@@ -40,6 +40,9 @@ const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
     })
   : supabaseAuth;
 
+console.log("[Supabase Config] URL:", SUPABASE_URL);
+console.log("[Supabase Config] Service Role Key configurada:", SUPABASE_SERVICE_ROLE_KEY ? `SÍ (largo: ${SUPABASE_SERVICE_ROLE_KEY.length})` : "NO");
+
 // Middleware para verificar autenticación mediante el token de Supabase
 async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -235,8 +238,9 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
     });
 
     if (createError) {
-      console.error("[POST /api/users] Error al crear usuario en Supabase Auth:", createError.message);
-      return res.status(400).json({ error: createError.message });
+      console.error("[POST /api/users] Error completo al crear usuario:", createError);
+      const errMsg = createError.message || createError.error_description || (typeof createError === 'object' ? JSON.stringify(createError) : String(createError)) || 'Error desconocido de Supabase Auth';
+      return res.status(400).json({ error: errMsg });
     }
 
     // 2. Modificar el rol en la tabla de perfiles
@@ -246,8 +250,9 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
       .eq('id', userData.user.id);
 
     if (profileError) {
-      console.error("[POST /api/users] Error al actualizar rol en la tabla profiles:", profileError.message);
-      return res.status(400).json({ error: `Usuario creado, pero no se pudo asignar el rol: ${profileError.message}` });
+      console.error("[POST /api/users] Error completo al actualizar rol:", profileError);
+      const profileErrMsg = profileError.message || (typeof profileError === 'object' ? JSON.stringify(profileError) : String(profileError)) || 'Error desconocido de perfil';
+      return res.status(400).json({ error: `Usuario creado, pero no se pudo asignar el rol: ${profileErrMsg}` });
     }
 
     res.status(201).json({
