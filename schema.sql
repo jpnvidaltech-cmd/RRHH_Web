@@ -69,12 +69,12 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, role)
-  VALUES (new.id, new.email, 'usuario'::user_role)
+  VALUES (new.id, new.email, 'usuario'::public.user_role)
   ON CONFLICT (id) DO UPDATE
   SET email = excluded.email;
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
