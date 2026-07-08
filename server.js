@@ -151,7 +151,7 @@ app.get('/api/cvs', requireAuth, async (req, res) => {
       .from('cvs')
       .select('nombre, apellido, created_at, web_cv_link')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(4);
 
     if (error) {
       return res.status(400).json({ error: error.message });
