@@ -153,7 +153,7 @@
       color: var(--text-muted);
       font-size: 14px;
       margin-left: 2rem;
-      flex-grow: 1;
+      flex: 1 1 0%;
     }
 
     .date-part,
@@ -316,7 +316,7 @@
       border: 1px solid var(--border);
       padding: 6px 12px;
       border-radius: 8px;
-      margin-left: 2rem;
+      flex-shrink: 0;
     }
 
     .admin-section-title {
@@ -369,6 +369,8 @@
       align-items: center;
       gap: 16px;
       margin-left: auto;
+      flex: 1 1 0%;
+      justify-content: flex-end;
     }
 
     .user-profile-info {
