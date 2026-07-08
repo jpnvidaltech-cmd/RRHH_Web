@@ -72,8 +72,8 @@
     /* ─── LAYOUT ─────────────────────────────────────────────────────── */
     .app {
       display: grid;
-      grid-template-columns: 360px 1fr;
-      grid-template-rows: 64px 1fr;
+      grid-template-columns: 432px 1fr;
+      grid-template-rows: 70px 1fr;
       height: 100vh;
       overflow: hidden;
     }
@@ -83,18 +83,19 @@
       grid-column: 1 / -1;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       padding: 0 2rem 0 0;
       background: var(--navy-mid);
       border-bottom: 1px solid var(--border);
       z-index: 10;
+      height: 70px;
     }
 
     .topbar-brand {
       display: flex;
       align-items: center;
       gap: 0;
-      width: 360px;
+      width: 432px;
       padding: 0 1.5rem;
       height: 100%;
       border-right: 1px solid var(--border);
@@ -102,16 +103,16 @@
 
     .brand-logo-wrapper {
       position: relative;
-      width: 44px;
-      height: 44px;
+      width: 54px;
+      height: 54px;
       margin-right: 12px;
       flex-shrink: 0;
     }
 
     .brand-logo-circle {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
+      width: 54px;
+      height: 54px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -127,17 +128,17 @@
     .brand-name {
       font-family: 'Syne', sans-serif;
       font-weight: 700;
-      font-size: 17px;
+      font-size: 20px;
       letter-spacing: .3px;
       color: var(--text-white);
     }
 
     .brand-tag {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 500;
       color: var(--blue-light);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.2px;
       display: block;
       margin-top: -2px;
     }
@@ -145,33 +146,77 @@
     .topbar-datetime {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: 15px;
+      margin-left: 2rem;
+      flex-grow: 1;
     }
 
-    .topbar-datetime .date-part {
+    .date-part {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text-white);
+    }
+
+    .time-part {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--blue-light);
+      background: var(--blue-glow);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(37, 99, 235, .2);
+    }
+
+    .tz-badge {
+      font-size: 11px;
+      background: var(--navy-light);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: .5px;
+      color: var(--text-muted);
+    }
+
+    .topbar-user-area {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-left: auto;
+    }
+
+    .user-profile-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .user-email {
+      font-size: 12px;
       font-weight: 500;
       color: var(--text-white);
     }
 
-    .topbar-datetime .time-part {
-      font-family: 'Syne', sans-serif;
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text-white);
-      letter-spacing: 1px;
+    .user-role-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(37, 99, 235, .2);
+      color: var(--blue-light);
+      border: 1px solid rgba(37, 99, 235, .3);
     }
 
-    .topbar-datetime .tz-badge {
-      background: var(--blue-glow);
-      border: 1px solid rgba(37, 99, 235, .4);
-      color: var(--blue-light);
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 6px;
-      letter-spacing: .5px;
+    .user-role-badge.role-admin {
+      background: rgba(245, 158, 11, .2);
+      color: var(--amber-light);
+      border: 1px solid rgba(245, 158, 11, .3);
     }
 
     /* ─── SIDEBAR ─────────────────────────────────────────────────────── */
@@ -1327,6 +1372,16 @@
         display: flex;
         gap: 8px;
         font-size: 11px;
+        margin-left: 12px;
+        flex-grow: 0;
+      }
+
+      .topbar-user-area {
+        margin-left: auto;
+      }
+
+      .user-profile-info {
+        display: none !important;
       }
 
       .topbar-datetime .date-part {
@@ -1903,6 +1958,12 @@
         <span class="date-part" id="datePart">—</span>
         <span class="time-part" id="timePart">00:00:00</span>
         <span class="tz-badge" id="tzBadge">—</span>
+      </div>
+      <div class="topbar-user-area">
+        <div class="user-profile-info" id="userProfileInfo" style="display: none;">
+          <span class="user-email" id="userEmailSpan">—</span>
+          <span class="user-role-badge" id="userRoleBadge">—</span>
+        </div>
         <button id="btnSignOut" class="btn-signout" style="display:none;">Cerrar Sesión</button>
       </div>
     </header>
@@ -2167,6 +2228,7 @@
       currentUser = user;
       const loginOverlay = document.getElementById('loginOverlay');
       const btnSignOut = document.getElementById('btnSignOut');
+      const userProfileInfo = document.getElementById('userProfileInfo');
 
       if (user) {
         loginOverlay.style.display = 'none';
@@ -2175,9 +2237,21 @@
         applyUserRole(role);
         loadRecentCVs();
         updateCVCount();
+
+        // Actualizar información del usuario en cabecera
+        userProfileInfo.style.display = 'flex';
+        document.getElementById('userEmailSpan').textContent = user.email || '';
+        const roleBadge = document.getElementById('userRoleBadge');
+        roleBadge.textContent = role === 'admin' ? 'Admin' : 'Usuario';
+        if (role === 'admin') {
+          roleBadge.className = 'user-role-badge role-admin';
+        } else {
+          roleBadge.className = 'user-role-badge';
+        }
       } else {
         loginOverlay.style.display = 'flex';
         btnSignOut.style.display = 'none';
+        if (userProfileInfo) userProfileInfo.style.display = 'none';
         currentUserProfile = null;
         sessionStorage.removeItem('rrhh_auth_token');
       }
