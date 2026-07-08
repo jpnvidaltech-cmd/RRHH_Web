@@ -213,6 +213,71 @@ app.post('/api/cvs', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// ─── ENDPOINTS: GESTIÓN DE USUARIOS (ADMIN-ONLY) ──────────────────────────────
+app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
+  const { email, password, role } = req.body;
+  if (!email || !password || !role) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios: email, password, role.' });
+  }
+
+  if (role !== 'admin' && role !== 'usuario') {
+    return res.status(400).json({ error: 'Rol inválido. Debe ser admin o usuario.' });
+  }
+
+  try {
+    // 1. Crear el usuario en auth.users de Supabase
+    const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
+    });
+
+    if (createError) {
+      return res.status(400).json({ error: createError.message });
+    }
+
+    // 2. Modificar el rol en la tabla de perfiles
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ role })
+      .eq('id', userData.user.id);
+
+    if (profileError) {
+      return res.status(400).json({ error: `Usuario creado, pero no se pudo asignar el rol: ${profileError.message}` });
+    }
+
+    res.status(201).json({
+      message: 'Usuario creado exitosamente.',
+      user: {
+        id: userData.user.id,
+        email: userData.user.email,
+        role: role
+      }
+    });
+  } catch (err) {
+    console.error("Excepción en creación de usuario:", err);
+    res.status(500).json({ error: 'Error interno del servidor al crear usuario.' });
+  }
+});
+
+app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { data: profilesList, error } = await supabaseAdmin
+      .from('profiles')
+      .select('email, role, updated_at')
+      .order('email', { ascending: true });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(profilesList || []);
+  } catch (err) {
+    console.error("Excepción en listado de usuarios:", err);
+    res.status(500).json({ error: 'Error interno al obtener usuarios del sistema.' });
+  }
+});
+
 // Servir la carpeta estática del frontend
 app.use(express.static(path.join(__dirname, 'public')));
 

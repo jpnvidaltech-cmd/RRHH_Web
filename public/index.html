@@ -149,39 +149,219 @@
     .topbar-datetime {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       color: var(--text-muted);
-      font-size: 15px;
+      font-size: 14px;
       margin-left: 2rem;
       flex-grow: 1;
     }
 
-    .date-part {
+    .date-part,
+    .time-part,
+    .tz-badge {
       font-family: 'Syne', sans-serif;
-      font-weight: 600;
-      font-size: 15px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--blue-light);
+      background: var(--blue-glow);
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(37, 99, 235, .2);
+      white-space: nowrap;
+    }
+
+    /* Modal / Pop-up styling */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 9, 21, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn .25s ease;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 440px;
+      max-width: 90vw;
+      padding: 1.75rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      animation: modalSlideUp .3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-content-wide {
+      width: 600px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
+
+    .modal-header h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
       color: var(--text-white);
     }
 
-    .time-part {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--blue-light);
-      background: var(--blue-glow);
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(37, 99, 235, .2);
+    .btn-close-modal {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+      transition: var(--trans);
     }
 
-    .tz-badge {
-      font-size: 11px;
+    .btn-close-modal:hover {
+      color: var(--error-light);
+    }
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-input,
+    .form-select {
       background: var(--navy-light);
       border: 1px solid var(--border);
-      padding: 2px 8px;
-      border-radius: 6px;
+      color: var(--text-white);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      outline: none;
+      transition: var(--trans);
+      width: 100%;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px var(--blue-glow);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-white);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--trans);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      border: 1px solid rgba(37, 99, 235, 0.4);
+      color: var(--text-white);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--trans);
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      box-shadow: 0 0 10px var(--blue-glow);
+    }
+
+    /* Admin Users Topbar section */
+    .topbar-admin-users {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 8px;
+      margin-left: 2rem;
+    }
+
+    .admin-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
       letter-spacing: .5px;
       color: var(--text-muted);
+    }
+
+    .admin-user-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-admin-action {
+      background: rgba(37, 99, 235, .15);
+      border: 1px solid rgba(37, 99, 235, .3);
+      color: var(--blue-light);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      transition: var(--trans);
+    }
+
+    .btn-admin-action:hover {
+      background: rgba(37, 99, 235, .3);
+      border-color: var(--blue);
+      transform: scale(1.05);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes modalSlideUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
     .topbar-user-area {
@@ -1962,6 +2142,13 @@
         <span class="time-part" id="timePart">00:00:00</span>
         <span class="tz-badge" id="tzBadge">—</span>
       </div>
+      <div class="topbar-admin-users" id="topbarAdminUsers" style="display: none;">
+        <span class="admin-section-title">Usuarios:</span>
+        <div class="admin-user-buttons">
+          <button class="btn-admin-action" onclick="openAddUserModal()" title="Agregar nuevo usuario">+</button>
+          <button class="btn-admin-action" onclick="openViewUsersModal()" title="Visualizar usuarios del sistema">👥</button>
+        </div>
+      </div>
       <div class="topbar-user-area">
         <div class="user-profile-info" id="userProfileInfo" style="display: none;">
           <span class="user-email" id="userEmailSpan">—</span>
@@ -2255,6 +2442,8 @@
         loginOverlay.style.display = 'flex';
         btnSignOut.style.display = 'none';
         if (userProfileInfo) userProfileInfo.style.display = 'none';
+        const topbarAdminUsers = document.getElementById('topbarAdminUsers');
+        if (topbarAdminUsers) topbarAdminUsers.style.display = 'none';
         currentUserProfile = null;
         sessionStorage.removeItem('rrhh_auth_token');
       }
@@ -2263,13 +2452,16 @@
     function applyUserRole(role) {
       const uploadZone = document.getElementById('uploadZone');
       const restrictedUploadMessage = document.getElementById('restrictedUploadMessage');
+      const topbarAdminUsers = document.getElementById('topbarAdminUsers');
 
       if (role === 'admin') {
         uploadZone.style.display = 'block';
         restrictedUploadMessage.style.display = 'none';
+        if (topbarAdminUsers) topbarAdminUsers.style.display = 'flex';
       } else {
         uploadZone.style.display = 'none';
         restrictedUploadMessage.style.display = 'block';
+        if (topbarAdminUsers) topbarAdminUsers.style.display = 'none';
       }
     }
 
@@ -3198,6 +3390,134 @@
       }
     }
 
+    // ─── ADMIN USER MANAGEMENT MODALS LÓGICA ───────────────────────────────
+    function openAddUserModal() {
+      document.getElementById('newEmail').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('newRole').value = 'usuario';
+      document.getElementById('addUserModal').style.display = 'flex';
+    }
+
+    function closeAddUserModal() {
+      document.getElementById('addUserModal').style.display = 'none';
+    }
+
+    function openViewUsersModal() {
+      document.getElementById('viewUsersModal').style.display = 'flex';
+      loadSystemUsers();
+    }
+
+    function closeViewUsersModal() {
+      document.getElementById('viewUsersModal').style.display = 'none';
+    }
+
+    async function handleAddUserSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('newEmail').value;
+      const password = document.getElementById('newPassword').value;
+      const role = document.getElementById('newRole').value;
+      const token = sessionStorage.getItem('rrhh_auth_token');
+
+      if (!token) return;
+
+      const submitBtn = document.getElementById('btnSubmitAddUser');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Guardando...';
+
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ email, password, role })
+        });
+
+        if (res.ok) {
+          showAlert('success', 'Usuario creado correctamente.');
+          closeAddUserModal();
+        } else {
+          const err = await res.json();
+          showAlert('error', `Error al crear usuario: ${err.error || res.statusText}`);
+        }
+      } catch (err) {
+        console.error("Error al crear usuario:", err);
+        showAlert('error', `Error de red: ${err.message}`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Guardar';
+      }
+    }
+
+    async function loadSystemUsers() {
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token) return;
+
+      const tbody = document.getElementById('usersListTableBody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="2" style="text-align: center; padding: 2rem; color: var(--text-dim);">
+            <div class="search-spinner" style="display: block; margin: 0 auto 10px;"></div>
+            Cargando lista de usuarios…
+          </td>
+        </tr>
+      `;
+
+      try {
+        const res = await fetch('/api/users', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const users = await res.json();
+          tbody.innerHTML = '';
+
+          if (users.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="2" style="text-align: center; padding: 2rem; color: var(--text-dim);">
+                  No hay otros usuarios registrados.
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          users.forEach(u => {
+            const tr = document.createElement('tr');
+            const isAdm = u.role === 'admin';
+            const roleClass = isAdm ? 'user-role-badge role-admin' : 'user-role-badge';
+            const roleName = isAdm ? 'Admin' : 'Usuario';
+
+            tr.innerHTML = `
+              <td><strong>${escHtml(u.email || '—')}</strong></td>
+              <td><span class="${roleClass}">${roleName}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } else {
+          const err = await res.json();
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="2" style="text-align: center; padding: 2rem; color: var(--error);">
+                ❌ Error: ${err.error || res.statusText}
+              </td>
+            </tr>
+          `;
+        }
+      } catch (err) {
+        console.error("Error al cargar usuarios:", err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="2" style="text-align: center; padding: 2rem; color: var(--error);">
+              ❌ Error de red: ${err.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
     // ─── ALERTS ──────────────────────────────────────────────────────────────
     function showAlert(type, message) {
       const container = document.getElementById('alertContainer');
@@ -3212,6 +3532,67 @@
       }, 4000);
     }
   </script>
+
+  <!-- Modal: Agregar Usuario -->
+  <div class="modal" id="addUserModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Agregar Usuario</h3>
+        <button class="btn-close-modal" onclick="closeAddUserModal()">×</button>
+      </div>
+      <form id="addUserForm" onsubmit="handleAddUserSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="newEmail">Email / Usuario</label>
+            <input type="email" id="newEmail" class="form-input" placeholder="correo@ejemplo.com" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="newRole">Rol / Perfil</label>
+            <select id="newRole" class="form-select" required>
+              <option value="usuario">Usuario</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="newPassword">Contraseña</label>
+            <input type="password" id="newPassword" class="form-input" placeholder="••••••••" required autocomplete="new-password">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeAddUserModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btnSubmitAddUser">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Visualizar Usuarios -->
+  <div class="modal" id="viewUsersModal" style="display: none;">
+    <div class="modal-content modal-content-wide">
+      <div class="modal-header">
+        <h3>Usuarios del Sistema</h3>
+        <button class="btn-close-modal" onclick="closeViewUsersModal()">×</button>
+      </div>
+      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+        <div class="table-responsive">
+          <table class="cv-table">
+            <thead>
+              <tr>
+                <th>Email / Usuario</th>
+                <th>Rol / Perfil</th>
+              </tr>
+            </thead>
+            <tbody id="usersListTableBody">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeViewUsersModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>
