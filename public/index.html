@@ -715,6 +715,40 @@
       height: 16px;
     }
 
+    .btn-clean {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(148, 163, 184, .15);
+      border: 1px solid rgba(148, 163, 184, .35);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--trans);
+      white-space: nowrap;
+    }
+
+    .btn-clean:hover {
+      background: rgba(255, 255, 255, .08);
+      border-color: var(--text-muted);
+      color: var(--text-white);
+    }
+
+    .btn-clean svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     /* Empty state */
     .empty-state {
       display: flex;
@@ -1139,7 +1173,9 @@
       .search-section,
       .main-header,
       .btn-print,
+      .btn-clean,
       .results-toolbar .btn-print,
+      .results-toolbar .btn-clean,
       .alert-container {
         display: none !important;
       }
@@ -1375,9 +1411,16 @@
         gap: 10px;
       }
 
-      .btn-print {
+      .btn-print,
+      .btn-clean {
         width: 100%;
         justify-content: center;
+      }
+
+      .toolbar-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
       }
 
       .candidates-grid {
@@ -1706,15 +1749,25 @@
             <h2>Resultados del análisis</h2>
             <div class="results-count" id="resultsCount"></div>
           </div>
-          <button class="btn-print" onclick="printReport()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <polyline points="6 9 6 2 18 2 18 9" />
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-              <rect x="6" y="14" width="12" height="8" />
-            </svg>
-            Imprimir Reporte (PDF)
-          </button>
+          <div class="toolbar-actions">
+            <button class="btn-clean" onclick="clearSearch()" title="Limpiar búsqueda">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m12 22 .7-.7c1.3-1.3 2-3.1 2-5V10c0-1.1-.9-2-2-2h-1c-1.1 0-2 .9-2 2v6.3c0 1.9.7 3.7 2 5l.7.7" />
+                <path d="M6 8V5c0-1.7 1.3-3 3-3h6c1.7 0 3 1.3 3 3v3" />
+                <path d="M18 8H6" />
+              </svg>
+              Limpiar
+            </button>
+            <button class="btn-print" onclick="printReport()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              Imprimir Reporte (PDF)
+            </button>
+          </div>
         </div>
 
         <!-- Empty state -->
@@ -2496,6 +2549,15 @@
     // ─── PRINT ────────────────────────────────────────────────────────────────
     function printReport() {
       window.print();
+    }
+
+    // ─── CLEAR SEARCH RESULTS ──────────────────────────────────────────────────
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('candidatesGrid').innerHTML = '';
+      document.getElementById('extraBlocks').innerHTML = '';
+      showState('empty');
+      showAlert('success', 'Búsqueda e historial de resultados limpiados.');
     }
 
     // ─── SECURE CV RETRIEVAL FROM N8N ─────────────────────────────────────────
