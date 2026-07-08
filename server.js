@@ -43,7 +43,9 @@ const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
 // Middleware para verificar autenticación mediante el token de Supabase
 async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
+  console.log(`[requireAuth] Ruta: ${req.path}, Método: ${req.method}, Authorization:`, authHeader ? 'Presente' : 'Ausente');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.warn(`[requireAuth] Falta token o no empieza con Bearer en ${req.path}`);
     return res.status(401).json({ error: 'Acceso no autorizado. Falta token.' });
   }
 

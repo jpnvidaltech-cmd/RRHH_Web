@@ -3420,7 +3420,13 @@
       const role = document.getElementById('newRole').value;
       const token = sessionStorage.getItem('rrhh_auth_token');
 
-      if (!token) return;
+      console.log("[handleAddUserSubmit] Intentando crear usuario:", email, "con rol:", role);
+      console.log("[handleAddUserSubmit] Token en sessionStorage:", token ? "Presente (largo: " + token.length + ")" : "Ausente / Nulo");
+
+      if (!token) {
+        showAlert('error', 'Token de sesión no encontrado. Por favor reinicia sesión.');
+        return;
+      }
 
       const submitBtn = document.getElementById('btnSubmitAddUser');
       submitBtn.disabled = true;
