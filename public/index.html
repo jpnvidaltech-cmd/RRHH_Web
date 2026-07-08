@@ -1,0 +1,2596 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfiles RRHH — Plataforma de Recursos Humanos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ─── RESET & BASE ─────────────────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --navy: #0F1A2E;
+      --navy-mid: #162035;
+      --navy-light: #1E2D4A;
+      --blue: #2563EB;
+      --blue-light: #3B82F6;
+      --blue-glow: rgba(37, 99, 235, .15);
+      --amber: #F59E0B;
+      --amber-light: #FCD34D;
+      --success: #10B981;
+      --error: #EF4444;
+      --text-white: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --border: rgba(255, 255, 255, .08);
+      --border-hard: rgba(255, 255, 255, .14);
+      --bg-card: rgba(255, 255, 255, .03);
+      --bg-hover: rgba(255, 255, 255, .06);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, .35);
+      --trans: all .2s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    html,
+    body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--navy);
+      color: var(--text-white);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ─── SCROLLBAR ─────────────────────────────────────────────────── */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, .15);
+      border-radius: 3px;
+    }
+
+    /* ─── LAYOUT ─────────────────────────────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      grid-template-rows: 64px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── TOPBAR ─────────────────────────────────────────────────────── */
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem 0 0;
+      background: var(--navy-mid);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 360px;
+      padding: 0 1.5rem;
+      height: 100%;
+      border-right: 1px solid var(--border);
+    }
+
+    .brand-logo-wrapper {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-wrapper input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .brand-logo-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+      border: 2px dashed rgba(255, 255, 255, .3);
+      transition: var(--trans);
+      overflow: hidden;
+    }
+
+    .brand-logo-circle:hover {
+      border-color: var(--blue-light);
+      background: var(--blue-light);
+    }
+
+    .brand-logo-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .brand-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: .3px;
+      color: var(--text-white);
+    }
+
+    .brand-tag {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--blue-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: block;
+      margin-top: -2px;
+    }
+
+    .topbar-datetime {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .topbar-datetime .date-part {
+      font-weight: 500;
+      color: var(--text-white);
+    }
+
+    .topbar-datetime .time-part {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-white);
+      letter-spacing: 1px;
+    }
+
+    .topbar-datetime .tz-badge {
+      background: var(--blue-glow);
+      border: 1px solid rgba(37, 99, 235, .4);
+      color: var(--blue-light);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: .5px;
+    }
+
+    /* ─── SIDEBAR ─────────────────────────────────────────────────────── */
+    .sidebar {
+      background: var(--navy-mid);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-dim);
+      padding: 0 .5rem;
+      margin-bottom: .5rem;
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed var(--border-hard);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--trans);
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: var(--blue);
+      background: var(--blue-glow);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      border-radius: 14px;
+      background: rgba(37, 99, 235, .2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .upload-zone h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-white);
+      margin-bottom: 4px;
+    }
+
+    .upload-zone p {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .upload-formats {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .format-badge {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, .07);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      display: none;
+      margin-top: 12px;
+      background: rgba(255, 255, 255, .07);
+      border-radius: 100px;
+      overflow: hidden;
+      height: 4px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 100px;
+      transition: width .3s ease;
+      width: 0%;
+    }
+
+    .upload-status {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      min-height: 18px;
+      transition: var(--trans);
+    }
+
+    .upload-status.success {
+      color: var(--success);
+    }
+
+    .upload-status.error {
+      color: var(--error);
+    }
+
+    /* Recent uploads list */
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      transition: var(--trans);
+    }
+
+    .recent-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .recent-item .file-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .file-icon.pdf {
+      background: rgba(239, 68, 68, .2);
+    }
+
+    .file-icon.docx {
+      background: rgba(37, 99, 235, .2);
+    }
+
+    .file-icon.img {
+      background: rgba(245, 158, 11, .2);
+    }
+
+    .recent-item .file-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-white);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .recent-item .file-status {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .file-status.ok {
+      background: var(--success);
+    }
+
+    .file-status.pending {
+      background: var(--amber);
+    }
+
+    /* ─── CV PARSED CARD ────────────────────────────────────────────── */
+    .cv-parsed-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(16, 185, 129, .25);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      animation: fadeSlideIn .35s ease;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .cv-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(16, 185, 129, .08);
+      border-bottom: 1px solid rgba(16, 185, 129, .15);
+    }
+
+    .cv-card-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      background: rgba(16, 185, 129, .2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--success);
+    }
+
+    .cv-card-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-white);
+      line-height: 1.3;
+    }
+
+    .cv-card-email {
+      font-size: 11px;
+      color: var(--success);
+      opacity: .8;
+      margin-top: 1px;
+    }
+
+    .cv-link-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      background: rgba(37, 99, 235, .15);
+      border: 1px solid rgba(37, 99, 235, .3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--blue-light);
+      text-decoration: none;
+      font-size: 13px;
+      transition: var(--trans);
+      margin-left: auto;
+    }
+
+    .cv-link-btn:hover {
+      background: rgba(37, 99, 235, .3);
+      border-color: var(--blue);
+      transform: scale(1.08);
+    }
+
+    .cv-card-body {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .cv-field {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cv-field-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+      color: var(--text-dim);
+    }
+
+    .cv-field-value {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .cv-field-empty {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    /* Duplicate CV notice */
+    .cv-duplicate-notice {
+      background: rgba(245, 158, 11, .08);
+      border: 1px solid rgba(245, 158, 11, .3);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      animation: fadeSlideIn .35s ease;
+    }
+
+    .cv-duplicate-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .cv-duplicate-text {}
+
+    .cv-duplicate-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--amber);
+      margin-bottom: 3px;
+    }
+
+    .cv-duplicate-msg {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .alert.warning {
+      border-left-color: var(--amber);
+    }
+
+    /* ─── MAIN CONTENT ──────────────────────────────────────────────── */
+    .main {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--navy);
+    }
+
+    .main-header {
+      padding: 1.5rem 2rem 1rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .main-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--text-white);
+      margin-bottom: 4px;
+    }
+
+    .main-header p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Search Section */
+    .search-section {
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .search-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .search-textarea {
+      flex: 1;
+      background: var(--navy-light);
+      border: 1px solid var(--border-hard);
+      border-radius: var(--radius-md);
+      color: var(--text-white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 12px 16px;
+      resize: vertical;
+      min-height: 80px;
+      max-height: 200px;
+      transition: var(--trans);
+      outline: none;
+    }
+
+    .search-textarea::placeholder {
+      color: var(--text-dim);
+    }
+
+    .search-textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-glow);
+    }
+
+    .btn-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0 20px;
+      height: 80px;
+      min-width: 130px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--trans);
+      flex-shrink: 0;
+    }
+
+    .btn-search:hover {
+      background: var(--blue-light);
+      transform: translateY(-1px);
+    }
+
+    .btn-search:active {
+      transform: scale(.98);
+    }
+
+    .btn-search:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-search svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .search-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, .3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ─── RESULTS AREA ──────────────────────────────────────────────── */
+    .results-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      position: relative;
+    }
+
+    .results-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .results-toolbar h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text-white);
+    }
+
+    .results-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .btn-print {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 158, 11, .15);
+      border: 1px solid rgba(245, 158, 11, .35);
+      color: var(--amber-light);
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--trans);
+      white-space: nowrap;
+    }
+
+    .btn-print:hover {
+      background: rgba(245, 158, 11, .25);
+      border-color: var(--amber);
+    }
+
+    .btn-print svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 300px;
+      text-align: center;
+      gap: 16px;
+      color: var(--text-dim);
+    }
+
+    .empty-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--border-hard);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .empty-state h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+    .empty-state p {
+      font-size: 13px;
+      max-width: 320px;
+      line-height: 1.6;
+    }
+
+    /* Loading state */
+    .loading-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 300px;
+      gap: 16px;
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .loading-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .loading-dot:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      80%,
+      100% {
+        opacity: .3;
+        transform: scale(.8);
+      }
+
+      40% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .loading-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ─── CANDIDATES GRID ──────────────────────────────────────────── */
+    .candidates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .candidate-card {
+      background: var(--navy-light);
+      border: 1px solid var(--border-hard);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: var(--trans);
+      position: relative;
+    }
+
+    .candidate-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(37, 99, 235, .2);
+    }
+
+    .card-header {
+      padding: 1.25rem 1.25rem .75rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .candidate-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--blue) 0%, #7C3AED 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .candidate-meta {
+      flex: 1;
+    }
+
+    .candidate-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text-white);
+      margin-bottom: 2px;
+    }
+
+    .candidate-role {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .score-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      background: rgba(245, 158, 11, .12);
+      border: 1px solid rgba(245, 158, 11, .3);
+      border-radius: 10px;
+      padding: 6px 12px;
+    }
+
+    .score-badge .score-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      color: var(--amber);
+      line-height: 1;
+    }
+
+    .score-badge .score-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--amber);
+      opacity: .7;
+    }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 1.25rem;
+    }
+
+    .card-body {
+      padding: .75rem 1.25rem 1.25rem;
+    }
+
+    .card-body ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .card-body li {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .card-body li::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--blue-light);
+      flex-shrink: 0;
+      margin-top: 7px;
+    }
+
+    /* ─── EXTRA BLOCKS (Comparison / Score) ─────────────────────────── */
+    .extra-blocks {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: .5rem;
+    }
+
+    .extra-block {
+      background: var(--navy-light);
+      border: 1px solid var(--border-hard);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+    }
+
+    .extra-block h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--blue-light);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .extra-block h3 span {
+      font-size: 16px;
+    }
+
+    .extra-block p,
+    .extra-block li {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .extra-block ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .extra-block li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .extra-block li::before {
+      content: '▸';
+      color: var(--blue-light);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Score chart bars */
+    .score-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .score-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .score-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .score-row-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-white);
+    }
+
+    .score-row-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--amber);
+    }
+
+    .score-track {
+      height: 6px;
+      background: rgba(255, 255, 255, .08);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--blue) 0%, var(--amber) 100%);
+      transition: width .8s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    /* Raw text fallback */
+    .raw-results {
+      background: var(--navy-light);
+      border: 1px solid var(--border-hard);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    /* ─── ALERTS ─────────────────────────────────────────────────────── */
+    .alert-container {
+      position: fixed;
+      top: 80px;
+      right: 24px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .alert {
+      background: var(--navy-light);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      min-width: 280px;
+      max-width: 360px;
+      box-shadow: var(--shadow);
+      border-left: 3px solid;
+      animation: slideIn .3s ease;
+      pointer-events: all;
+    }
+
+    .alert.success {
+      border-left-color: var(--success);
+    }
+
+    .alert.error {
+      border-left-color: var(--error);
+    }
+
+    .alert.warning {
+      border-left-color: var(--amber);
+    }
+
+    .alert.info {
+      border-left-color: var(--blue-light);
+    }
+
+    .alert-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .alert-msg {
+      color: var(--text-white);
+      flex: 1;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+    }
+
+    /* ─── PRINT STYLES ──────────────────────────────────────────────── */
+    @media print {
+      @page {
+        margin: 18mm 20mm;
+      }
+
+      .sidebar,
+      .topbar,
+      .search-section,
+      .main-header,
+      .btn-print,
+      .results-toolbar .btn-print,
+      .alert-container {
+        display: none !important;
+      }
+
+      .app {
+        display: block !important;
+      }
+
+      .main {
+        display: block !important;
+        overflow: visible !important;
+      }
+
+      .results-area {
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+
+      .results-toolbar {
+        margin-bottom: 12px !important;
+      }
+
+      body {
+        background: #fff !important;
+        color: #0F172A !important;
+        font-size: 12pt;
+      }
+
+      .candidate-card,
+      .extra-block {
+        background: #fff !important;
+        border: 1px solid #CBD5E1 !important;
+        break-inside: avoid;
+        color: #0F172A !important;
+      }
+
+      .candidate-name {
+        color: #0F172A !important;
+      }
+
+      .candidate-role,
+      .card-body li {
+        color: #475569 !important;
+      }
+
+      .card-body li::before {
+        background: #2563EB !important;
+      }
+
+      .score-badge {
+        background: #FEF3C7 !important;
+        border-color: #F59E0B !important;
+      }
+
+      .score-badge .score-num {
+        color: #B45309 !important;
+      }
+
+      .score-fill {
+        background: #2563EB !important;
+      }
+
+      .extra-block h3 {
+        color: #1E3A8A !important;
+      }
+
+      .extra-block p,
+      .extra-block li {
+        color: #334155 !important;
+      }
+
+      .extra-block li::before {
+        color: #2563EB !important;
+      }
+
+      .results-toolbar h2 {
+        color: #0F172A !important;
+      }
+
+      .results-count {
+        color: #64748B !important;
+      }
+
+      h1 {
+        display: block;
+        font-size: 20pt;
+        color: #0F172A !important;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #2563EB;
+        margin-bottom: 16px;
+        font-family: 'Syne', sans-serif;
+      }
+
+      .print-header-info {
+        display: block !important;
+      }
+
+      .candidates-grid,
+      .extra-blocks {
+        gap: 12pt !important;
+      }
+    }
+
+    /* Print report header (hidden on screen) */
+    .print-header-info {
+      display: none;
+      font-size: 11pt;
+      color: #64748B;
+      margin-bottom: 16px;
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+
+      html,
+      body {
+        height: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        height: auto;
+        overflow: visible;
+        display: flex;
+        flex-direction: column;
+        max-width: 100vw;
+      }
+
+      .topbar {
+        padding: 0 1rem;
+        height: 60px;
+        flex-shrink: 0;
+      }
+
+      .topbar-brand {
+        width: auto;
+        padding: 0;
+        border-right: none;
+      }
+
+      .topbar-datetime {
+        display: flex;
+        gap: 8px;
+        font-size: 11px;
+      }
+
+      .topbar-datetime .date-part {
+        display: none;
+      }
+
+      .topbar-datetime .tz-badge {
+        display: none;
+      }
+
+      .topbar-datetime .time-part {
+        font-size: 15px;
+      }
+
+      /* CV Upload section: acento verde esmeralda */
+      .sidebar {
+        max-height: none;
+        overflow: visible;
+        padding: 1rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        border-top: 3px solid var(--success);
+        background: linear-gradient(180deg, rgba(16, 185, 129, .06) 0%, var(--navy-mid) 60%);
+      }
+
+      .upload-zone {
+        padding: 1.25rem 1rem;
+      }
+
+      /* Search section: acento azul */
+      .main {
+        height: auto;
+        overflow: visible;
+      }
+
+      .main-header {
+        padding: 1rem 1rem 0.5rem;
+        border-top: 3px solid var(--blue);
+        background: linear-gradient(180deg, rgba(37, 99, 235, .07) 0%, transparent 70%);
+      }
+
+      .main-header h1 {
+        font-size: 18px;
+      }
+
+      .main-header p {
+        font-size: 12px;
+      }
+
+      .search-section {
+        padding: 1rem;
+      }
+
+      /* Fix textarea: mismo ancho que el boton Buscar */
+      .search-row {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .search-textarea {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 100px;
+        resize: none;
+      }
+
+      .btn-search {
+        height: 48px;
+        width: 100%;
+        min-width: 100%;
+        justify-content: center;
+      }
+
+      /* Results: contener tarjetas dentro del ancho de pantalla */
+      .results-area {
+        padding: 1rem;
+        overflow: visible;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+      .results-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .btn-print {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .candidates-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      .candidate-card {
+        max-width: 100%;
+        overflow: hidden;
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+
+      .card-body li {
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+
+      .candidate-role {
+        word-break: break-word;
+      }
+
+      .extra-blocks {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      .extra-block {
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+
+      .score-row-name {
+        word-break: break-word;
+      }
+
+      .raw-results {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar-datetime {
+        display: none;
+      }
+
+      .topbar {
+        justify-content: flex-start;
+        gap: 0;
+      }
+
+      /* Alertas: contenidas dentro del ancho de pantalla */
+      .alert-container {
+        right: 12px;
+        left: 12px;
+      }
+
+      .alert {
+        min-width: unset;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      /* Lista de CVs recientes: altura máxima para no crecer infinito */
+      .recent-list {
+        max-height: 180px;
+        overflow-y: auto;
+      }
+    }
+
+    /* ─── AUTH & LOGIN STYLES ────────────────────────────────────────── */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 26, 46, 0.96);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .login-box {
+      background: var(--navy-mid);
+      border: 1px solid var(--border-hard);
+      padding: 2.5rem;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow);
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .login-box h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      margin-bottom: 8px;
+      color: var(--text-white);
+    }
+
+    .login-box p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+    }
+
+    .form-group input {
+      background: var(--navy-light);
+      border: 1px solid var(--border-hard);
+      border-radius: var(--radius-md);
+      color: var(--text-white);
+      padding: 10px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: var(--trans);
+    }
+
+    .form-group input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-glow);
+    }
+
+    .btn-login {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--trans);
+      margin-top: 8px;
+    }
+
+    .btn-login:hover {
+      background: var(--blue-light);
+    }
+
+    .login-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--error);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .btn-signout {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: var(--error);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: var(--trans);
+      margin-left: 12px;
+    }
+
+    .btn-signout:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: var(--error);
+    }
+
+    .restricted-upload-msg {
+      border: 2px dashed var(--border-hard);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.01);
+      color: var(--text-dim);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .restricted-upload-msg span {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .restricted-upload-msg h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-white);
+      margin-bottom: 6px;
+    }
+  </style>
+  <!-- SDK de Supabase removido del cliente por seguridad (interacción a través de Express) -->
+</head>
+
+<body>
+
+  <div class="alert-container" id="alertContainer"></div>
+
+  <div class="app">
+
+    <!-- ── TOPBAR ── -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <div class="brand-logo-wrapper">
+          <input type="file" accept="image/*" id="logoUpload" aria-label="Subir logotipo">
+          <div class="brand-logo-circle" id="brandLogoCircle">
+            <img src="Logo/Gemini_Generated_Image_7q2veh7q2veh7q2v.png" alt="Logo">
+          </div>
+        </div>
+        <div>
+          <div class="brand-name">Perfiles RRHH</div>
+          <span class="brand-tag">RRHH · AI-Powered</span>
+        </div>
+      </div>
+      <div class="topbar-datetime">
+        <span class="date-part" id="datePart">—</span>
+        <span class="time-part" id="timePart">00:00:00</span>
+        <span class="tz-badge" id="tzBadge">—</span>
+        <button id="btnSignOut" class="btn-signout" style="display:none;">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar">
+
+      <div id="uploadSectionContainer">
+        <p class="sidebar-section-label">Cargar CV</p>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="cvFileInput" accept=".pdf,.jpg,.jpeg,.png" aria-label="Seleccionar CV">
+          <div class="upload-icon">📄</div>
+          <h3>Arrastrá o seleccioná</h3>
+          <p>Cargá el CV del candidato para indexarlo en el sistema</p>
+          <div class="upload-formats">
+            <span class="format-badge">PDF</span>
+            <span class="format-badge">JPG</span>
+          </div>
+          <div class="progress-wrap" id="progressWrap">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="upload-status" id="uploadStatus"></div>
+        </div>
+        <div id="restrictedUploadMessage" class="restricted-upload-msg" style="display:none;">
+          <span>🔒</span>
+          <h3>Acceso Restringido</h3>
+          <p>Solo los usuarios administradores pueden cargar nuevos currículums.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="sidebar-section-label">CVs recientes</p>
+        <div class="recent-list" id="recentList">
+          <div style="font-size:12px;color:var(--text-dim);padding:4px 10px;">Aún no hay CVs cargados.</div>
+        </div>
+      </div>
+
+      <div id="cvResultSection" style="display:none;">
+        <p class="sidebar-section-label">Último CV procesado</p>
+        <div id="cvResultCard"></div>
+      </div>
+
+    </aside>
+
+    <!-- ── MAIN ── -->
+    <main class="main">
+
+      <div class="main-header">
+        <h1>Búsqueda de Perfiles</h1>
+        <p>Describí el perfil que buscás y el agente IA encontrará los mejores candidatos en la base de datos.</p>
+      </div>
+
+      <div class="search-section">
+        <p class="search-label">Descripción del perfil buscado</p>
+        <div class="search-row">
+          <textarea class="search-textarea" id="searchInput"
+            placeholder="Ej: Busco un desarrollador senior con experiencia en React, Node.js y bases de datos relacionales. Que tenga liderazgo técnico y haya trabajado en startups..."></textarea>
+          <button class="btn-search" id="btnSearch">
+            <div class="search-spinner" id="searchSpinner"></div>
+            <svg id="searchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <span id="searchBtnText">Buscar</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="results-area" id="resultsArea">
+
+        <div class="print-header-info" id="printHeaderInfo"></div>
+
+        <div class="results-toolbar" id="resultsToolbar" style="display:none;">
+          <div>
+            <h2>Resultados del análisis</h2>
+            <div class="results-count" id="resultsCount"></div>
+          </div>
+          <button class="btn-print" onclick="printReport()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            Imprimir Reporte (PDF)
+          </button>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🔍</div>
+          <h3>Sin resultados todavía</h3>
+          <p>Ingresá la descripción del perfil que buscás y presioná <strong>Buscar</strong> para que el agente IA
+            analice la base de CVs.</p>
+        </div>
+
+        <!-- Loading state -->
+        <div class="loading-state" id="loadingState">
+          <div class="loading-dots">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+          </div>
+          <div class="loading-text">El agente IA está analizando los CVs…</div>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsContent" style="display:none;">
+          <div class="candidates-grid" id="candidatesGrid"></div>
+          <div class="extra-blocks" id="extraBlocks"></div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── LOGIN OVERLAY ── -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+      <h2>Iniciar Sesión</h2>
+      <p>Accedé al Asistente RRHH con tus credenciales de Supabase</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="correo@ejemplo.com" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" id="btnLoginSubmit" class="btn-login">
+          <span id="loginBtnText">Ingresar</span>
+          <div class="search-spinner" id="loginSpinner"
+            style="display:none; width:16px; height:16px; border-width:2px; border-top-color:#fff; margin-left:8px;">
+          </div>
+        </button>
+      </form>
+      <div id="loginError" class="login-error" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── CONFIGURACIÓN DINÁMICA DE WEBHOOKS ───────────────────────────────────
+    let CONFIG = {
+      webhookCargaCv: 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa',
+      webhookAgenteCv: 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa',
+      webhookObtenerCv: 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV'
+    };
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+          CONFIG = await res.json();
+          console.log("Configuración dinámica cargada de forma exitosa:", CONFIG);
+        }
+      } catch (err) {
+        console.warn("No se pudo cargar la configuración de red desde el servidor, usando valores por defecto:", err);
+      }
+    }
+
+    let currentUser = null;
+    let currentUserProfile = null;
+
+    async function checkUserSession() {
+      // Cargar la configuración de los webhooks primero
+      await loadConfig();
+
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token) {
+        handleAuthState(null, 'usuario');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          handleAuthState(data.user, data.role);
+        } else {
+          sessionStorage.removeItem('rrhh_auth_token');
+          handleAuthState(null, 'usuario');
+        }
+      } catch (err) {
+        console.error("Error al obtener la sesión del usuario:", err);
+        handleAuthState(null, 'usuario');
+      }
+    }
+
+    function showSupabaseError(msg) {
+      const loginOverlay = document.getElementById('loginOverlay');
+      const loginError = document.getElementById('loginError');
+      loginOverlay.style.display = 'flex';
+      loginError.textContent = msg;
+      loginError.style.display = 'block';
+    }
+
+    function handleAuthState(user, role) {
+      currentUser = user;
+      const loginOverlay = document.getElementById('loginOverlay');
+      const btnSignOut = document.getElementById('btnSignOut');
+
+      if (user) {
+        loginOverlay.style.display = 'none';
+        btnSignOut.style.display = 'block';
+        currentUserProfile = { role };
+        applyUserRole(role);
+        loadRecentCVs();
+      } else {
+        loginOverlay.style.display = 'flex';
+        btnSignOut.style.display = 'none';
+        currentUserProfile = null;
+        sessionStorage.removeItem('rrhh_auth_token');
+      }
+    }
+
+    function applyUserRole(role) {
+      const uploadZone = document.getElementById('uploadZone');
+      const restrictedUploadMessage = document.getElementById('restrictedUploadMessage');
+
+      if (role === 'admin') {
+        uploadZone.style.display = 'block';
+        restrictedUploadMessage.style.display = 'none';
+      } else {
+        uploadZone.style.display = 'none';
+        restrictedUploadMessage.style.display = 'block';
+      }
+    }
+
+    // Inicializar listeners de autenticación e interfaz
+    checkUserSession();
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const loginError = document.getElementById('loginError');
+      const spinner = document.getElementById('loginSpinner');
+      const btnSubmit = document.getElementById('btnLoginSubmit');
+
+      loginError.style.display = 'none';
+      spinner.style.display = 'block';
+      btnSubmit.disabled = true;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Credenciales inválidas.');
+        }
+
+        // Guardar el token de la sesión
+        sessionStorage.setItem('rrhh_auth_token', data.session.access_token);
+        handleAuthState(data.user, data.role);
+      } catch (err) {
+        loginError.textContent = `Error: ${err.message}`;
+        loginError.style.display = 'block';
+      } finally {
+        spinner.style.display = 'none';
+        btnSubmit.disabled = false;
+      }
+    });
+
+    document.getElementById('btnSignOut').addEventListener('click', () => {
+      sessionStorage.removeItem('rrhh_auth_token');
+      handleAuthState(null, 'usuario');
+    });
+
+    async function loadRecentCVs() {
+      const list = document.getElementById('recentList');
+      list.innerHTML = '';
+
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('/api/cvs', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Error al obtener CVs.');
+        }
+
+        const cvList = await res.json();
+
+        if (cvList && cvList.length > 0) {
+          cvList.forEach(cv => {
+            const item = document.createElement('div');
+            item.className = 'recent-item';
+            const fullName = `${cv.nombre || ''} ${cv.apellido || ''}`.trim() || 'Candidato sin nombre';
+            item.innerHTML = `
+          <div class="file-icon pdf">📕</div>
+          <span class="file-name" style="cursor: pointer;" title="Abrir CV">${escHtml(fullName)}</span>
+          <span class="file-status ok"></span>
+        `;
+            if (cv.web_cv_link) {
+              item.querySelector('.file-name').addEventListener('click', () => {
+                openCV(cv.web_cv_link);
+              });
+            }
+            list.appendChild(item);
+          });
+        } else {
+          list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:4px 10px;">Aún no hay CVs cargados.</div>';
+        }
+      } catch (err) {
+        console.error("Error al cargar CVs recientes:", err);
+        list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:4px 10px;">Error al cargar lista.</div>';
+      }
+    }
+
+    // ─── DATETIME ──────────────────────────────────────────────────────────────
+    function updateClock() {
+      const now = new Date();
+      const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const day = dayNames[now.getDay()];
+      const date = now.getDate();
+      const month = monthNames[now.getMonth()];
+      const year = now.getFullYear();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      document.getElementById('datePart').textContent = `${day} ${date} ${month} ${year}`;
+      document.getElementById('timePart').textContent = `${h}:${m}`;
+      document.getElementById('tzBadge').textContent = tz;
+    }
+    updateClock();
+    setInterval(updateClock, 60000);
+
+    // ─── SESSION ID ───────────────────────────────────────────────────────────
+    function getSessionId() {
+      let id = sessionStorage.getItem('rrhh_session_id');
+      if (!id) {
+        id = crypto.randomUUID();
+        sessionStorage.setItem('rrhh_session_id', id);
+      }
+      return id;
+    }
+    const SESSION_ID = getSessionId();
+
+    // ─── ISO TIMESTAMP WITH OFFSET ────────────────────────────────────────────
+    function isoWithOffset() {
+      const now = new Date();
+      const off = -now.getTimezoneOffset();
+      const sign = off >= 0 ? '+' : '-';
+      const hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, '0');
+      const mm = String(Math.abs(off) % 60).padStart(2, '0');
+      const pad = n => String(n).padStart(2, '0');
+      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${String(now.getMilliseconds()).padStart(3, '0')}${sign}${hh}:${mm}`;
+    }
+
+    // ─── LOGO UPLOAD ──────────────────────────────────────────────────────────
+    document.getElementById('logoUpload').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const circle = document.getElementById('brandLogoCircle');
+        circle.innerHTML = `<img src="${ev.target.result}" alt="Logo">`;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // ─── UPLOAD ZONE: DRAG & DROP ─────────────────────────────────────────────
+    const uploadZone = document.getElementById('uploadZone');
+    const cvFileInput = document.getElementById('cvFileInput');
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      uploadZone.addEventListener(evt, e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+      uploadZone.addEventListener(evt, e => { e.preventDefault(); uploadZone.classList.remove('dragover'); });
+    });
+    uploadZone.addEventListener('drop', e => {
+      const file = e.dataTransfer.files[0];
+      if (file) uploadCV(file);
+    });
+    cvFileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) uploadCV(file);
+    });
+
+    async function uploadCV(file) {
+      const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowed.includes(file.type)) {
+        setUploadStatus('Formato no soportado. Usá PDF o JPG.', 'error');
+        return;
+      }
+      const progressWrap = document.getElementById('progressWrap');
+      const progressBar = document.getElementById('progressBar');
+      const statusEl = document.getElementById('uploadStatus');
+
+      progressWrap.style.display = 'block';
+      progressBar.style.width = '0%';
+      setUploadStatus('Cargando…', '');
+
+      // Animate progress visually
+      let prog = 0;
+      const progInt = setInterval(() => {
+        prog = Math.min(prog + Math.random() * 15, 85);
+        progressBar.style.width = prog + '%';
+      }, 200);
+
+      // ── Generar SHA-256 del archivo ──────────────────────────────────
+      let fileHash = '';
+      try {
+        const buffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        fileHash = Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) { fileHash = 'hash-unavailable'; }
+
+      // ── FormData: archivo binario + campos JSON sueltos ──────────────
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      formData.append('filename', file.name);
+      formData.append('mimetype', file.type);
+      formData.append('size', file.size);
+      formData.append('file_hash', fileHash);
+      formData.append('submittedAt', isoWithOffset());
+      formData.append('formMode', 'test');
+      formData.append('session_id', SESSION_ID);
+
+      try {
+        const res = await fetch(CONFIG.webhookCargaCv, {
+          method: 'POST',
+          body: formData
+        });
+        clearInterval(progInt);
+        progressBar.style.width = '100%';
+        if (res.ok) {
+          const rawText = await res.text();
+          let parsed = null;
+          try {
+            const data = JSON.parse(rawText);
+            parsed = Array.isArray(data) ? data[0] : data;
+          } catch (e) { /* body vacío o no-JSON — igual mostramos éxito */ }
+
+          // ── Detectar CV duplicado ────────────────────────────────────
+          const responseMsg = parsed?.Response || parsed?.response || '';
+          const isDuplicate = responseMsg.toLowerCase().includes('ya se encuentra');
+
+          if (isDuplicate) {
+            setUploadStatus('⚠ CV ya registrado', '');
+            showAlert('warning', `⚠ ${responseMsg}`);
+            showCVDuplicate(responseMsg);
+          } else {
+            setUploadStatus('✓ CV procesado correctamente', 'success');
+            addRecentFile(file);
+            showAlert('success', `✓ "${file.name}" indexado con éxito.`);
+            if (parsed) {
+              renderCVCard(parsed);
+
+              // Guardar en la tabla de currículums de Supabase a través del backend
+              try {
+                const cvData = {
+                  nombre: parsed['Nombre'] || parsed['nombre'] || '',
+                  apellido: parsed['Apellido'] || parsed['apellido'] || '',
+                  profesion: parsed['Profesion'] || parsed['profesion'] || parsed['Profesión'] || parsed['profesión'] || '',
+                  ciudad: parsed['Ciudad'] || parsed['ciudad'] || '',
+                  pais: parsed['Pais'] || parsed['pais'] || parsed['País'] || parsed['país'] || '',
+                  fecha_nacimiento: parsed['Fecha de Nacimiento'] || parsed['fecha_nacimiento'] || parsed['Fecha Nacimiento'] || parsed['fecha_nacimiento'] || null,
+                  perfil_laboral: parsed['Perfil Laboral'] || parsed['perfil_laboral'] || parsed['Perfil'] || parsed['perfil'] || '',
+                  experiencia: parsed['Experiencia'] || parsed['experiencia'] || '',
+                  habilidades: parsed['Habilidades'] || parsed['habilidades'] || '',
+                  idiomas: parsed['Idiomas'] || parsed['idiomas'] || '',
+                  educacion: parsed['Educacion'] || parsed['educacion'] || parsed['Educación'] || parsed['educación'] || '',
+                  email: parsed['Email'] || parsed['email'] || '',
+                  file_hash: fileHash,
+                  web_cv_link: parsed['WebCVLink'] || parsed['WebCVLInk'] || parsed['webcvlink'] || '',
+                  recurso: parsed['Recurso'] || parsed['recurso'] || ''
+                };
+
+                if (cvData.fecha_nacimiento) {
+                  const d = new Date(cvData.fecha_nacimiento);
+                  if (!isNaN(d.getTime())) {
+                    cvData.fecha_nacimiento = d.toISOString().split('T')[0];
+                  } else {
+                    cvData.fecha_nacimiento = null;
+                  }
+                }
+
+                const token = sessionStorage.getItem('rrhh_auth_token');
+                const dbRes = await fetch('/api/cvs', {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify(cvData)
+                });
+
+                if (!dbRes.ok) {
+                  const dbErr = await dbRes.json();
+                  throw new Error(dbErr.error || 'Error en el guardado de BD.');
+                }
+
+                console.log("CV guardado correctamente en Supabase.");
+                loadRecentCVs(); // Recargar la lista
+              } catch (dbErr) {
+                console.error("Excepción al guardar en Supabase:", dbErr);
+                showAlert('warning', `Guardado local falló: ${dbErr.message}`);
+              }
+            }
+          }
+        } else {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } catch (err) {
+        clearInterval(progInt);
+        progressBar.style.width = '100%';
+        progressBar.style.background = 'var(--error)';
+        setUploadStatus('Error al cargar. Intentá de nuevo.', 'error');
+        showAlert('error', `Error al subir "${file.name}": ${err.message}`);
+      }
+      setTimeout(() => {
+        progressWrap.style.display = 'none';
+        progressBar.style.width = '0%';
+        progressBar.style.background = '';
+        cvFileInput.value = '';
+      }, 3000);
+    }
+
+    function setUploadStatus(msg, type) {
+      const el = document.getElementById('uploadStatus');
+      el.textContent = msg;
+      el.className = 'upload-status ' + type;
+    }
+
+    function addRecentFile(file) {
+      const list = document.getElementById('recentList');
+      const ext = file.name.split('.').pop().toLowerCase();
+      const iconClass = ext === 'pdf' ? 'pdf' : ext === 'docx' ? 'docx' : 'img';
+      const icon = ext === 'pdf' ? '📕' : ext === 'docx' ? '📘' : '🖼️';
+      // Remove placeholder if present
+      const placeholder = list.querySelector('div');
+      if (placeholder && !placeholder.classList.contains('recent-item')) placeholder.remove();
+      const item = document.createElement('div');
+      item.className = 'recent-item';
+      item.innerHTML = `
+    <div class="file-icon ${iconClass}">${icon}</div>
+    <span class="file-name">${file.name}</span>
+    <span class="file-status ok"></span>
+  `;
+      list.insertBefore(item, list.firstChild);
+    }
+
+    // ─── CV DUPLICADO ─────────────────────────────────────────────────────────
+    function showCVDuplicate(message) {
+      const section = document.getElementById('cvResultSection');
+      const container = document.getElementById('cvResultCard');
+      container.innerHTML = `
+    <div class="cv-duplicate-notice">
+      <span class="cv-duplicate-icon">⚠️</span>
+      <div class="cv-duplicate-text">
+        <div class="cv-duplicate-title">CV ya cargado</div>
+        <div class="cv-duplicate-msg">${escHtml(message)}</div>
+      </div>
+    </div>`;
+      section.style.display = 'block';
+    }
+
+    // ─── RENDER CV PARSED CARD ────────────────────────────────────────────────
+    function renderCVCard(data) {
+      const section = document.getElementById('cvResultSection');
+      const container = document.getElementById('cvResultCard');
+
+      const nombre = data['Nombre'] || data['nombre'] || '';
+      const perfil = data['Perfil Laboral'] || data['perfil_laboral'] || data['Perfil'] || '';
+      const exp = data['Experiencia'] || data['experiencia'] || '';
+      const habs = data['Habilidades'] || data['habilidades'] || '';
+      const idiomas = data['Idiomas'] || data['idiomas'] || '';
+      const edu = data['Educacion'] || data['educacion'] || data['Educación'] || '';
+      const email = data['Email'] || data['email'] || '';
+      const cvLink = data['WebCVLInk'] || data['WebCVLink'] || data['webcvlink'] || '';
+
+      const initials = nombre
+        ? nombre.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
+        : 'CV';
+
+      // Helper: campo con valor o placeholder
+      const field = (label, value) => {
+        if (!value || value.toString().trim() === '') {
+          return `<div class="cv-field">
+        <span class="cv-field-label">${label}</span>
+        <span class="cv-field-empty">No especificado</span>
+      </div>`;
+        }
+        return `<div class="cv-field">
+      <span class="cv-field-label">${label}</span>
+      <span class="cv-field-value">${escHtml(value.toString().trim())}</span>
+    </div>`;
+      };
+
+      container.innerHTML = `
+    <div class="cv-parsed-card">
+      <div class="cv-card-header">
+        <div class="cv-card-avatar">${escHtml(initials)}</div>
+        <div>
+          <div class="cv-card-name">${nombre ? escHtml(nombre) : '<em style="opacity:.5">Sin nombre</em>'}</div>
+          ${email ? `<div class="cv-card-email">${escHtml(email)}</div>` : ''}
+        </div>
+        ${cvLink ? `<a class="cv-link-btn" href="#" onclick="event.preventDefault(); openCV('${escHtml(cvLink)}')" title="Ver CV">📄</a>` : ''}
+      </div>
+      <div class="cv-card-body">
+        ${field('Perfil', perfil)}
+        ${field('Experiencia', exp)}
+        ${field('Habilidades', habs)}
+        ${field('Idiomas', idiomas)}
+        ${field('Educación', edu)}
+      </div>
+    </div>`;
+
+      section.style.display = 'block';
+    }
+
+    // ─── SEARCH ───────────────────────────────────────────────────────────────
+    document.getElementById('btnSearch').addEventListener('click', doSearch);
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.ctrlKey) doSearch();
+    });
+
+    async function doSearch() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) { showAlert('error', 'Por favor, describí el perfil antes de buscar.'); return; }
+
+      setSearchLoading(true);
+      showState('loading');
+
+      const payload = [{
+        "Texto describiendo perfil": query,
+        "submittedAt": isoWithOffset(),
+        "formMode": "test",
+        "session_id": SESSION_ID
+      }];
+
+      try {
+        const res = await fetch(CONFIG.webhookAgenteCv, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rawText = await res.text();
+        let data;
+        try { data = JSON.parse(rawText); }
+        catch (e) { throw new Error(`JSON inválido: ${rawText.slice(0, 120)}`); }
+        const output = Array.isArray(data) ? data[0]?.output : data?.output;
+        if (!output) throw new Error('Propiedad "output" no encontrada en la respuesta.');
+        renderResults(output, query);
+        showAlert('success', 'Análisis completado correctamente.');
+      } catch (err) {
+        showState('empty');
+        showAlert('error', `Error en la búsqueda: ${err.message}`);
+      } finally {
+        setSearchLoading(false);
+      }
+    }
+
+    function setSearchLoading(on) {
+      document.getElementById('btnSearch').disabled = on;
+      document.getElementById('searchSpinner').style.display = on ? 'block' : 'none';
+      document.getElementById('searchIcon').style.display = on ? 'none' : 'block';
+      document.getElementById('searchBtnText').textContent = on ? 'Buscando…' : 'Buscar';
+    }
+
+    function showState(state) {
+      document.getElementById('emptyState').style.display = state === 'empty' ? 'flex' : 'none';
+      document.getElementById('loadingState').style.display = state === 'loading' ? 'flex' : 'none';
+      document.getElementById('resultsContent').style.display = state === 'results' ? 'block' : 'none';
+      document.getElementById('resultsToolbar').style.display = state === 'results' ? 'flex' : 'none';
+    }
+
+    // ─── RESULTS PARSER ───────────────────────────────────────────────────────
+    function renderResults(text, query) {
+      const grid = document.getElementById('candidatesGrid');
+      const extra = document.getElementById('extraBlocks');
+      grid.innerHTML = '';
+      extra.innerHTML = '';
+
+      try {
+        const lines = text.split('\n');
+        const candidates = [];
+        const comparisonLines = [];
+        const ratingLines = [];
+        let currentCandidate = null;
+        // mode: 'intro' | 'candidates' | 'comparison' | 'rating'
+        let mode = 'intro';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+
+          // ── Section headers (anchored to line start) ──
+          if (/^comparaci[oó]n/i.test(trimmed)) {
+            if (currentCandidate) { candidates.push(currentCandidate); currentCandidate = null; }
+            mode = 'comparison'; continue;
+          }
+          if (/^calificaci[oó]n|^puntaje|^score/i.test(trimmed)) {
+            if (currentCandidate) { candidates.push(currentCandidate); currentCandidate = null; }
+            mode = 'rating'; continue;
+          }
+
+          if (mode === 'comparison') { if (trimmed) comparisonLines.push(trimmed); continue; }
+          if (mode === 'rating') { if (trimmed) ratingLines.push(trimmed); continue; }
+
+          // ── Numbered candidate: "1. Name:" ──
+          const candMatch = trimmed.match(/^(\d+)\.\s+(.+?)(?::\s*)?$/);
+          if (candMatch) {
+            if (currentCandidate) candidates.push(currentCandidate);
+            const rawName = candMatch[2].replace(/:$/, '').trim();
+            currentCandidate = { index: candMatch[1], name: rawName, bullets: [] };
+            mode = 'candidates'; continue;
+          }
+
+          // ── Bullet point ──
+          if (currentCandidate && /^[-•]\s+/.test(trimmed)) {
+            const bullet = trimmed.replace(/^[-•]\s+/, '').trim();
+            // Extraer WebCVLink como campo especial, no como bullet visible
+            const linkMatch = bullet.match(/^WebCVL[iI]nk:\s*(.+)/i);
+            if (linkMatch) {
+              currentCandidate.cvLink = linkMatch[1].trim();
+            } else if (bullet) {
+              currentCandidate.bullets.push(bullet);
+            }
+            continue;
+          }
+        }
+        if (currentCandidate) candidates.push(currentCandidate);
+
+        // ── Parse ratings: soporta dos formatos ──────────────────────────
+        // Formato A (sección Calificación): "- Rafael Sosa Reyes: 9/10"
+        // Formato B (embebido en Comparación): "- Rafael recibe una calificación de 9/10..."
+        const ratings = {};
+
+        const parseScoreLine = (l) => {
+          // Formato A: "- Nombre: N/10"
+          const mA = l.match(/^[-•]\s+(.+?):\s*(\d+(?:\.\d+)?)(?:\/10)?(?:\s|$|\()/);
+          if (mA && parseFloat(mA[2]) <= 10) {
+            ratings[mA[1].trim()] = parseFloat(mA[2]); return;
+          }
+          // Formato B: "- Nombre ... N/10 ..."  (calificación embebida)
+          const mB = l.match(/^[-•]\s+(\w+).*?(\d+(?:\.\d+)?)\/10/);
+          if (mB && parseFloat(mB[2]) <= 10) {
+            ratings[mB[1].trim()] = parseFloat(mB[2]);
+          }
+        };
+
+        ratingLines.forEach(parseScoreLine);
+        comparisonLines.forEach(parseScoreLine);
+
+        // ── Score lookup (first-name match, case-insensitive) ──
+        function findScore(name) {
+          const first = name.toLowerCase().split(' ')[0];
+          for (const [key, val] of Object.entries(ratings)) {
+            if (key.toLowerCase().startsWith(first) || key.toLowerCase().includes(first)) return val;
+          }
+          return null;
+        }
+
+        if (candidates.length > 0) {
+
+          candidates.forEach(c => {
+            const score = findScore(c.name);
+            const initials = c.name.split(/\s+/).map(w => w[0]).filter(Boolean).join('').slice(0, 2).toUpperCase();
+            // First bullet often starts with "Perfil:" — strip that label for subtitle
+            const roleRaw = c.bullets[0] || '';
+            const roleHint = roleRaw.replace(/^Perfil:\s*/i, '').trim();
+
+            const card = document.createElement('div');
+            card.className = 'candidate-card';
+            card.innerHTML = `
+          <div class="card-header">
+            <div class="candidate-avatar">${initials}</div>
+            <div class="candidate-meta">
+              <div class="candidate-name">${escHtml(c.name)}</div>
+              <div class="candidate-role">${escHtml(roleHint.slice(0, 80))}${roleHint.length > 80 ? '…' : ''}</div>
+            </div>
+            ${score !== null ? `<div class="score-badge">
+              <span class="score-num">${score}</span>
+              <span class="score-label">/ 10</span>
+            </div>` : ''}
+            ${c.cvLink ? `<a class="cv-link-btn" href="#" onclick="event.preventDefault(); openCV('${escHtml(c.cvLink)}')" title="Ver CV">📄</a>` : ''}
+          </div>
+          <div class="card-divider"></div>
+          <div class="card-body">
+            <ul>${c.bullets.map(b => `<li>${escHtml(b)}</li>`).join('')}</ul>
+          </div>
+        `;
+            grid.appendChild(card);
+          });
+
+          // Score bars block
+          const ratingEntries = Object.entries(ratings);
+          if (ratingEntries.length > 0) {
+            const barsBlock = document.createElement('div');
+            barsBlock.className = 'extra-block';
+            barsBlock.innerHTML = `<h3><span>⭐</span> Calificación comparativa</h3>
+          <div class="score-bars">
+            ${ratingEntries.map(([name, score]) => `
+              <div class="score-row">
+                <div class="score-row-header">
+                  <span class="score-row-name">${escHtml(name)}</span>
+                  <span class="score-row-num">${score}/10</span>
+                </div>
+                <div class="score-track">
+                  <div class="score-fill" style="width:${(score / 10) * 100}%"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>`;
+            extra.appendChild(barsBlock);
+          }
+
+          // Comparison block
+          const compBullets = comparisonLines.filter(l => /^[-•]/.test(l));
+          if (compBullets.length > 0) {
+            const compBlock = document.createElement('div');
+            compBlock.className = 'extra-block';
+            compBlock.innerHTML = `<h3><span>⚖️</span> Comparación de perfiles</h3>
+          <ul>${compBullets.map(l => `<li>${escHtml(l.replace(/^[-•]\s*/, ''))}</li>`).join('')}</ul>`;
+            extra.appendChild(compBlock);
+          }
+
+          document.getElementById('resultsCount').textContent =
+            `${candidates.length} candidato${candidates.length !== 1 ? 's' : ''} encontrado${candidates.length !== 1 ? 's' : ''}`;
+
+        } else {
+          // Raw text fallback
+          const raw = document.createElement('div');
+          raw.className = 'raw-results';
+          raw.textContent = text;
+          grid.appendChild(raw);
+          document.getElementById('resultsCount').textContent = 'Respuesta del agente';
+        }
+
+      } catch (err) {
+        // Guaranteed fallback — never leave the user with an empty screen
+        console.error('renderResults error:', err);
+        grid.innerHTML = '';
+        const raw = document.createElement('div');
+        raw.className = 'raw-results';
+        raw.textContent = text;
+        grid.appendChild(raw);
+        document.getElementById('resultsCount').textContent = 'Respuesta del agente (raw)';
+      }
+
+      // Print header
+      const now = new Date();
+      const candidateCount = document.querySelectorAll('.candidate-card').length;
+      document.getElementById('printHeaderInfo').innerHTML =
+        `<strong>Búsqueda:</strong> "${escHtml(query)}"<br>
+     <strong>Fecha:</strong> ${now.toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' })}<br>
+     <strong>Candidatos encontrados:</strong> ${candidateCount}`;
+
+      showState('results');
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ─── PRINT ────────────────────────────────────────────────────────────────
+    function printReport() {
+      window.print();
+    }
+
+    // ─── SECURE CV RETRIEVAL FROM N8N ─────────────────────────────────────────
+    async function openCV(cvLinkOrPath) {
+      if (!cvLinkOrPath) return;
+
+      // Si es una URL HTTP/HTTPS directa, la abrimos normalmente
+      if (cvLinkOrPath.startsWith('http://') || cvLinkOrPath.startsWith('https://')) {
+        window.open(cvLinkOrPath, '_blank');
+        return;
+      }
+
+      // De lo contrario, se asume que es una ruta de Supabase Storage.
+      // Solicitamos a N8N que genere la URL firmada usando el nuevo webhook seguro.
+      showAlert('info', 'Obteniendo enlace seguro del currículum...');
+
+      try {
+        const payload = {
+          path: cvLinkOrPath,
+          session_id: SESSION_ID,
+          email: currentUser?.email || 'anonimo@sistema.com'
+        };
+
+        const res = await fetch(CONFIG.webhookObtenerCv, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          throw new Error(`Error en el servidor de firmas (${res.status})`);
+        }
+
+        const data = await res.json();
+        const signedURL = data.signedURL || data.signedUrl;
+
+        if (!signedURL) {
+          throw new Error('No se recibió la URL firmada en la respuesta.');
+        }
+
+        window.open(signedURL, '_blank');
+      } catch (err) {
+        console.error("Error al obtener URL firmada:", err);
+        showAlert('error', `No se pudo abrir el CV: ${err.message}`);
+      }
+    }
+
+    // ─── ALERTS ──────────────────────────────────────────────────────────────
+    function showAlert(type, message) {
+      const container = document.getElementById('alertContainer');
+      const el = document.createElement('div');
+      el.className = `alert ${type}`;
+      const icon = type === 'success' ? '✅' : type === 'warning' ? '⚠️' : type === 'info' ? 'ℹ️' : '❌';
+      el.innerHTML = `<span class="alert-icon">${icon}</span><span class="alert-msg">${escHtml(message)}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.animation = 'slideOut .3s ease forwards';
+        setTimeout(() => el.remove(), 300);
+      }, 4000);
+    }
+  </script>
+</body>
+
+</html>
