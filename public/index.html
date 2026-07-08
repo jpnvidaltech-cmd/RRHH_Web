@@ -2755,40 +2755,40 @@
             showCVDuplicate(responseMsg);
           } else {
             setUploadStatus('✓ CV procesado correctamente', 'success');
-            addRecentFile(file);
             showAlert('success', `✓ "${file.name}" indexado con éxito.`);
             if (parsed) {
               renderCVCard(parsed);
 
               // Guardar en la tabla de currículums de Supabase a través del backend
-              try {
-                const cvData = {
-                  nombre: parsed['Nombre'] || parsed['nombre'] || '',
-                  apellido: parsed['Apellido'] || parsed['apellido'] || '',
-                  profesion: parsed['Profesion'] || parsed['profesion'] || parsed['Profesión'] || parsed['profesión'] || '',
-                  ciudad: parsed['Ciudad'] || parsed['ciudad'] || '',
-                  pais: parsed['Pais'] || parsed['pais'] || parsed['País'] || parsed['país'] || '',
-                  fecha_nacimiento: parsed['Fecha de Nacimiento'] || parsed['fecha_nacimiento'] || parsed['Fecha Nacimiento'] || parsed['fecha_nacimiento'] || null,
-                  perfil_laboral: parsed['Perfil Laboral'] || parsed['perfil_laboral'] || parsed['Perfil'] || parsed['perfil'] || '',
-                  experiencia: parsed['Experiencia'] || parsed['experiencia'] || '',
-                  habilidades: parsed['Habilidades'] || parsed['habilidades'] || '',
-                  idiomas: parsed['Idiomas'] || parsed['idiomas'] || '',
-                  educacion: parsed['Educacion'] || parsed['educacion'] || parsed['Educación'] || parsed['educación'] || '',
-                  email: parsed['Email'] || parsed['email'] || '',
-                  file_hash: fileHash,
-                  web_cv_link: parsed['WebCVLink'] || parsed['WebCVLInk'] || parsed['webcvlink'] || '',
-                  recurso: parsed['Recurso'] || parsed['recurso'] || ''
-                };
+              // (N8N puede haberlo guardado ya, por lo que manejamos el posible conflicto silenciosamente)
+              const cvData = {
+                nombre: parsed['Nombre'] || parsed['nombre'] || '',
+                apellido: parsed['Apellido'] || parsed['apellido'] || '',
+                profesion: parsed['Profesion'] || parsed['profesion'] || parsed['Profesión'] || parsed['profesión'] || '',
+                ciudad: parsed['Ciudad'] || parsed['ciudad'] || '',
+                pais: parsed['Pais'] || parsed['pais'] || parsed['País'] || parsed['país'] || '',
+                fecha_nacimiento: parsed['Fecha de Nacimiento'] || parsed['fecha_nacimiento'] || parsed['Fecha Nacimiento'] || parsed['fecha_nacimiento'] || null,
+                perfil_laboral: parsed['Perfil Laboral'] || parsed['perfil_laboral'] || parsed['Perfil'] || parsed['perfil'] || '',
+                experiencia: parsed['Experiencia'] || parsed['experiencia'] || '',
+                habilidades: parsed['Habilidades'] || parsed['habilidades'] || '',
+                idiomas: parsed['Idiomas'] || parsed['idiomas'] || '',
+                educacion: parsed['Educacion'] || parsed['educacion'] || parsed['Educación'] || parsed['educación'] || '',
+                email: parsed['Email'] || parsed['email'] || '',
+                file_hash: fileHash,
+                web_cv_link: parsed['WebCVLink'] || parsed['WebCVLInk'] || parsed['webcvlink'] || '',
+                recurso: parsed['Recurso'] || parsed['recurso'] || ''
+              };
 
-                if (cvData.fecha_nacimiento) {
-                  const d = new Date(cvData.fecha_nacimiento);
-                  if (!isNaN(d.getTime())) {
-                    cvData.fecha_nacimiento = d.toISOString().split('T')[0];
-                  } else {
-                    cvData.fecha_nacimiento = null;
-                  }
+              if (cvData.fecha_nacimiento) {
+                const d = new Date(cvData.fecha_nacimiento);
+                if (!isNaN(d.getTime())) {
+                  cvData.fecha_nacimiento = d.toISOString().split('T')[0];
+                } else {
+                  cvData.fecha_nacimiento = null;
                 }
+              }
 
+              try {
                 const token = sessionStorage.getItem('rrhh_auth_token');
                 const dbRes = await fetch('/api/cvs', {
                   method: 'POST',
@@ -2799,18 +2799,19 @@
                   body: JSON.stringify(cvData)
                 });
 
-                if (!dbRes.ok) {
+                if (dbRes.ok) {
+                  console.log("CV guardado correctamente en Supabase mediante backend.");
+                } else {
                   const dbErr = await dbRes.json();
-                  throw new Error(dbErr.error || 'Error en el guardado de BD.');
+                  console.warn("Aviso al registrar en BD (probablemente ya insertado por N8N):", dbErr.error);
                 }
-
-                console.log("CV guardado correctamente en Supabase.");
-                loadRecentCVs(); // Recargar la lista
-                updateCVCount(); // Actualizar contador total
               } catch (dbErr) {
-                console.error("Excepción al guardar en Supabase:", dbErr);
-                showAlert('warning', `Guardado local falló: ${dbErr.message}`);
+                console.warn("Excepción al registrar en BD:", dbErr);
               }
+
+              // Recargar siempre la lista reciente y actualizar el contador de CVs
+              loadRecentCVs();
+              updateCVCount();
             }
           }
         } else {
