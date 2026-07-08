@@ -235,6 +235,7 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
     });
 
     if (createError) {
+      console.error("[POST /api/users] Error al crear usuario en Supabase Auth:", createError.message);
       return res.status(400).json({ error: createError.message });
     }
 
@@ -245,6 +246,7 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
       .eq('id', userData.user.id);
 
     if (profileError) {
+      console.error("[POST /api/users] Error al actualizar rol en la tabla profiles:", profileError.message);
       return res.status(400).json({ error: `Usuario creado, pero no se pudo asignar el rol: ${profileError.message}` });
     }
 
