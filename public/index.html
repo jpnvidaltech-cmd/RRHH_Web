@@ -2812,6 +2812,11 @@
               // Recargar siempre la lista reciente y actualizar el contador de CVs
               loadRecentCVs();
               updateCVCount();
+
+              // Si la vista de listado está activa, la recargamos también para mostrar el nuevo CV
+              if (activeView === 'list') {
+                loadCVList();
+              }
             }
           }
         } else {
