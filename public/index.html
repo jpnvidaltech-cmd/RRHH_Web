@@ -146,28 +146,43 @@
       margin-top: -2px;
     }
 
+    .topbar-datetime-wrapper {
+      display: flex;
+      align-items: center;
+      flex: 1 1 0%;
+      min-width: 0;
+    }
+
     .topbar-datetime {
       display: flex;
       align-items: center;
-      gap: 12px;
-      color: var(--text-muted);
-      font-size: 14px;
+      gap: 10px;
+      color: var(--blue-light);
+      background: var(--blue-glow);
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(37, 99, 235, .2);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
       margin-left: 2rem;
-      flex: 1 1 0%;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .datetime-divider {
+      opacity: 0.3;
+      font-weight: 300;
+      font-family: sans-serif;
     }
 
     .date-part,
     .time-part,
     .tz-badge {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--blue-light);
-      background: var(--blue-glow);
-      padding: 5px 12px;
-      border-radius: 6px;
-      border: 1px solid rgba(37, 99, 235, .2);
-      white-space: nowrap;
+      font-family: inherit;
+      font-weight: inherit;
+      font-size: inherit;
+      color: inherit;
     }
 
     /* Modal / Pop-up styling */
@@ -1521,6 +1536,60 @@
       margin-bottom: 16px;
     }
 
+    /* ─── DESKTOP RESPONSIVE ADAPTATIONS ──────────────────────────────── */
+    @media (max-width: 1400px) {
+      .topbar-brand {
+        width: 320px !important;
+      }
+    }
+
+    @media (max-width: 1250px) {
+      .topbar-brand {
+        width: 250px !important;
+      }
+      .brand-name {
+        font-size: 15px !important;
+      }
+      .brand-tag {
+        font-size: 9px !important;
+      }
+      .topbar-datetime {
+        margin-left: 1rem !important;
+        padding: 5px 10px !important;
+        font-size: 12px !important;
+        gap: 8px !important;
+      }
+      .topbar-user-area {
+        gap: 10px !important;
+      }
+      .user-email {
+        font-size: 11px !important;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .topbar-datetime .tz-badge,
+      .topbar-datetime .datetime-divider:last-of-type {
+        display: none !important;
+      }
+      .admin-section-title {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 950px) {
+      .topbar-datetime .date-part,
+      .topbar-datetime .datetime-divider {
+        display: none !important;
+      }
+      .topbar-brand {
+        width: 70px !important;
+      }
+      .topbar-brand div:last-child {
+        display: none !important;
+      }
+    }
+
     /* ─── RESPONSIVE ─────────────────────────────────────────────────── */
     @media (max-width: 768px) {
 
@@ -1553,12 +1622,21 @@
         border-right: none;
       }
 
-      .topbar-datetime {
-        display: flex;
-        gap: 8px;
-        font-size: 11px;
-        margin-left: 12px;
+      .topbar-datetime-wrapper {
         flex-grow: 0;
+        flex: none;
+      }
+
+      .topbar-datetime {
+        margin-left: 8px;
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      .topbar-datetime .date-part,
+      .topbar-datetime .tz-badge,
+      .topbar-datetime .datetime-divider {
+        display: none !important;
       }
 
       .topbar-user-area {
@@ -1567,18 +1645,6 @@
 
       .user-profile-info {
         display: none !important;
-      }
-
-      .topbar-datetime .date-part {
-        display: none;
-      }
-
-      .topbar-datetime .tz-badge {
-        display: none;
-      }
-
-      .topbar-datetime .time-part {
-        font-size: 15px;
       }
 
       /* CV Upload section: acento verde esmeralda */
@@ -2139,10 +2205,14 @@
           <span class="brand-tag">RRHH · AI-Powered</span>
         </div>
       </div>
-      <div class="topbar-datetime">
-        <span class="date-part" id="datePart">—</span>
-        <span class="time-part" id="timePart">00:00:00</span>
-        <span class="tz-badge" id="tzBadge">—</span>
+      <div class="topbar-datetime-wrapper">
+        <div class="topbar-datetime" id="topbarDatetime">
+          <span class="date-part" id="datePart">—</span>
+          <span class="datetime-divider">|</span>
+          <span class="time-part" id="timePart">00:00:00</span>
+          <span class="datetime-divider">|</span>
+          <span class="tz-badge" id="tzBadge">—</span>
+        </div>
       </div>
       <div class="topbar-admin-users" id="topbarAdminUsers" style="display: none;">
         <span class="admin-section-title">Usuarios:</span>
