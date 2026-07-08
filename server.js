@@ -158,6 +158,39 @@ app.get('/api/cvs', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/api/cvs/count', requireAuth, async (req, res) => {
+  try {
+    const { count, error } = await supabaseAdmin
+      .from('cvs')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ count: count || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener la cantidad de currículums.' });
+  }
+});
+
+app.get('/api/cvs/all', requireAuth, async (req, res) => {
+  try {
+    const { data: cvList, error } = await supabaseAdmin
+      .from('cvs')
+      .select('nombre, apellido, profesion, perfil_laboral, email, web_cv_link, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(cvList || []);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener la lista de currículums.' });
+  }
+});
+
 app.post('/api/cvs', requireAuth, requireAdmin, async (req, res) => {
   const cvData = req.body;
   if (!cvData || !cvData.file_hash) {
