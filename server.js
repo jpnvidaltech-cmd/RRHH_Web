@@ -287,6 +287,36 @@ app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// ─── ENDPOINT: CAMBIO DE CONTRASEÑA DE USUARIO (AUTENTICADO) ─────────────────
+app.put('/api/auth/change-password', requireAuth, async (req, res) => {
+  const { newPassword } = req.body;
+  if (!newPassword) {
+    return res.status(400).json({ error: 'Falta la nueva contraseña.' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
+  }
+
+  try {
+    // Actualizar la contraseña del usuario logueado en Supabase Auth
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
+      req.user.id,
+      { password: newPassword }
+    );
+
+    if (error) {
+      console.error("[PUT /api/auth/change-password] Error de Supabase Auth:", error.message);
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: 'Contraseña actualizada exitosamente.' });
+  } catch (err) {
+    console.error("Excepción en cambio de contraseña:", err);
+    res.status(500).json({ error: 'Error interno del servidor al cambiar contraseña.' });
+  }
+});
+
 // Servir la carpeta estática del frontend
 app.use(express.static(path.join(__dirname, 'public')));
 

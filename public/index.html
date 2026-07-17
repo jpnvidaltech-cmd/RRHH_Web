@@ -388,6 +388,28 @@
       justify-content: flex-end;
     }
 
+    .btn-change-password {
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid var(--border);
+      color: var(--text-white);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: var(--trans);
+    }
+
+    .btn-change-password:hover {
+      background: rgba(37, 99, 235, .15);
+      border-color: var(--blue);
+      color: var(--blue-light);
+      transform: scale(1.05);
+    }
+
     .user-profile-info {
       display: flex;
       flex-direction: column;
@@ -2226,6 +2248,7 @@
           <span class="user-email" id="userEmailSpan">—</span>
           <span class="user-role-badge" id="userRoleBadge">—</span>
         </div>
+        <button id="btnChangePassword" class="btn-change-password" style="display:none;" onclick="openChangePasswordModal()" title="Cambiar Contraseña">🔑</button>
         <button id="btnSignOut" class="btn-signout" style="display:none;">Cerrar Sesión</button>
       </div>
     </header>
@@ -2490,11 +2513,13 @@
       currentUser = user;
       const loginOverlay = document.getElementById('loginOverlay');
       const btnSignOut = document.getElementById('btnSignOut');
+      const btnChangePassword = document.getElementById('btnChangePassword');
       const userProfileInfo = document.getElementById('userProfileInfo');
 
       if (user) {
         loginOverlay.style.display = 'none';
         btnSignOut.style.display = 'block';
+        if (btnChangePassword) btnChangePassword.style.display = 'flex';
         currentUserProfile = { role };
         applyUserRole(role);
         loadRecentCVs();
@@ -2513,6 +2538,7 @@
       } else {
         loginOverlay.style.display = 'flex';
         btnSignOut.style.display = 'none';
+        if (btnChangePassword) btnChangePassword.style.display = 'none';
         if (userProfileInfo) userProfileInfo.style.display = 'none';
         const topbarAdminUsers = document.getElementById('topbarAdminUsers');
         if (topbarAdminUsers) topbarAdminUsers.style.display = 'none';
@@ -3602,6 +3628,68 @@
       }
     }
 
+    // ─── USER CHANGE PASSWORD MODALS LÓGICA ──────────────────────────────────
+    function openChangePasswordModal() {
+      document.getElementById('changeNewPassword').value = '';
+      document.getElementById('changeConfirmPassword').value = '';
+      document.getElementById('changePasswordModal').style.display = 'flex';
+    }
+
+    function closeChangePasswordModal() {
+      document.getElementById('changePasswordModal').style.display = 'none';
+    }
+
+    async function handleChangePasswordSubmit(e) {
+      e.preventDefault();
+      const newPassword = document.getElementById('changeNewPassword').value;
+      const confirmPassword = document.getElementById('changeConfirmPassword').value;
+      const token = sessionStorage.getItem('rrhh_auth_token');
+
+      if (!token) {
+        showAlert('error', 'Token de sesión no encontrado. Por favor reinicia sesión.');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showAlert('error', 'La contraseña debe tener al menos 6 caracteres.');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showAlert('error', 'Las contraseñas no coinciden.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('btnSubmitChangePassword');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Actualizando...';
+
+      try {
+        const res = await fetch('/api/auth/change-password', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ newPassword })
+        });
+
+        if (res.ok) {
+          showAlert('success', 'Contraseña cambiada exitosamente.');
+          closeChangePasswordModal();
+        } else {
+          const err = await res.json();
+          showAlert('error', `Error al cambiar contraseña: ${err.error || res.statusText}`);
+        }
+      } catch (err) {
+        console.error("Error al cambiar contraseña:", err);
+        showAlert('error', `Error de red: ${err.message}`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Actualizar';
+      }
+    }
+
     // ─── ALERTS ──────────────────────────────────────────────────────────────
     function showAlert(type, message) {
       const container = document.getElementById('alertContainer');
@@ -3675,6 +3763,31 @@
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeViewUsersModal()">Cerrar</button>
       </div>
+    </div>
+  </div>
+  <!-- Modal: Cambiar Contraseña -->
+  <div class="modal" id="changePasswordModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Cambiar Contraseña</h3>
+        <button class="btn-close-modal" onclick="closeChangePasswordModal()">×</button>
+      </div>
+      <form id="changePasswordForm" onsubmit="handleChangePasswordSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="changeNewPassword">Nueva Contraseña</label>
+            <input type="password" id="changeNewPassword" class="form-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="changeConfirmPassword">Confirmar Nueva Contraseña</label>
+            <input type="password" id="changeConfirmPassword" class="form-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeChangePasswordModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btnSubmitChangePassword">Actualizar</button>
+        </div>
+      </form>
     </div>
   </div>
 </body>
