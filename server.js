@@ -285,66 +285,76 @@ app.post('/api/tenants', requireAuth, requireSuperAdmin, async (req, res) => {
 // ─── ENDPOINTS: GESTIÓN DE CVS PARALELA (mt_cvs) ──────────────────────────────
 app.get('/api/cvs', requireAuth, async (req, res) => {
   try {
-    if (!req.user.tenant_id) {
+    const activeTenantId = req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
+    if (!activeTenantId) {
       return res.json([]);
     }
 
     const { data: cvList, error } = await supabaseAdmin
       .from('mt_cvs')
       .select('nombre, apellido, created_at, web_cv_link')
-      .eq('tenant_id', req.user.tenant_id)
+      .eq('tenant_id', activeTenantId)
       .order('created_at', { ascending: false })
       .limit(4);
 
     if (error) {
+      console.error("[GET /api/cvs] Error de Supabase:", error);
       return res.status(400).json({ error: error.message });
     }
 
     res.json(cvList || []);
   } catch (err) {
+    console.error("[GET /api/cvs] Excepción:", err);
     res.status(500).json({ error: 'Error al obtener currículums.' });
   }
 });
 
 app.get('/api/cvs/count', requireAuth, async (req, res) => {
   try {
-    if (!req.user.tenant_id) {
+    const activeTenantId = req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
+    if (!activeTenantId) {
       return res.json({ count: 0 });
     }
 
     const { count, error } = await supabaseAdmin
       .from('mt_cvs')
       .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', req.user.tenant_id);
+      .eq('tenant_id', activeTenantId);
 
     if (error) {
+      console.error("[GET /api/cvs/count] Error de Supabase:", error);
       return res.status(400).json({ error: error.message });
     }
 
     res.json({ count: count || 0 });
   } catch (err) {
+    console.error("[GET /api/cvs/count] Excepción:", err);
     res.status(500).json({ error: 'Error al obtener la cantidad de currículums.' });
   }
 });
 
 app.get('/api/cvs/all', requireAuth, async (req, res) => {
   try {
-    if (!req.user.tenant_id) {
+    const activeTenantId = req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
+    if (!activeTenantId) {
       return res.json([]);
     }
 
+    console.log(`[GET /api/cvs/all] Consultando mt_cvs para tenant_id: ${activeTenantId}`);
     const { data: cvList, error } = await supabaseAdmin
       .from('mt_cvs')
       .select('nombre, apellido, profesion, perfil_laboral, email, web_cv_link, created_at')
-      .eq('tenant_id', req.user.tenant_id)
+      .eq('tenant_id', activeTenantId)
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error("[GET /api/cvs/all] Error de Supabase:", error);
       return res.status(400).json({ error: error.message });
     }
 
     res.json(cvList || []);
   } catch (err) {
+    console.error("[GET /api/cvs/all] Excepción:", err);
     res.status(500).json({ error: 'Error al obtener la lista de currículums.' });
   }
 });

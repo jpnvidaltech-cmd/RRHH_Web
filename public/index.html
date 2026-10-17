@@ -2692,11 +2692,14 @@
 
       try {
         const res = await fetch('/api/cvs', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-tenant-id': currentTenant?.id || ''
+          }
         });
 
         if (!res.ok) {
-          const errData = await res.json();
+          const errData = await res.json().catch(() => ({}));
           throw new Error(errData.error || 'Error al obtener CVs.');
         }
 
@@ -2900,7 +2903,8 @@
                   method: 'POST',
                   headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'x-tenant-id': currentTenant?.id || ''
                   },
                   body: JSON.stringify(cvData)
                 });
@@ -3311,7 +3315,10 @@
       if (!token) return;
       try {
         const res = await fetch('/api/cvs/count', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-tenant-id': currentTenant?.id || ''
+          }
         });
         if (res.ok) {
           const data = await res.json();
@@ -3382,11 +3389,15 @@
         `;
 
         const res = await fetch('/api/cvs/all', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-tenant-id': currentTenant?.id || ''
+          }
         });
 
         if (!res.ok) {
-          throw new Error('No se pudo obtener la lista de CVs.');
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}: No se pudo obtener la lista de CVs.`);
         }
 
         allCVs = await res.json();
