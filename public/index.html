@@ -441,6 +441,12 @@
       border: 1px solid rgba(245, 158, 11, .3);
     }
 
+    .user-role-badge.role-manager {
+      background: rgba(16, 185, 129, .2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, .35);
+    }
+
     /* ─── TENANT CAPSULE (MULTITENANT) ────────────────────────────────── */
     .tenant-badge-wrapper {
       display: flex;
@@ -466,6 +472,16 @@
       transform: translateY(-1px);
     }
 
+    .tenant-capsule.static {
+      cursor: default;
+    }
+
+    .tenant-capsule.static:hover {
+      background: rgba(37, 99, 235, 0.12);
+      border-color: rgba(59, 130, 246, 0.35);
+      transform: none;
+    }
+
     .tenant-icon {
       font-size: 13px;
     }
@@ -489,6 +505,10 @@
     .tenant-capsule:hover .tenant-switch-arrow {
       color: #fff;
       transform: translateY(1px);
+    }
+
+    .tenant-capsule.static .tenant-switch-arrow {
+      display: none;
     }
 
     /* ─── SIDEBAR ─────────────────────────────────────────────────────── */
@@ -2596,16 +2616,31 @@
         } else if (role === 'admin') {
           roleBadge.textContent = 'Admin';
           roleBadge.className = 'user-role-badge role-admin';
+        } else if (role === 'manager') {
+          roleBadge.textContent = 'Manager';
+          roleBadge.className = 'user-role-badge role-manager';
         } else {
           roleBadge.textContent = 'Usuario';
           roleBadge.className = 'user-role-badge';
         }
 
         // Actualizar badge de organización
+        const tenantCapsule = document.getElementById('tenantCapsule');
         if (tenantBadgeWrapper) {
           tenantBadgeWrapper.style.display = 'flex';
           if (tenantNameSpan) {
             tenantNameSpan.textContent = tenant?.name || 'Organización';
+          }
+        }
+        if (tenantCapsule) {
+          if (role === 'admin' || role === 'superadmin') {
+            tenantCapsule.classList.remove('static');
+            tenantCapsule.title = 'Hacé clic para cambiar o crear Organizaciones';
+            tenantCapsule.onclick = openSwitchTenantModal;
+          } else {
+            tenantCapsule.classList.add('static');
+            tenantCapsule.title = 'Organización asignada';
+            tenantCapsule.onclick = null;
           }
         }
       } else {
@@ -2626,15 +2661,24 @@
       const uploadZone = document.getElementById('uploadZone');
       const restrictedUploadMessage = document.getElementById('restrictedUploadMessage');
       const topbarAdminUsers = document.getElementById('topbarAdminUsers');
+      const adminCreateTenantSection = document.getElementById('adminCreateTenantSection');
 
-      if (role === 'admin' || role === 'superadmin') {
+      // Admin, SuperAdmin y Manager pueden subir CVs
+      if (role === 'admin' || role === 'superadmin' || role === 'manager') {
         uploadZone.style.display = 'block';
         restrictedUploadMessage.style.display = 'none';
-        if (topbarAdminUsers) topbarAdminUsers.style.display = 'flex';
       } else {
         uploadZone.style.display = 'none';
         restrictedUploadMessage.style.display = 'block';
+      }
+
+      // Solo Admin y Superadmin pueden administrar usuarios y crear empresas
+      if (role === 'admin' || role === 'superadmin') {
+        if (topbarAdminUsers) topbarAdminUsers.style.display = 'flex';
+        if (adminCreateTenantSection) adminCreateTenantSection.style.display = 'block';
+      } else {
         if (topbarAdminUsers) topbarAdminUsers.style.display = 'none';
+        if (adminCreateTenantSection) adminCreateTenantSection.style.display = 'none';
       }
     }
 
@@ -3639,9 +3683,11 @@
 
           users.forEach(u => {
             const tr = document.createElement('tr');
+            const isSuper = u.role === 'superadmin';
             const isAdm = u.role === 'admin';
-            const roleClass = isAdm ? 'user-role-badge role-admin' : 'user-role-badge';
-            const roleName = isAdm ? 'Admin' : 'Usuario';
+            const isMgr = u.role === 'manager';
+            const roleClass = (isSuper || isAdm) ? 'user-role-badge role-admin' : (isMgr ? 'user-role-badge role-manager' : 'user-role-badge');
+            const roleName = isSuper ? 'SuperAdmin' : (isAdm ? 'Admin' : (isMgr ? 'Manager' : 'Usuario'));
 
             tr.innerHTML = `
               <td><strong>${escHtml(u.email || '—')}</strong></td>
@@ -3842,6 +3888,93 @@
       }
     }
 
+    // ─── CREAR NUEVA EMPRESA (ADMIN MULTITENANT) ───────────────────────────
+    function toggleNewTenantForm() {
+      const container = document.getElementById('newTenantFormContainer');
+      const btn = document.getElementById('btnToggleNewTenantForm');
+      if (container.style.display === 'none' || !container.style.display) {
+        container.style.display = 'block';
+        btn.textContent = 'Cancelar';
+        document.getElementById('newTenantName').focus();
+      } else {
+        container.style.display = 'none';
+        btn.textContent = '+ Nueva Empresa';
+      }
+    }
+
+    function autoGenerateTenantSlug() {
+      const name = document.getElementById('newTenantName').value;
+      const slugInput = document.getElementById('newTenantSlug');
+      const generated = name.toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9_-]/g, '-')
+        .replace(/-+/g, '-');
+      slugInput.value = generated;
+    }
+
+    async function handleCreateTenantSubmit() {
+      const name = document.getElementById('newTenantName').value.trim();
+      const slug = document.getElementById('newTenantSlug').value.trim();
+      const btn = document.getElementById('btnSubmitCreateTenant');
+
+      if (!name || !slug) {
+        showAlert('warning', 'Ingresá el nombre y el slug de la nueva empresa.');
+        return;
+      }
+
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Creando empresa…';
+
+      try {
+        const res = await fetch('/api/tenants', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name, slug })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'No se pudo crear la empresa.');
+        }
+
+        showAlert('success', `¡Empresa "${data.name}" creada exitosamente! Conectando…`);
+
+        // Limpiar formulario y replegar
+        document.getElementById('newTenantName').value = '';
+        document.getElementById('newTenantSlug').value = '';
+        toggleNewTenantForm();
+
+        // Conectar automáticamente a la nueva empresa
+        await fetch('/api/auth/switch-tenant', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ tenant_id: data.id })
+        });
+
+        currentTenant = data;
+        const tenantNameSpan = document.getElementById('tenantNameSpan');
+        if (tenantNameSpan) tenantNameSpan.textContent = currentTenant.name || 'Organización';
+        closeSwitchTenantModal();
+
+        // Refrescar toda la pantalla
+        await refreshAllTenantData();
+      } catch (err) {
+        showAlert('error', `Error al crear empresa: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Crear y Conectar';
+      }
+    }
+
     // ─── ALERTS ──────────────────────────────────────────────────────────────
     function showAlert(type, message) {
       const container = document.getElementById('alertContainer');
@@ -3874,6 +4007,25 @@
             <!-- Dinámico -->
           </select>
         </div>
+
+        <!-- Sección de Crear Nueva Empresa (exclusiva para Admin) -->
+        <div id="adminCreateTenantSection" style="margin-top: 1.25rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary);">¿Necesitás dar de alta otra empresa?</span>
+            <button type="button" class="btn-secondary" id="btnToggleNewTenantForm" onclick="toggleNewTenantForm()" style="padding: 3px 10px; font-size: 0.75rem;">+ Nueva Empresa</button>
+          </div>
+          <div id="newTenantFormContainer" style="display: none; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; margin-top: 8px;">
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label for="newTenantName" style="font-size: 0.75rem;">Nombre de la Empresa</label>
+              <input type="text" id="newTenantName" class="form-input" placeholder="Ej: Mercado Libre" oninput="autoGenerateTenantSlug()" style="padding: 6px 10px; font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label for="newTenantSlug" style="font-size: 0.75rem;">Slug Identificador (único)</label>
+              <input type="text" id="newTenantSlug" class="form-input" placeholder="ej: mercado-libre" style="padding: 6px 10px; font-size: 0.85rem;">
+            </div>
+            <button type="button" class="btn-primary" id="btnSubmitCreateTenant" onclick="handleCreateTenantSubmit()" style="width: 100%; padding: 6px 12px; font-size: 0.82rem;">Crear y Conectar</button>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeSwitchTenantModal()">Cerrar</button>
@@ -3898,8 +4050,9 @@
           <div class="form-group">
             <label for="newRole">Rol / Perfil</label>
             <select id="newRole" class="form-select" required>
-              <option value="usuario">Usuario</option>
-              <option value="admin">Administrador</option>
+              <option value="usuario">Usuario (Solo Lectura / Búsqueda)</option>
+              <option value="manager">Manager (Carga y Gestión de CVs en su Empresa)</option>
+              <option value="admin">Administrador (Acceso Global y Multitenant)</option>
             </select>
           </div>
           <div class="form-group">

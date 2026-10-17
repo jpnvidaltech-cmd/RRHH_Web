@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.mt_profiles (
   id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
   tenant_id UUID REFERENCES public.mt_tenants(id) ON DELETE CASCADE NOT NULL,
   email TEXT NOT NULL,
-  role TEXT DEFAULT 'usuario' CHECK (role IN ('superadmin', 'admin', 'usuario')),
+  role TEXT DEFAULT 'usuario' CHECK (role IN ('superadmin', 'admin', 'manager', 'usuario')),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 

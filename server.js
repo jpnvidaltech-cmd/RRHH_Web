@@ -140,12 +140,31 @@ async function requireAdmin(req, res, next) {
   return res.status(403).json({ error: 'Acceso restringido. Se requiere rol de administrador o superadmin.' });
 }
 
+// Middleware para verificar rol de Manager, Administrador o Superadmin (Carga y gestión de CVs)
+async function requireManagerOrAdmin(req, res, next) {
+  if (req.user && (req.user.role === 'manager' || req.user.role === 'admin' || req.user.role === 'superadmin')) {
+    return next();
+  }
+  return res.status(403).json({ error: 'Acceso restringido. Se requiere rol de manager o administrador para cargar CVs.' });
+}
+
 // Middleware para verificar rol de Superadmin
 async function requireSuperAdmin(req, res, next) {
   if (req.user && req.user.role === 'superadmin') {
     return next();
   }
   return res.status(403).json({ error: 'Acceso restringido. Se requiere rol de superadmin.' });
+}
+
+// Helper para resolver el tenant activo respetando la jerarquía de roles
+function resolveActiveTenantId(req) {
+  const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
+  // Solo los administradores pueden alternar de tenant mediante cabecera o query param
+  if (isAdmin) {
+    return req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
+  }
+  // Para Manager y Usuario, el tenant_id está estrictamente fijado a su asignación
+  return req.user.tenant_id;
 }
 
 // ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE WEBHOOKS ─────────────────────────────
@@ -207,8 +226,8 @@ app.get('/api/auth/profile', requireAuth, async (req, res) => {
   }
 });
 
-// Endpoint para conmutar de organización (utilizado en pruebas o por superadmin)
-app.post('/api/auth/switch-tenant', requireAuth, async (req, res) => {
+// Endpoint para conmutar de organización (exclusivo para admin o superadmin)
+app.post('/api/auth/switch-tenant', requireAuth, requireAdmin, async (req, res) => {
   const { tenant_id } = req.body;
   if (!tenant_id) {
     return res.status(400).json({ error: 'tenant_id es requerido.' });
@@ -244,11 +263,20 @@ app.post('/api/auth/switch-tenant', requireAuth, async (req, res) => {
 // ─── ENDPOINTS: GESTIÓN DE ORGANIZACIONES (TENANTS) ───────────────────────────
 app.get('/api/tenants', requireAuth, async (req, res) => {
   try {
-    // Si es superadmin o modo prueba devuelve todas las empresas disponibles
-    const { data: tenantsList, error } = await supabaseAdmin
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
+
+    let query = supabaseAdmin
       .from('mt_tenants')
       .select('id, name, slug, status, created_at')
       .order('name', { ascending: true });
+
+    // Si no es admin/superadmin, solo puede ver la organización a la que pertenece
+    if (!isAdmin) {
+      if (!req.user.tenant_id) return res.json([]);
+      query = query.eq('id', req.user.tenant_id);
+    }
+
+    const { data: tenantsList, error } = await query;
 
     if (error) {
       return res.status(400).json({ error: error.message });
@@ -260,19 +288,25 @@ app.get('/api/tenants', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/tenants', requireAuth, requireSuperAdmin, async (req, res) => {
+// Creación de organización (habilitado para Administradores y Superadmins)
+app.post('/api/tenants', requireAuth, requireAdmin, async (req, res) => {
   const { name, slug } = req.body;
   if (!name || !slug) {
-    return res.status(400).json({ error: 'Nombre y slug son obligatorios.' });
+    return res.status(400).json({ error: 'Nombre y slug identificador son obligatorios.' });
   }
+
+  const cleanSlug = slug.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
 
   try {
     const { data, error } = await supabaseAdmin
       .from('mt_tenants')
-      .insert([{ name, slug: slug.toLowerCase().trim() }])
+      .insert([{ name: name.trim(), slug: cleanSlug }])
       .select();
 
     if (error) {
+      if (error.code === '23505') {
+        return res.status(400).json({ error: `El slug identificador "${cleanSlug}" ya está en uso. Por favor elegí otro.` });
+      }
       return res.status(400).json({ error: error.message });
     }
 
@@ -285,7 +319,7 @@ app.post('/api/tenants', requireAuth, requireSuperAdmin, async (req, res) => {
 // ─── ENDPOINTS: GESTIÓN DE CVS PARALELA (mt_cvs) ──────────────────────────────
 app.get('/api/cvs', requireAuth, async (req, res) => {
   try {
-    const activeTenantId = req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
+    const activeTenantId = resolveActiveTenantId(req);
     if (!activeTenantId) {
       return res.json([]);
     }
@@ -312,7 +346,7 @@ app.get('/api/cvs', requireAuth, async (req, res) => {
 
 app.get('/api/cvs/count', requireAuth, async (req, res) => {
   try {
-    const activeTenantId = req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
+    const activeTenantId = resolveActiveTenantId(req);
     if (!activeTenantId) {
       return res.json({ count: 0 });
     }
@@ -337,7 +371,7 @@ app.get('/api/cvs/count', requireAuth, async (req, res) => {
 
 app.get('/api/cvs/all', requireAuth, async (req, res) => {
   try {
-    const activeTenantId = req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
+    const activeTenantId = resolveActiveTenantId(req);
     if (!activeTenantId) {
       return res.json([]);
     }
@@ -362,7 +396,8 @@ app.get('/api/cvs/all', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/cvs', requireAuth, requireAdmin, async (req, res) => {
+// Guardado de CVs permitido para Managers y Administradores
+app.post('/api/cvs', requireAuth, requireManagerOrAdmin, async (req, res) => {
   const cvData = req.body;
   if (!cvData || !cvData.file_hash) {
     return res.status(400).json({ error: 'Datos de CV e identificador de hash inválidos.' });
@@ -373,12 +408,13 @@ app.post('/api/cvs', requireAuth, requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'No se puede registrar un CV sin nombre ni apellido.' });
   }
 
-  if (!req.user.tenant_id) {
+  const activeTenantId = resolveActiveTenantId(req);
+  if (!activeTenantId) {
     return res.status(400).json({ error: 'El usuario no tiene una organización asignada.' });
   }
 
-  // Asignar el tenant_id del usuario conectado
-  cvData.tenant_id = req.user.tenant_id;
+  // Asignar el tenant_id resuelto
+  cvData.tenant_id = activeTenantId;
 
   try {
     const { data, error } = await supabaseAdmin
@@ -432,8 +468,8 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Faltan campos obligatorios: email, password, role.' });
   }
 
-  if (role !== 'admin' && role !== 'usuario' && role !== 'superadmin') {
-    return res.status(400).json({ error: 'Rol inválido. Debe ser admin, usuario o superadmin.' });
+  if (role !== 'admin' && role !== 'usuario' && role !== 'superadmin' && role !== 'manager') {
+    return res.status(400).json({ error: 'Rol inválido. Debe ser admin, manager, usuario o superadmin.' });
   }
 
   // Determinar la organización destino
