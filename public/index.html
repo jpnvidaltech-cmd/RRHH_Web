@@ -2853,83 +2853,32 @@
             parsed = Array.isArray(data) ? data[0] : data;
           } catch (e) { /* body vacío o no-JSON — igual mostramos éxito */ }
 
-          // ── Detectar CV duplicado ────────────────────────────────────
-          const responseMsg = parsed?.Response || parsed?.response || '';
+          // ── Detectar CV duplicado o archivo no válido ────────────────
+          const responseMsg = parsed?.Response || parsed?.response || parsed?.message || parsed?.error || '';
           const isDuplicate = responseMsg.toLowerCase().includes('ya se encuentra');
+          const isNotCv = parsed?.error || responseMsg.toLowerCase().includes('no es un cv') || responseMsg.toLowerCase().includes('no corresponde');
+          const hasCandidateName = Boolean((parsed?.['Nombre'] || parsed?.['nombre'] || '').trim() || (parsed?.['Apellido'] || parsed?.['apellido'] || '').trim());
 
           if (isDuplicate) {
             setUploadStatus('⚠ CV ya registrado', '');
             showAlert('warning', `⚠ ${responseMsg}`);
             showCVDuplicate(responseMsg);
+          } else if (isNotCv || !hasCandidateName) {
+            setUploadStatus('⚠ Archivo no válido', '');
+            showAlert('warning', responseMsg || 'El archivo cargado no parece ser un currículum vitae válido.');
           } else {
             setUploadStatus('✓ CV procesado correctamente', 'success');
             showAlert('success', `✓ "${file.name}" indexado con éxito.`);
             if (parsed) {
               renderCVCard(parsed);
-
-              // Guardar en la tabla de currículums de Supabase a través del backend
-              // (N8N puede haberlo guardado ya, por lo que manejamos el posible conflicto silenciosamente)
-              const cvData = {
-                nombre: parsed['Nombre'] || parsed['nombre'] || '',
-                apellido: parsed['Apellido'] || parsed['apellido'] || '',
-                profesion: parsed['Profesion'] || parsed['profesion'] || parsed['Profesión'] || parsed['profesión'] || '',
-                ciudad: parsed['Ciudad'] || parsed['ciudad'] || '',
-                pais: parsed['Pais'] || parsed['pais'] || parsed['País'] || parsed['país'] || '',
-                fecha_nacimiento: parsed['Fecha de Nacimiento'] || parsed['fecha_nacimiento'] || parsed['Fecha Nacimiento'] || parsed['fecha_nacimiento'] || null,
-                perfil_laboral: parsed['Perfil Laboral'] || parsed['perfil_laboral'] || parsed['Perfil'] || parsed['perfil'] || '',
-                experiencia: parsed['Experiencia'] || parsed['experiencia'] || '',
-                habilidades: parsed['Habilidades'] || parsed['habilidades'] || '',
-                idiomas: parsed['Idiomas'] || parsed['idiomas'] || '',
-                educacion: parsed['Educacion'] || parsed['educacion'] || parsed['Educación'] || parsed['educación'] || '',
-                email: parsed['Email'] || parsed['email'] || '',
-                file_hash: fileHash,
-                web_cv_link: parsed['WebCVLink'] || parsed['WebCVLInk'] || parsed['webcvlink'] || '',
-                recurso: parsed['Recurso'] || parsed['recurso'] || ''
-              };
-
-              if (cvData.fecha_nacimiento) {
-                const d = new Date(cvData.fecha_nacimiento);
-                if (!isNaN(d.getTime())) {
-                  cvData.fecha_nacimiento = d.toISOString().split('T')[0];
-                } else {
-                  cvData.fecha_nacimiento = null;
-                }
-              }
-
-              try {
-                const token = sessionStorage.getItem('rrhh_auth_token');
-                const dbRes = await fetch('/api/cvs', {
-                  method: 'POST',
-                  headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'x-tenant-id': currentTenant?.id || ''
-                  },
-                  body: JSON.stringify(cvData)
-                });
-
-                if (dbRes.ok) {
-                  console.log("CV guardado correctamente en Supabase mediante backend.");
-                } else {
-                  const dbErr = await dbRes.json();
-                  console.warn("Aviso al registrar en BD (probablemente ya insertado por N8N):", dbErr.error);
-                }
-              } catch (dbErr) {
-                console.warn("Excepción al registrar en BD:", dbErr);
-              }
-
-              // Recargar siempre la lista reciente y actualizar el contador de CVs
-              loadRecentCVs();
-              updateCVCount();
-
-              // Si la vista de listado está activa, la recargamos también para mostrar el nuevo CV
-              if (activeView === 'list') {
-                loadCVList();
-              }
             }
+            // N8N es el único responsable de guardar en Supabase.
+            // La app solo refresca los contadores y listados de la empresa:
+            await refreshAllTenantData();
           }
         } else {
-          throw new Error(`HTTP ${res.status}`);
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || `HTTP ${res.status}`);
         }
       } catch (err) {
         clearInterval(progInt);

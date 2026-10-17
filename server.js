@@ -368,6 +368,11 @@ app.post('/api/cvs', requireAuth, requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Datos de CV e identificador de hash inválidos.' });
   }
 
+  // Validación: el CV debe tener al menos nombre o apellido
+  if (!cvData.nombre?.trim() && !cvData.apellido?.trim()) {
+    return res.status(400).json({ error: 'No se puede registrar un CV sin nombre ni apellido.' });
+  }
+
   if (!req.user.tenant_id) {
     return res.status(400).json({ error: 'El usuario no tiene una organización asignada.' });
   }
