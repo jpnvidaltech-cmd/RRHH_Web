@@ -6,7 +6,7 @@ const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3010;
 
 // Configurar Express para parsear JSON y urlencoded
 app.use(express.json());
