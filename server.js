@@ -447,8 +447,12 @@ app.get('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
       .select('id, email, role, updated_at, tenant_id, mt_tenants(name)')
       .order('email', { ascending: true });
 
-    // Si no es superadmin, se filtra por la organización activa o correspondiente
-    if (req.user.role !== 'superadmin') {
+    // Si es manager, solo ve usuarios de su propia empresa con rol manager o usuario (no administradores)
+    if (req.user.role === 'manager') {
+      query = query
+        .eq('tenant_id', req.user.tenant_id)
+        .in('role', ['manager', 'usuario']);
+    } else if (req.user.role !== 'superadmin') {
       query = query.eq('tenant_id', activeTenantId);
     }
 

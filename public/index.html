@@ -3774,14 +3774,21 @@
         });
 
         if (res.ok) {
-          const users = await res.json();
+          const rawUsers = await res.json();
+          const myRole = currentUserProfile?.role || 'usuario';
+
+          // El manager solo ve usuarios y managers de su empresa, nunca administradores globales
+          const users = myRole === 'manager'
+            ? rawUsers.filter(u => u.role !== 'admin' && u.role !== 'superadmin')
+            : rawUsers;
+
           tbody.innerHTML = '';
 
           if (users.length === 0) {
             tbody.innerHTML = `
               <tr>
                 <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-dim);">
-                  No hay otros usuarios registrados.
+                  No hay otros usuarios registrados en tu organización.
                 </td>
               </tr>
             `;
