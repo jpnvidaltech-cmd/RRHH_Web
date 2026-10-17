@@ -433,20 +433,23 @@ app.post('/api/cvs', requireAuth, requireManagerOrAdmin, async (req, res) => {
 });
 
 // ─── ENDPOINTS: GESTIÓN DE USUARIOS MULTITENANT ───────────────────────────────
-app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
+app.get('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
   try {
-    if (!req.user.tenant_id) {
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
+    const activeTenantId = resolveActiveTenantId(req);
+
+    if (!activeTenantId && !isAdmin) {
       return res.json([]);
     }
 
     let query = supabaseAdmin
       .from('mt_profiles')
-      .select('email, role, updated_at, tenant_id, mt_tenants(name)')
+      .select('id, email, role, updated_at, tenant_id, mt_tenants(name)')
       .order('email', { ascending: true });
 
-    // Si no es superadmin, solo consulta usuarios de su misma organización
+    // Si no es superadmin, se filtra por la organización activa o correspondiente
     if (req.user.role !== 'superadmin') {
-      query = query.eq('tenant_id', req.user.tenant_id);
+      query = query.eq('tenant_id', activeTenantId);
     }
 
     const { data: profilesList, error } = await query;
@@ -462,7 +465,7 @@ app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
+app.post('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
   const { email, password, role, tenant_id } = req.body;
   if (!email || !password || !role) {
     return res.status(400).json({ error: 'Faltan campos obligatorios: email, password, role.' });
@@ -472,10 +475,16 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Rol inválido. Debe ser admin, manager, usuario o superadmin.' });
   }
 
-  // Determinar la organización destino
+  // Restricción para Manager: no puede crear Administradores ni Superadmins
+  if (req.user.role === 'manager' && (role === 'admin' || role === 'superadmin')) {
+    return res.status(403).json({ error: 'Los managers solo tienen autorización para crear roles de Manager o Usuario.' });
+  }
+
+  // Determinar la organización destino:
+  // Si es Manager, siempre se fija de forma estricta a su propio tenant_id
   const targetTenantId = (req.user.role === 'superadmin' && tenant_id)
     ? tenant_id
-    : req.user.tenant_id;
+    : (req.user.role === 'admin' ? resolveActiveTenantId(req) : req.user.tenant_id);
 
   if (!targetTenantId) {
     return res.status(400).json({ error: 'Debe especificarse una organización para el usuario.' });
@@ -524,6 +533,116 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
   } catch (err) {
     console.error("Excepción en creación de usuario:", err);
     res.status(500).json({ error: 'Error interno del servidor al crear usuario.' });
+  }
+});
+
+// Eliminar un perfil de usuario (con jerarquía de permisos)
+app.delete('/api/users/:id', requireAuth, requireManagerOrAdmin, async (req, res) => {
+  const targetId = req.params.id;
+
+  // 1. Evitar autoeliminación
+  if (targetId === req.user.id) {
+    return res.status(400).json({ error: 'No podés eliminar tu propia cuenta de usuario en uso.' });
+  }
+
+  try {
+    // 2. Consultar perfil del usuario objetivo
+    const { data: targetProfile, error: fetchErr } = await supabaseAdmin
+      .from('mt_profiles')
+      .select('id, email, role, tenant_id')
+      .eq('id', targetId)
+      .single();
+
+    if (fetchErr || !targetProfile) {
+      return res.status(404).json({ error: 'El usuario no fue encontrado en el sistema.' });
+    }
+
+    // 3. Validar jerarquía de permisos
+    if (req.user.role === 'admin') {
+      // El admin no puede eliminar otros admins ni superadmins
+      if (targetProfile.role === 'admin' || targetProfile.role === 'superadmin') {
+        return res.status(403).json({ error: 'Un administrador no puede eliminar a otro administrador o superadmin.' });
+      }
+    } else if (req.user.role === 'manager') {
+      // El manager debe estar en la misma empresa
+      if (targetProfile.tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'No tenés permisos sobre usuarios de otra organización.' });
+      }
+      // El manager solo puede eliminar usuarios con rol 'usuario'
+      if (targetProfile.role !== 'usuario') {
+        return res.status(403).json({ error: 'Los managers solo pueden eliminar usuarios regulares (no a otros managers ni admins).' });
+      }
+    }
+
+    // 4. Eliminar de Supabase Auth
+    const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(targetId);
+    if (delErr) {
+      console.error("[DELETE /api/users/:id] Error de Supabase Auth:", delErr.message);
+      return res.status(400).json({ error: delErr.message });
+    }
+
+    // 5. Limpieza explícita de mt_profiles
+    await supabaseAdmin.from('mt_profiles').delete().eq('id', targetId);
+
+    console.log(`[DELETE /api/users/:id] Usuario ${targetProfile.email} (${targetProfile.role}) eliminado por ${req.user.email} (${req.user.role})`);
+    res.json({ message: `El usuario ${targetProfile.email} ha sido eliminado exitosamente.` });
+  } catch (err) {
+    console.error("Excepción en eliminación de usuario:", err);
+    res.status(500).json({ error: 'Error interno del servidor al eliminar el usuario.' });
+  }
+});
+
+// Resetear contraseña de un usuario (con jerarquía de permisos)
+app.put('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, async (req, res) => {
+  const targetId = req.params.id;
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+  }
+
+  try {
+    // 1. Consultar perfil del usuario objetivo
+    const { data: targetProfile, error: fetchErr } = await supabaseAdmin
+      .from('mt_profiles')
+      .select('id, email, role, tenant_id')
+      .eq('id', targetId)
+      .single();
+
+    if (fetchErr || !targetProfile) {
+      return res.status(404).json({ error: 'El usuario no fue encontrado en el sistema.' });
+    }
+
+    // 2. Validar jerarquía de permisos
+    if (req.user.role === 'admin') {
+      if (targetProfile.role === 'admin' || targetProfile.role === 'superadmin') {
+        return res.status(403).json({ error: 'No podés resetear la contraseña de otro administrador.' });
+      }
+    } else if (req.user.role === 'manager') {
+      if (targetProfile.tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'No tenés permisos sobre usuarios de otra organización.' });
+      }
+      if (targetProfile.role !== 'usuario') {
+        return res.status(403).json({ error: 'Los managers solo pueden resetear la contraseña de usuarios regulares.' });
+      }
+    }
+
+    // 3. Actualizar contraseña mediante Supabase Auth Admin
+    const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(
+      targetId,
+      { password: newPassword }
+    );
+
+    if (updErr) {
+      console.error("[PUT /api/users/:id/reset-password] Error de Supabase Auth:", updErr.message);
+      return res.status(400).json({ error: updErr.message });
+    }
+
+    console.log(`[PUT /api/users/:id/reset-password] Contraseña de ${targetProfile.email} reseteada por ${req.user.email} (${req.user.role})`);
+    res.json({ message: `Contraseña de ${targetProfile.email} actualizada exitosamente.` });
+  } catch (err) {
+    console.error("Excepción en reseteo de contraseña:", err);
+    res.status(500).json({ error: 'Error interno del servidor al resetear la contraseña.' });
   }
 });
 

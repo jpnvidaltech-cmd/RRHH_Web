@@ -447,6 +447,75 @@
       border: 1px solid rgba(16, 185, 129, .35);
     }
 
+    /* ─── PASSWORD VISIBILITY & TOGGLE ────────────────────────────────── */
+    .password-field-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .password-field-wrap input {
+      padding-right: 42px !important;
+      width: 100%;
+    }
+
+    .btn-toggle-pwd {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      padding: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s ease, transform 0.15s ease;
+      user-select: none;
+    }
+
+    .btn-toggle-pwd:hover {
+      opacity: 0.8;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    /* Botones de acción en tabla de usuarios */
+    .btn-action-small {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-small:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-action-small.btn-action-danger {
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .btn-action-small.btn-action-danger:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
     /* ─── TENANT CAPSULE (MULTITENANT) ────────────────────────────────── */
     .tenant-badge-wrapper {
       display: flex;
@@ -2514,7 +2583,10 @@
         </div>
         <div class="form-group">
           <label for="loginPassword">Contraseña</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+          <div class="password-field-wrap">
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('loginPassword', this)" title="Mostrar u ocultar contraseña">👁️</button>
+          </div>
         </div>
         <button type="submit" id="btnLoginSubmit" class="btn-login">
           <span id="loginBtnText">Ingresar</span>
@@ -2528,6 +2600,21 @@
   </div>
 
   <script>
+    // ─── HELPER: VISIBILIDAD DE CONTRASEÑAS (SHOW / HIDE PASSWORD) ───────────
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+        btn.title = 'Ocultar contraseña';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+        btn.title = 'Mostrar contraseña';
+      }
+    }
+
     // ─── CONFIGURACIÓN DINÁMICA DE WEBHOOKS ───────────────────────────────────
     let CONFIG = {
       webhookCargaCv: 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa',
@@ -2672,12 +2759,17 @@
         restrictedUploadMessage.style.display = 'block';
       }
 
-      // Solo Admin y Superadmin pueden administrar usuarios y crear empresas
-      if (role === 'admin' || role === 'superadmin') {
+      // Admin, Superadmin y Manager pueden gestionar usuarios (con sus respectivos límites jerárquicos)
+      if (role === 'admin' || role === 'superadmin' || role === 'manager') {
         if (topbarAdminUsers) topbarAdminUsers.style.display = 'flex';
-        if (adminCreateTenantSection) adminCreateTenantSection.style.display = 'block';
       } else {
         if (topbarAdminUsers) topbarAdminUsers.style.display = 'none';
+      }
+
+      // Solo Admin y Superadmin pueden crear nuevas empresas
+      if (role === 'admin' || role === 'superadmin') {
+        if (adminCreateTenantSection) adminCreateTenantSection.style.display = 'block';
+      } else {
         if (adminCreateTenantSection) adminCreateTenantSection.style.display = 'none';
       }
     }
@@ -3581,11 +3673,27 @@
       }
     }
 
-    // ─── ADMIN USER MANAGEMENT MODALS LÓGICA ───────────────────────────────
+    // ─── ADMIN & MANAGER USER MANAGEMENT MODALS LÓGICA ─────────────────────
     function openAddUserModal() {
       document.getElementById('newEmail').value = '';
       document.getElementById('newPassword').value = '';
-      document.getElementById('newRole').value = 'usuario';
+      
+      const newRoleSelect = document.getElementById('newRole');
+      const myRole = currentUserProfile?.role || 'usuario';
+
+      if (myRole === 'manager') {
+        newRoleSelect.innerHTML = `
+          <option value="usuario">Usuario (Solo Lectura / Búsqueda)</option>
+          <option value="manager">Manager (Carga y Gestión en su Empresa)</option>
+        `;
+      } else {
+        newRoleSelect.innerHTML = `
+          <option value="usuario">Usuario (Solo Lectura / Búsqueda)</option>
+          <option value="manager">Manager (Carga y Gestión en su Empresa)</option>
+          <option value="admin">Administrador (Acceso Global y Multitenant)</option>
+        `;
+      }
+      newRoleSelect.value = 'usuario';
       document.getElementById('addUserModal').style.display = 'flex';
     }
 
@@ -3610,7 +3718,6 @@
       const token = sessionStorage.getItem('rrhh_auth_token');
 
       console.log("[handleAddUserSubmit] Intentando crear usuario:", email, "con rol:", role);
-      console.log("[handleAddUserSubmit] Token en sessionStorage:", token ? "Presente (largo: " + token.length + ")" : "Ausente / Nulo");
 
       if (!token) {
         showAlert('error', 'Token de sesión no encontrado. Por favor reinicia sesión.');
@@ -3654,7 +3761,7 @@
       const tbody = document.getElementById('usersListTableBody');
       tbody.innerHTML = `
         <tr>
-          <td colspan="2" style="text-align: center; padding: 2rem; color: var(--text-dim);">
+          <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-dim);">
             <div class="search-spinner" style="display: block; margin: 0 auto 10px;"></div>
             Cargando lista de usuarios…
           </td>
@@ -3673,7 +3780,7 @@
           if (users.length === 0) {
             tbody.innerHTML = `
               <tr>
-                <td colspan="2" style="text-align: center; padding: 2rem; color: var(--text-dim);">
+                <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-dim);">
                   No hay otros usuarios registrados.
                 </td>
               </tr>
@@ -3689,9 +3796,47 @@
             const roleClass = (isSuper || isAdm) ? 'user-role-badge role-admin' : (isMgr ? 'user-role-badge role-manager' : 'user-role-badge');
             const roleName = isSuper ? 'SuperAdmin' : (isAdm ? 'Admin' : (isMgr ? 'Manager' : 'Usuario'));
 
+            const isSelf = currentUser && (currentUser.id === u.id || currentUser.email === u.email);
+            const myRole = currentUserProfile?.role || 'usuario';
+
+            let canReset = false;
+            let canDelete = false;
+
+            if (!isSelf) {
+              if (myRole === 'superadmin') {
+                canReset = true;
+                canDelete = true;
+              } else if (myRole === 'admin') {
+                if (u.role === 'manager' || u.role === 'usuario') {
+                  canReset = true;
+                  canDelete = true;
+                }
+              } else if (myRole === 'manager') {
+                if (u.role === 'usuario') {
+                  canReset = true;
+                  canDelete = true;
+                }
+              }
+            }
+
+            let actionsHtml = '';
+            if (isSelf) {
+              actionsHtml = `<span style="font-size: 0.75rem; color: var(--text-dim); font-style: italic;">(Tu cuenta)</span>`;
+            } else if (canReset || canDelete) {
+              actionsHtml = `
+                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                  ${canReset ? `<button type="button" class="btn-action-small" onclick="openResetPasswordModal('${u.id}', '${escHtml(u.email)}')" title="Resetear contraseña">🔑 Resetear</button>` : ''}
+                  ${canDelete ? `<button type="button" class="btn-action-small btn-action-danger" onclick="confirmDeleteUser('${u.id}', '${escHtml(u.email)}')" title="Eliminar usuario">🗑️ Eliminar</button>` : ''}
+                </div>
+              `;
+            } else {
+              actionsHtml = `<span style="font-size: 0.75rem; color: var(--text-dim);">—</span>`;
+            }
+
             tr.innerHTML = `
               <td><strong>${escHtml(u.email || '—')}</strong></td>
               <td><span class="${roleClass}">${roleName}</span></td>
+              <td style="text-align: right;">${actionsHtml}</td>
             `;
             tbody.appendChild(tr);
           });
@@ -3699,7 +3844,7 @@
           const err = await res.json();
           tbody.innerHTML = `
             <tr>
-              <td colspan="2" style="text-align: center; padding: 2rem; color: var(--error);">
+              <td colspan="3" style="text-align: center; padding: 2rem; color: var(--error);">
                 ❌ Error: ${err.error || res.statusText}
               </td>
             </tr>
@@ -3709,11 +3854,94 @@
         console.error("Error al cargar usuarios:", err);
         tbody.innerHTML = `
           <tr>
-            <td colspan="2" style="text-align: center; padding: 2rem; color: var(--error);">
+            <td colspan="3" style="text-align: center; padding: 2rem; color: var(--error);">
               ❌ Error de red: ${err.message}
             </td>
           </tr>
         `;
+      }
+    }
+
+    // ─── RESET PASSWORD Y DELETE USER HANDLERS ──────────────────────────────
+    function openResetPasswordModal(userId, userEmail) {
+      document.getElementById('resetTargetUserId').value = userId;
+      document.getElementById('resetTargetUserEmail').textContent = userEmail;
+      document.getElementById('resetNewPassword').value = '';
+      document.getElementById('resetPasswordModal').style.display = 'flex';
+    }
+
+    function closeResetPasswordModal() {
+      document.getElementById('resetPasswordModal').style.display = 'none';
+    }
+
+    async function handleResetPasswordSubmit(e) {
+      e.preventDefault();
+      const targetId = document.getElementById('resetTargetUserId').value;
+      const newPassword = document.getElementById('resetNewPassword').value;
+      const targetEmail = document.getElementById('resetTargetUserEmail').textContent;
+      const token = sessionStorage.getItem('rrhh_auth_token');
+
+      if (!token || !targetId) return;
+
+      if (newPassword.length < 6) {
+        showAlert('warning', 'La nueva contraseña debe tener al menos 6 caracteres.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('btnSubmitResetPassword');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Actualizando…';
+
+      try {
+        const res = await fetch(`/api/users/${targetId}/reset-password`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ newPassword })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Error al resetear la contraseña.');
+        }
+
+        showAlert('success', `Contraseña de ${targetEmail} actualizada exitosamente.`);
+        closeResetPasswordModal();
+      } catch (err) {
+        showAlert('error', `Error: ${err.message}`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Guardar Nueva Clave';
+      }
+    }
+
+    async function confirmDeleteUser(userId, userEmail) {
+      if (!confirm(`¿Estás seguro de que deseás eliminar permanentemente al usuario ${userEmail}? Esta acción no se puede deshacer.`)) {
+        return;
+      }
+
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token) return;
+
+      try {
+        const res = await fetch(`/api/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Error al eliminar el usuario.');
+        }
+
+        showAlert('success', `Usuario ${userEmail} eliminado correctamente.`);
+        loadSystemUsers();
+      } catch (err) {
+        showAlert('error', `Error al eliminar: ${err.message}`);
       }
     }
 
@@ -4057,7 +4285,10 @@
           </div>
           <div class="form-group">
             <label for="newPassword">Contraseña</label>
-            <input type="password" id="newPassword" class="form-input" placeholder="••••••••" required autocomplete="new-password">
+            <div class="password-field-wrap">
+              <input type="password" id="newPassword" class="form-input" placeholder="••••••••" required autocomplete="new-password">
+              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('newPassword', this)" title="Mostrar u ocultar contraseña">👁️</button>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -4082,6 +4313,7 @@
               <tr>
                 <th>Email / Usuario</th>
                 <th>Rol / Perfil</th>
+                <th style="text-align: right;">Acciones</th>
               </tr>
             </thead>
             <tbody id="usersListTableBody">
@@ -4095,22 +4327,58 @@
       </div>
     </div>
   </div>
-  <!-- Modal: Cambiar Contraseña -->
+
+  <!-- Modal: Resetear Contraseña de Usuario (Admin & Manager) -->
+  <div class="modal" id="resetPasswordModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔑 Resetear Contraseña</h3>
+        <button class="btn-close-modal" onclick="closeResetPasswordModal()">×</button>
+      </div>
+      <form id="resetPasswordForm" onsubmit="handleResetPasswordSubmit(event)">
+        <input type="hidden" id="resetTargetUserId">
+        <div class="modal-body">
+          <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.25rem; line-height: 1.4;">
+            Asigná una nueva contraseña para <strong id="resetTargetUserEmail" style="color: var(--blue-light);">—</strong>.
+          </p>
+          <div class="form-group">
+            <label for="resetNewPassword">Nueva Contraseña</label>
+            <div class="password-field-wrap">
+              <input type="password" id="resetNewPassword" class="form-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('resetNewPassword', this)" title="Mostrar u ocultar contraseña">👁️</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeResetPasswordModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btnSubmitResetPassword">Guardar Nueva Clave</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Cambiar Contraseña Personal -->
   <div class="modal" id="changePasswordModal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Cambiar Contraseña</h3>
+        <h3>Cambiar Mi Contraseña</h3>
         <button class="btn-close-modal" onclick="closeChangePasswordModal()">×</button>
       </div>
       <form id="changePasswordForm" onsubmit="handleChangePasswordSubmit(event)">
         <div class="modal-body">
           <div class="form-group">
             <label for="changeNewPassword">Nueva Contraseña</label>
-            <input type="password" id="changeNewPassword" class="form-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+            <div class="password-field-wrap">
+              <input type="password" id="changeNewPassword" class="form-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('changeNewPassword', this)" title="Mostrar u ocultar contraseña">👁️</button>
+            </div>
           </div>
           <div class="form-group">
             <label for="changeConfirmPassword">Confirmar Nueva Contraseña</label>
-            <input type="password" id="changeConfirmPassword" class="form-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+            <div class="password-field-wrap">
+              <input type="password" id="changeConfirmPassword" class="form-input" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+              <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('changeConfirmPassword', this)" title="Mostrar u ocultar contraseña">👁️</button>
+            </div>
           </div>
         </div>
         <div class="modal-footer">

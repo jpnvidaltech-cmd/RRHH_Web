@@ -2,9 +2,9 @@
 
 ## 1. Resumen Ejecutivo
 
-Este documento define la arquitectura de control de acceso basada en roles (RBAC) y la jerarquía de permisos del sistema **Perfiles RRHH Web** en su modalidad **Multitenant**.
+Este documento define la arquitectura de control de acceso basada en roles (RBAC), la jerarquía de permisos y la gestión del ciclo de vida de usuarios del sistema **Perfiles RRHH Web** en su modalidad **Multitenant**.
 
-El sistema establece tres niveles operativos diseñados para garantizar el aislamiento estricto de los datos entre diferentes organizaciones (tenants), permitiendo a la vez la administración centralizada de la plataforma y la creación dinámica de nuevas organizaciones.
+El sistema establece tres niveles operativos diseñados para garantizar el aislamiento estricto de los datos entre diferentes organizaciones (tenants), permitiendo a la vez la administración centralizada de la plataforma, la creación dinámica de organizaciones y la delegación segura de tareas de administración a los gerentes (managers) de cada empresa.
 
 ---
 
@@ -19,54 +19,58 @@ El sistema establece tres niveles operativos diseñados para garantizar el aisla
 | **Carga e Indexación de Nuevos CVs (Drag & Drop)** | Sí | Sí | ❌ No |
 | **Cambiar de Empresa Activa (Tenant Switcher)** | Sí | ❌ No | ❌ No |
 | **Crear Nuevas Empresas / Tenants** | Sí | ❌ No | ❌ No |
-| **Administración y Alta de Usuarios** | Sí | ❌ No | ❌ No |
+| **Crear Nuevos Usuarios** | Sí (Admin, Manager, Usuario) | Sí (Solo Manager y Usuario) | ❌ No |
+| **Eliminar Perfiles de Usuario** | Sí (Managers y Usuarios) | Sí (Solo Usuarios de su empresa) | ❌ No |
+| **Resetear Contraseñas de Terceros** | Sí (Managers y Usuarios) | Sí (Solo Usuarios de su empresa) | ❌ No |
+| **Cambiar su Propia Contraseña** | Sí | Sí | Sí |
 
 ---
 
 ## 3. Descripción Detallada de los Roles
 
 ### 3.1. Rol: Admin / Superadmin (Nivel 1)
-- **Propósito**: Gestión global de la plataforma, alta de clientes/organizaciones y supervisión transversal.
+- **Propósito**: Gestión global de la plataforma, alta de organizaciones y administración transversal de cuentas.
 - **Capacidades**:
-  - **Creación de Tenants**: Puede dar de alta nuevas empresas directamente desde la interfaz, definiendo el *Nombre* y el *Slug identificador*.
-  - **Conmutación Dinámica (Tenant Switcher)**: Puede cambiar en caliente entre cualquier empresa del sistema mediante la cápsula superior o el modal de selección.
-  - **Gestión de Usuarios**: Puede crear usuarios y asignar cualquiera de los roles (`admin`, `manager`, `usuario`) a cualquier organización.
-  - **Carga de CVs**: Habilitado para subir y procesar currículums en cualquier organización activa.
-  - **Consulta Completa**: Acceso total a listados, estadísticas y búsquedas de candidatos.
+  - **Creación de Tenants**: Puede crear nuevas empresas definiendo *Nombre* y *Slug identificador*.
+  - **Conmutación Dinámica (Tenant Switcher)**: Puede alternar libremente entre empresas activas.
+  - **Gestión Total de Usuarios**:
+    - Puede crear usuarios con roles `admin`, `manager` o `usuario`.
+    - Puede **eliminar perfiles** de `manager` y `usuario`.
+    - Puede **resetear la contraseña** de perfiles de `manager` y `usuario`, asignando una nueva clave si la han olvidado.
+  - **Carga y Gestión de CVs**: Habilitado para subir y consultar CVs en cualquier organización activa.
 
 ### 3.2. Rol: Manager (Nivel 2)
 - **Propósito**: Responsable operativo de Recursos Humanos dentro de su respectiva empresa u organización.
 - **Capacidades**:
-  - **Carga de CVs Activa**: Acceso completo a la zona de drag-and-drop para cargar CVs (PDF, JPG, PNG) para su procesamiento e indexación con IA.
-  - **Gestión y Consulta de Candidatos**: Búsqueda semántica, filtros por perfil laboral, descarga y visualización de CVs.
-  - **Aislamiento Estricto**: Su sesión está vinculada de manera inmutable a su `tenant_id`. No puede ver ni conmutar a otras organizaciones.
-  - **Sin Gestión Global**: No puede crear nuevas empresas ni administrar usuarios globales del sistema.
+  - **Carga de CVs**: Acceso completo a la zona de drag-and-drop para cargar CVs (PDF, JPG, PNG) para su procesamiento e indexación con IA.
+  - **Gestión y Consulta de Candidatos**: Búsqueda semántica, filtros y descarga de CVs.
+  - **Gestión Delegada de Usuarios (Dentro de su Empresa)**:
+    - Puede ver la lista de miembros de su propia organización.
+    - Puede **crear nuevos perfiles de `manager` y `usuario`** para su empresa (no puede crear administradores globales).
+    - Puede **eliminar perfiles de `usuario`** de su empresa (no puede eliminar otros managers ni administradores).
+    - Puede **resetear la contraseña de perfiles de `usuario`** de su empresa si olvidan su acceso.
+  - **Aislamiento Estricto**: Su sesión está vinculada de manera inmutable a su `tenant_id`. No puede ver ni alterar datos de otras empresas.
 
 ### 3.3. Rol: Usuario (Nivel 3)
-- **Propósito**: Miembro del equipo o consultor que requiere consultar candidatos sin capacidad de modificar la base documental.
+- **Propósito**: Miembro del equipo o consultor que requiere consultar candidatos sin capacidad de modificar la base documental ni la configuración de usuarios.
 - **Capacidades**:
-  - **Modo Solo Lectura**: Puede buscar, visualizar y descargar currículums existentes dentro de su empresa.
+  - **Modo Consulta**: Puede buscar, filtrar, visualizar y descargar currículums existentes dentro de su empresa.
   - **Zona de Carga Bloqueada**: La sección de subida de archivos se reemplaza por un aviso informativo de permisos restringidos.
-  - **Aislamiento Estricto**: Solo puede consultar la información correspondiente a su empresa asignada.
+  - **Sin Gestión de Cuentas**: No puede crear, eliminar ni resetear contraseñas de otros usuarios.
+  - **Autogestión de Seguridad**: Puede cambiar su propia contraseña personal en cualquier momento.
 
 ---
 
-## 4. Nueva Funcionalidad: Creación de Tenants por Administradores
+## 4. Visualización y Asistencia de Contraseñas (Password Toggle)
 
-El usuario con rol **Admin** dispone de una herramienta integrada para incorporar nuevas empresas al ecosistema:
-
-1. **Ubicación en UI**:
-   - En el modal de organizaciones (`switchTenantModal`) se incorpora el acceso colapsable o botón directo **"+ Nueva Empresa"**.
-2. **Campos requeridos**:
-   - **Nombre de la Empresa**: Nombre visible (ejemplo: *Globant*, *Mercado Libre*, *Antártida Labs*).
-   - **Slug identificador**: Código único alfanumérico en minúsculas (ejemplo: `globant`, `mercado-libre`), con generación automática sugerida a partir del nombre.
-3. **Flujo de Ejecución**:
-   - Validación de unicidad del `slug` en la tabla `mt_tenants`.
-   - Llamada a la API (`POST /api/tenants`).
-   - Tras la creación exitosa:
-     - La nueva empresa se incorpora automáticamente al selector de organizaciones.
-     - El sistema conmuta la sesión activa del Administrador a la empresa recién creada.
-     - Se refrescan contadores (KPIs a 0), tabla de CVs y listado de recientes.
+Para mejorar la experiencia de usuario y evitar bloqueos por errores de tipeo involuntarios (mayúsculas activadas, símbolos o espacios):
+- Todos los campos de contraseña en la plataforma incorporan un botón con icono interactivo de **ojo abierto (`👁️`) / ojo tachado o cerrado (`🙈`)**.
+- Al hacer clic, conmuta el atributo del input entre `type="password"` y `type="text"`.
+- Disponible en:
+  1. Pantalla de Inicio de Sesión (Login).
+  2. Modal de Cambio de Contraseña Personal.
+  3. Modal de Creación de Nuevos Usuarios.
+  4. Modal de Reseteo de Contraseña Administrativo.
 
 ---
 
@@ -79,29 +83,37 @@ El usuario con rol **Admin** dispone de una herramienta integrada para incorpora
   ALTER TABLE public.mt_profiles ADD CONSTRAINT mt_profiles_role_check 
     CHECK (role IN ('superadmin', 'admin', 'manager', 'usuario'));
   ```
-- **Políticas RLS**: Las consultas y mutaciones en `mt_cvs` validan que el usuario solo opere en registros donde `tenant_id` coincide con el perfil autenticado (a menos que actúe el rol administrador con token de servicio).
+- **Integridad Referencial en Cascada**:
+  - La tabla `mt_profiles` referencia a `auth.users(id) ON DELETE CASCADE`.
+  - Al eliminar un usuario mediante la API de administración de Supabase Auth, su registro en `mt_profiles` se depura de forma atómica e inmediata.
 
 ### 5.2. Capa Backend (Node.js / Express)
-- **Middlewares de Acceso**:
-  - `requireAuth`: Extrae token JWT, valida sesión e inyecta `req.user` con su `tenant_id` y `role`.
-  - `requireAdmin`: Restringe la ruta exclusivamente a `admin` y `superadmin`.
-  - `requireManagerOrAdmin`: Permite el acceso a `manager`, `admin` y `superadmin` (utilizado para subida y registro de CVs).
-- **Protección contra Inyección de Tenant**:
-  - En los endpoints `/api/cvs`, `/api/cvs/count` y `/api/cvs/all`, solo se respeta la cabecera `x-tenant-id` si `req.user.role === 'admin' || req.user.role === 'superadmin'`.
-  - Si el usuario es `manager` o `usuario`, se descarta cualquier cabecera externa y se fuerza estrictamente `req.user.tenant_id`.
-- **Ruta de Cambio de Empresa (`POST /api/auth/switch-tenant`)**:
-  - Valida que el rol sea `admin` o `superadmin`. En caso contrario retorna `403 Forbidden`.
-- **Ruta de Creación de Empresa (`POST /api/tenants`)**:
-  - Actualizada de `requireSuperAdmin` a `requireAdmin`.
+- **Middleware `requireManagerOrAdmin`**:
+  - Protege los endpoints de gestión de usuarios (`GET /api/users`, `POST /api/users`, `DELETE /api/users/:id`, `PUT /api/users/:id/reset-password`).
+- **Reglas de Seguridad y Validación en Eliminación (`DELETE /api/users/:id`)**:
+  - **Anti-Autoeliminación**: Ningún usuario puede eliminar su propia cuenta activa.
+  - **Admin**: Puede eliminar cuentas con rol `manager` o `usuario`.
+  - **Manager**: 
+    - Se valida que `targetProfile.tenant_id === req.user.tenant_id`.
+    - Se valida que `targetProfile.role === 'usuario'`.
+    - Bloqueo con `403 Forbidden` si intenta eliminar otro `manager`, `admin` o usuario de otra empresa.
+- **Reglas de Seguridad en Reseteo de Claves (`PUT /api/users/:id/reset-password`)**:
+  - Requiere contraseña con longitud mínima de 6 caracteres.
+  - **Admin**: Puede resetear contraseñas de `manager` y `usuario`.
+  - **Manager**: Solo puede resetear contraseñas de `usuario` pertenecientes a su misma empresa.
+  - Ejecución mediante `supabaseAdmin.auth.admin.updateUserById(targetId, { password: newPassword })`.
+- **Reglas de Creación (`POST /api/users`)**:
+  - Si el creador es `manager`, solo se admiten roles `manager` y `usuario`, forzando el `tenant_id` del creador.
+  - Si el creador es `admin`, puede crear en el tenant activo y asignar cualquier rol excepto superadmin.
 
 ### 5.3. Capa Frontend (Vanilla JS + CSS)
-- **Visualización Condicional por Rol (`applyUserRole`)**:
-  - Habilitación o bloqueo visual de `uploadZone` y `restrictedUploadMessage`.
-  - Visibilidad de opciones administrativas en el Topbar.
-- **Cápsula de Organización**:
-  - Si es `admin` / `superadmin`: muestra cursor interactivo y flecha selectora `▾` que activa el modal.
-  - Si es `manager` / `usuario`: se muestra como badge estático institucional sin interacción de cambio.
-- **Badges de Identificación**:
-  - `SuperAdmin` / `Admin`: Badge violeta / púrpura.
-  - `Manager`: Badge verde esmeralda distintivo (`role-manager`).
-  - `Usuario`: Badge neutro / gris (`role-usuario`).
+- **Panel de Gestión de Usuarios para Admin y Manager**:
+  - El botón de usuarios del Topbar (`topbarAdminUsers`) se activa tanto para `Admin` como para `Manager`.
+  - El selector de roles en `addUserModal`:
+    - Para `Admin`: Muestra opciones `Usuario`, `Manager`, `Admin`.
+    - Para `Manager`: Muestra únicamente `Usuario` y `Manager`.
+- **Acciones en la Tabla de Usuarios (`openViewUsersModal`)**:
+  - Cada fila muestra botones de acción según el rol del usuario conectado:
+    - Botón **🔑 Resetear Contraseña**: Abre un modal modal interactivo para ingresar/generar la nueva contraseña.
+    - Botón **🗑️ Eliminar Usuario**: Muestra confirmación de seguridad y elimina la cuenta de forma permanente.
+    - Se ocultan las acciones sobre la propia cuenta del usuario conectado y sobre usuarios de mayor o igual jerarquía no permitidos.
