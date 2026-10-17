@@ -1,6 +1,6 @@
 {
   "name": "asistente-rrhh-cv",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "Asistente RRHH Web - Cliente y Servidor Express",
   "main": "server.js",
   "scripts": {
