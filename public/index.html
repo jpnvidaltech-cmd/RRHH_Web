@@ -3208,6 +3208,16 @@
       document.getElementById('resultsToolbar').style.display = state === 'results' ? 'flex' : 'none';
     }
 
+    // Helper para limpiar el enlace o ruta de Supabase Storage en WebCVLink
+    function cleanWebCVLink(raw) {
+      if (!raw) return null;
+      const mdMatch = raw.match(/\]\(([^)]+)\)/);
+      if (mdMatch) return mdMatch[1].trim();
+      const urlMatch = raw.match(/(https?:\/\/[^\s]+|Curriculums\/[^\s]+|[a-f0-9-]{36}\/[^\s]+)/i);
+      if (urlMatch) return urlMatch[1].trim();
+      return raw.trim();
+    }
+
     // ─── RESULTS PARSER ───────────────────────────────────────────────────────
     function renderResults(text, query) {
       const grid = document.getElementById('candidatesGrid');
@@ -3220,43 +3230,101 @@
         const candidates = [];
         const comparisonLines = [];
         const ratingLines = [];
+        const trailingCvLinks = [];
         let currentCandidate = null;
-        // mode: 'intro' | 'candidates' | 'comparison' | 'rating'
         let mode = 'intro';
 
         for (const line of lines) {
           const trimmed = line.trim();
+          if (!trimmed) continue;
 
-          // ── Section headers (anchored to line start) ──
-          if (/^comparaci[oó]n/i.test(trimmed)) {
+          const cleanHeader = trimmed.replace(/^[#*_\s]+|[#*_\s]+$/g, '');
+
+          // Detección de secciones de comparación o calificación (soporta markdown y variaciones)
+          if (/^(comparaci[oó]n|puntuaci[oó]n|an[aá]lisis comparativo|tabla comparativa)/i.test(cleanHeader)) {
             if (currentCandidate) { candidates.push(currentCandidate); currentCandidate = null; }
-            mode = 'comparison'; continue;
+            mode = 'comparison';
+            continue;
           }
-          if (/^calificaci[oó]n|^puntaje|^score/i.test(trimmed)) {
+          if (/^(calificaci[oó]n|puntaje|score|ranking)/i.test(cleanHeader)) {
             if (currentCandidate) { candidates.push(currentCandidate); currentCandidate = null; }
-            mode = 'rating'; continue;
+            mode = 'rating';
+            continue;
           }
 
-          if (mode === 'comparison') { if (trimmed) comparisonLines.push(trimmed); continue; }
-          if (mode === 'rating') { if (trimmed) ratingLines.push(trimmed); continue; }
+          if (mode === 'comparison' || mode === 'rating') {
+            // Ignorar preguntas de cortesía al final del prompt
+            if (/^[¿?]/.test(trimmed) || /quieres que te ayude|necesitas m[aá]s informaci[oó]n/i.test(trimmed)) {
+              continue;
+            }
+            if (mode === 'comparison') comparisonLines.push(trimmed);
+            else ratingLines.push(trimmed);
+            continue;
+          }
 
-          // ── Numbered candidate: "1. Name:" ──
-          const candMatch = trimmed.match(/^(\d+)\.\s+(.+?)(?::\s*)?$/);
+          // Detección de candidato numerado (ej. "1. Nombre..." o "**1. Nombre...**")
+          const candMatch = trimmed.match(/^(?:\*{1,2}|#{1,4})?\s*(\d+)[\.\)]\s+(.+?)(?::\s*)?(?:\*{1,2})?$/);
+          const isScoreRankingLine = /:\s*\d+(?:\.\d+)?\s*\/\s*10|\(\s*\d+(?:\.\d+)?\s*\/\s*10/.test(trimmed);
+
           if (candMatch) {
+            const rawTitle = candMatch[2].replace(/\*\*/g, '').replace(/__/g, '').trim();
+
+            // Si ya tenemos candidatos con viñetas y esta nueva línea contiene un puntaje, es la sección de comparación
+            if (candidates.length > 0 && isScoreRankingLine && candidates.some(c => c.bullets.length > 0)) {
+              if (currentCandidate) { candidates.push(currentCandidate); currentCandidate = null; }
+              mode = 'comparison';
+              comparisonLines.push(trimmed);
+              continue;
+            }
+
             if (currentCandidate) candidates.push(currentCandidate);
-            const rawName = candMatch[2].replace(/:$/, '').trim();
-            currentCandidate = { index: candMatch[1], name: rawName, bullets: [] };
-            mode = 'candidates'; continue;
+
+            let embeddedScore = null;
+            let extraNote = '';
+            let cleanName = rawTitle;
+
+            const scoreMatch = rawTitle.match(/\(?\s*(?:puntuaci[oó]n|score|calificaci[oó]n)?\s*:?\s*(\d+(?:\.\d+)?)\s*\/\s*10([^)]*)\)?/i);
+            if (scoreMatch) {
+              embeddedScore = parseFloat(scoreMatch[1]);
+              extraNote = (scoreMatch[2] || '').replace(/^[\s,;:-]+|[\s,;:-]+$/g, '').trim();
+              cleanName = rawTitle.replace(/\(?\s*(?:puntuaci[oó]n|score|calificaci[oó]n)?\s*:?\s*\d+(?:\.\d+)?\s*\/\s*10[^)]*\)?/gi, '').trim();
+            }
+
+            currentCandidate = {
+              index: candMatch[1],
+              name: cleanName,
+              embeddedScore: embeddedScore,
+              extraNote: extraNote,
+              bullets: [],
+              cvLink: null
+            };
+            mode = 'candidates';
+            continue;
           }
 
-          // ── Bullet point ──
-          if (currentCandidate && /^[-•]\s+/.test(trimmed)) {
-            const bullet = trimmed.replace(/^[-•]\s+/, '').trim();
-            // Extraer WebCVLink como campo especial, no como bullet visible
+          // Viñetas o campos
+          if (/^(?:[-•*]|\d+\))\s+/.test(trimmed)) {
+            const bullet = trimmed.replace(/^(?:[-•*]|\d+\))\s+/, '').trim();
+
+            // WebCVLink directo
             const linkMatch = bullet.match(/^WebCVL[iI]nk:\s*(.+)/i);
             if (linkMatch) {
-              currentCandidate.cvLink = linkMatch[1].trim();
-            } else if (bullet) {
+              if (currentCandidate) {
+                currentCandidate.cvLink = cleanWebCVLink(linkMatch[1]);
+              }
+              continue;
+            }
+
+            // Enlaces de CV en formato lista final: "- Nombre: Curriculums/..." o "- Nombre: [CV](...)"
+            const trailingMatch = bullet.match(/^([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+):\s*(?:\[[^\]]*\]\s*\(([^)]+)\)|(Curriculums\/[^\s]+|https?:\/\/[^\s]+))/);
+            if (trailingMatch) {
+              const candName = trailingMatch[1].trim();
+              const linkUrl = trailingMatch[2] || trailingMatch[3];
+              trailingCvLinks.push({ name: candName, url: cleanWebCVLink(linkUrl) });
+              continue;
+            }
+
+            if (currentCandidate && bullet) {
               currentCandidate.bullets.push(bullet);
             }
             continue;
@@ -3264,97 +3332,152 @@
         }
         if (currentCandidate) candidates.push(currentCandidate);
 
-        // ── Parse ratings: soporta dos formatos ──────────────────────────
-        // Formato A (sección Calificación): "- Rafael Sosa Reyes: 9/10"
-        // Formato B (embebido en Comparación): "- Rafael recibe una calificación de 9/10..."
+        // Asignar enlaces finales a los candidatos correspondientes si vinieron al final
+        trailingCvLinks.forEach(item => {
+          const firstWord = item.name.toLowerCase().split(/\s+/)[0];
+          const matched = candidates.find(c => c.name.toLowerCase().includes(firstWord));
+          if (matched && !matched.cvLink) {
+            matched.cvLink = item.url;
+          }
+        });
+
+        // ── Parseo de calificaciones ──────────────────────────
         const ratings = {};
 
-        const parseScoreLine = (l) => {
-          // Formato A: "- Nombre: N/10"
-          const mA = l.match(/^[-•]\s+(.+?):\s*(\d+(?:\.\d+)?)(?:\/10)?(?:\s|$|\()/);
-          if (mA && parseFloat(mA[2]) <= 10) {
-            ratings[mA[1].trim()] = parseFloat(mA[2]); return;
+        // Agregar puntajes embebidos en el nombre
+        candidates.forEach(c => {
+          if (c.embeddedScore !== null && c.embeddedScore !== undefined) {
+            ratings[c.name] = c.embeddedScore;
           }
-          // Formato B: "- Nombre ... N/10 ..."  (calificación embebida)
-          const mB = l.match(/^[-•]\s+(\w+).*?(\d+(?:\.\d+)?)\/10/);
+        });
+
+        const parseScoreLine = (l) => {
+          // Formato: "1. Nombre: 9/10" o "- Nombre: 9/10"
+          const mA = l.match(/(?:[-•*]|\d+[\.\)])?\s*([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+?)\s*:\s*(\d+(?:\.\d+)?)\s*\/\s*10/i);
+          if (mA && parseFloat(mA[2]) <= 10) {
+            const name = mA[1].replace(/\*\*/g, '').trim();
+            ratings[name] = parseFloat(mA[2]);
+            return;
+          }
+          // Formato: "Nombre recibe una calificación de 9/10"
+          const mB = l.match(/([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+).*?(\d+(?:\.\d+)?)\s*\/\s*10/i);
           if (mB && parseFloat(mB[2]) <= 10) {
-            ratings[mB[1].trim()] = parseFloat(mB[2]);
+            const name = mB[1].replace(/\*\*/g, '').trim();
+            ratings[name] = parseFloat(mB[2]);
           }
         };
 
         ratingLines.forEach(parseScoreLine);
         comparisonLines.forEach(parseScoreLine);
 
-        // ── Score lookup (first-name match, case-insensitive) ──
+        // Búsqueda de puntaje por coincidencia de nombre
         function findScore(name) {
-          const first = name.toLowerCase().split(' ')[0];
+          if (!name) return null;
+          const first = name.toLowerCase().split(/\s+/)[0];
           for (const [key, val] of Object.entries(ratings)) {
-            if (key.toLowerCase().startsWith(first) || key.toLowerCase().includes(first)) return val;
+            const k = key.toLowerCase();
+            if (k.startsWith(first) || k.includes(first) || name.toLowerCase().includes(k)) return val;
           }
           return null;
         }
 
         if (candidates.length > 0) {
-
           candidates.forEach(c => {
-            const score = findScore(c.name);
-            const initials = c.name.split(/\s+/).map(w => w[0]).filter(Boolean).join('').slice(0, 2).toUpperCase();
-            // First bullet often starts with "Perfil:" — strip that label for subtitle
-            const roleRaw = c.bullets[0] || '';
-            const roleHint = roleRaw.replace(/^Perfil:\s*/i, '').trim();
+            const score = (c.embeddedScore !== null && c.embeddedScore !== undefined) ? c.embeddedScore : findScore(c.name);
+            const initials = c.name.split(/\s+/).map(w => w[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'CV';
+
+            // Subtítulo de rol o perfil
+            const roleRaw = c.bullets[0] || c.extraNote || '';
+            const roleHint = roleRaw.replace(/^(Perfil|Profesión):\s*/i, '').trim();
+
+            // Asegurar que el cuerpo de la tarjeta nunca quede vacío
+            let bulletsHtml = '';
+            if (c.bullets.length > 0) {
+              bulletsHtml = c.bullets.map(b => `<li>${escHtml(b)}</li>`).join('');
+            } else {
+              const fallbackItems = [];
+              if (c.extraNote) fallbackItems.push(c.extraNote);
+              if (score !== null) fallbackItems.push(`Calificación en análisis: ${score}/10`);
+              fallbackItems.push('Perfil preseleccionado por IA para la búsqueda solicitada.');
+              bulletsHtml = fallbackItems.map(b => `<li>${escHtml(b)}</li>`).join('');
+            }
 
             const card = document.createElement('div');
             card.className = 'candidate-card';
             card.innerHTML = `
-          <div class="card-header">
-            <div class="candidate-avatar">${initials}</div>
-            <div class="candidate-meta">
-              <div class="candidate-name">${escHtml(c.name)}</div>
-              <div class="candidate-role">${escHtml(roleHint.slice(0, 80))}${roleHint.length > 80 ? '…' : ''}</div>
-            </div>
-            ${score !== null ? `<div class="score-badge">
-              <span class="score-num">${score}</span>
-              <span class="score-label">/ 10</span>
-            </div>` : ''}
-            ${c.cvLink ? `<a class="cv-link-btn" href="#" onclick="event.preventDefault(); openCV('${escHtml(c.cvLink)}')" title="Ver CV">📄</a>` : ''}
-          </div>
-          <div class="card-divider"></div>
-          <div class="card-body">
-            <ul>${c.bullets.map(b => `<li>${escHtml(b)}</li>`).join('')}</ul>
-          </div>
-        `;
+              <div class="card-header">
+                <div class="candidate-avatar">${initials}</div>
+                <div class="candidate-meta">
+                  <div class="candidate-name">${escHtml(c.name)}</div>
+                  <div class="candidate-role">${escHtml(roleHint.slice(0, 80))}${roleHint.length > 80 ? '…' : ''}</div>
+                </div>
+                ${score !== null ? `
+                  <div class="score-badge">
+                    <span class="score-num">${score}</span>
+                    <span class="score-label">/ 10</span>
+                  </div>
+                ` : ''}
+                ${c.cvLink ? `
+                  <a class="cv-link-btn" href="#" onclick="event.preventDefault(); openCV('${escHtml(c.cvLink)}')" title="Ver CV">📄</a>
+                ` : ''}
+              </div>
+              <div class="card-divider"></div>
+              <div class="card-body">
+                <ul>${bulletsHtml}</ul>
+              </div>
+            `;
             grid.appendChild(card);
           });
 
-          // Score bars block
+          // Bloque 1: Calificación comparativa (barras de puntaje)
           const ratingEntries = Object.entries(ratings);
           if (ratingEntries.length > 0) {
+            // Ordenar de mayor a menor puntaje
+            ratingEntries.sort((a, b) => b[1] - a[1]);
             const barsBlock = document.createElement('div');
             barsBlock.className = 'extra-block';
-            barsBlock.innerHTML = `<h3><span>⭐</span> Calificación comparativa</h3>
-          <div class="score-bars">
-            ${ratingEntries.map(([name, score]) => `
-              <div class="score-row">
-                <div class="score-row-header">
-                  <span class="score-row-name">${escHtml(name)}</span>
-                  <span class="score-row-num">${score}/10</span>
-                </div>
-                <div class="score-track">
-                  <div class="score-fill" style="width:${(score / 10) * 100}%"></div>
-                </div>
+            barsBlock.innerHTML = `
+              <h3><span>⭐</span> Calificación comparativa</h3>
+              <div class="score-bars">
+                ${ratingEntries.map(([name, score]) => `
+                  <div class="score-row">
+                    <div class="score-row-header">
+                      <span class="score-row-name">${escHtml(name)}</span>
+                      <span class="score-row-num">${score}/10</span>
+                    </div>
+                    <div class="score-track">
+                      <div class="score-fill" style="width:${Math.min(100, Math.max(0, (score / 10) * 100))}%"></div>
+                    </div>
+                  </div>
+                `).join('')}
               </div>
-            `).join('')}
-          </div>`;
+            `;
             extra.appendChild(barsBlock);
           }
 
-          // Comparison block
-          const compBullets = comparisonLines.filter(l => /^[-•]/.test(l));
+          // Bloque 2: Comparación de perfiles
+          const compBullets = [];
+          comparisonLines.forEach(l => {
+            const cleaned = l.replace(/^(?:[-•*]|\d+[\.\)])\s*/, '').trim();
+            if (cleaned && !/^[¿?]/.test(cleaned)) {
+              compBullets.push(cleaned);
+            }
+          });
+
+          // Si no vinieron líneas explícitas pero tenemos calificaciones, generar resumen
+          if (compBullets.length === 0 && ratingEntries.length > 0) {
+            ratingEntries.forEach(([name, score]) => {
+              compBullets.push(`<strong>${name}</strong>: Calificación ${score}/10 según perfil, habilidades y experiencia.`);
+            });
+          }
+
           if (compBullets.length > 0) {
             const compBlock = document.createElement('div');
             compBlock.className = 'extra-block';
-            compBlock.innerHTML = `<h3><span>⚖️</span> Comparación de perfiles</h3>
-          <ul>${compBullets.map(l => `<li>${escHtml(l.replace(/^[-•]\s*/, ''))}</li>`).join('')}</ul>`;
+            compBlock.innerHTML = `
+              <h3><span>⚖️</span> Comparación de perfiles</h3>
+              <ul>${compBullets.map(l => `<li>${l.includes('<strong>') ? l : escHtml(l)}</li>`).join('')}</ul>
+            `;
             extra.appendChild(compBlock);
           }
 
