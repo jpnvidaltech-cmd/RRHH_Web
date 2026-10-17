@@ -17,6 +17,7 @@ El sistema establece tres niveles operativos diseñados para garantizar el aisla
 | **Listado y Filtro de Candidatos** | Sí | Sí | Sí |
 | **Visualización y Descarga de CVs** | Sí | Sí | Sí |
 | **Carga e Indexación de Nuevos CVs (Drag & Drop)** | Sí | Sí | ❌ No |
+| **Eliminar Currículums (BD y Supabase Storage)** | Sí | Sí (Solo de su empresa) | ❌ No |
 | **Cambiar de Empresa Activa (Tenant Switcher)** | Sí | ❌ No | ❌ No |
 | **Crear Nuevas Empresas / Tenants** | Sí | ❌ No | ❌ No |
 | **Crear Nuevos Usuarios** | Sí (Admin, Manager, Usuario) | Sí (Solo Manager y Usuario) | ❌ No |
@@ -37,12 +38,12 @@ El sistema establece tres niveles operativos diseñados para garantizar el aisla
     - Puede crear usuarios con roles `admin`, `manager` o `usuario`.
     - Puede **eliminar perfiles** de `manager` y `usuario`.
     - Puede **resetear la contraseña** de perfiles de `manager` y `usuario`, asignando una nueva clave si la han olvidado.
-  - **Carga y Gestión de CVs**: Habilitado para subir y consultar CVs en cualquier organización activa.
+  - **Carga y Gestión de CVs**: Habilitado para subir, consultar y **eliminar CVs** en cualquier organización activa, purgando tanto el registro de base de datos (`mt_cvs`) como el archivo en Supabase Storage.
 
 ### 3.2. Rol: Manager (Nivel 2)
 - **Propósito**: Responsable operativo de Recursos Humanos dentro de su respectiva empresa u organización.
 - **Capacidades**:
-  - **Carga de CVs**: Acceso completo a la zona de drag-and-drop para cargar CVs (PDF, JPG, PNG) para su procesamiento e indexación con IA.
+  - **Carga y Gestión de CVs**: Acceso completo a la zona de drag-and-drop para cargar CVs (PDF, JPG, PNG) para su procesamiento e indexación con IA, y **eliminación de CVs** de su empresa (purgando base de datos y Supabase Storage) cuando un candidato ya no esté disponible.
   - **Gestión y Consulta de Candidatos**: Búsqueda semántica, filtros y descarga de CVs.
   - **Gestión Delegada de Usuarios (Dentro de su Empresa)**:
     - Puede ver la lista de miembros de su propia organización.
@@ -117,3 +118,17 @@ Para mejorar la experiencia de usuario y evitar bloqueos por errores de tipeo in
     - Botón **🔑 Resetear Contraseña**: Abre un modal modal interactivo para ingresar/generar la nueva contraseña.
     - Botón **🗑️ Eliminar Usuario**: Muestra confirmación de seguridad y elimina la cuenta de forma permanente.
     - Se ocultan las acciones sobre la propia cuenta del usuario conectado y sobre usuarios de mayor o igual jerarquía no permitidos.
+
+### 5.4. Eliminación de Currículums (Base de Datos y Supabase Storage)
+- **Endpoint**: `DELETE /api/cvs/:id` protegido por `requireAuth` y `requireManagerOrAdmin`.
+- **Aislamiento Multitenant**:
+  - Se resuelve `activeTenantId` para el solicitante. Un `Manager` sólo puede eliminar CVs con `tenant_id === req.user.tenant_id`.
+  - Un `Admin` puede eliminar CVs de la empresa activa seleccionada.
+- **Doble Depuración Atómica**:
+  1. **Supabase Storage**: A partir del enlace `web_cv_link` registrado, el backend extrae la ruta interna dentro del bucket `Curriculums` e invoca `supabaseAdmin.storage.from('Curriculums').remove([storagePath])`, evitando archivos huérfanos.
+  2. **PostgreSQL**: Se elimina la fila correspondiente en la tabla `mt_cvs` (`.delete().eq('id', cvId).eq('tenant_id', activeTenantId)`).
+- **Interfaz de Usuario**:
+  - En la **Base de Candidatos** (`#listContainer`), la columna *Acción* muestra el botón `🗑️` (Eliminar) exclusivamente a usuarios con rol `Manager` o `Admin`.
+  - Solicita confirmación explícita con el nombre del candidato antes de ejecutar la acción.
+  - Tras la eliminación, actualiza en tiempo real los contadores (KPIs) y la lista de CVs recientes sin requerir recargar la página.
+

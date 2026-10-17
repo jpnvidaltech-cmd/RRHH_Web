@@ -2310,6 +2310,18 @@
       transform: scale(1.08);
     }
 
+    .cv-table .btn-action-danger-cv {
+      background: rgba(239, 68, 68, .12);
+      border: 1px solid rgba(239, 68, 68, .28);
+      color: #f87171;
+    }
+
+    .cv-table .btn-action-danger-cv:hover {
+      background: rgba(239, 68, 68, .25);
+      border-color: #ef4444;
+      transform: scale(1.08);
+    }
+
     /* Pagination controls */
     .pagination-bar {
       display: flex;
@@ -3579,6 +3591,9 @@
           ? nombreCompleto.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
           : 'CV';
 
+        const myRole = currentUserProfile?.role || 'usuario';
+        const canDeleteCv = (myRole === 'admin' || myRole === 'superadmin' || myRole === 'manager');
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
@@ -3596,9 +3611,14 @@
           <td>${escHtml(cv.email || '—')}</td>
           <td>${formatDate(cv.created_at)}</td>
           <td>
-            ${cv.web_cv_link ? `
-              <button class="btn-action" onclick="openCV('${escHtml(cv.web_cv_link)}')" title="Ver Currículum">📄</button>
-            ` : '—'}
+            <div style="display: flex; gap: 6px; align-items: center;">
+              ${cv.web_cv_link ? `
+                <button class="btn-action" onclick="openCV('${escHtml(cv.web_cv_link)}')" title="Ver Currículum">📄</button>
+              ` : '—'}
+              ${canDeleteCv && cv.id ? `
+                <button class="btn-action btn-action-danger-cv" onclick="confirmDeleteCv('${cv.id}', '${escHtml(nombreCompleto)}')" title="Eliminar Currículum">🗑️</button>
+              ` : ''}
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
@@ -3682,6 +3702,45 @@
       } catch (err) {
         console.error("Error al obtener URL firmada:", err);
         showAlert('error', `No se pudo abrir el CV: ${err.message}`);
+      }
+    }
+
+    // ─── ELIMINACIÓN DE CV (BD Y STORAGE) PARA MANAGER Y ADMIN ─────────────────
+    async function confirmDeleteCv(cvId, candidateName) {
+      if (!confirm(`¿Estás seguro de que deseás eliminar permanentemente el currículum de ${candidateName}? Esta acción borrará el archivo de almacenamiento y todos sus datos asociados.`)) {
+        return;
+      }
+
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token || !cvId) return;
+
+      try {
+        showAlert('info', `Eliminando currículum de ${candidateName}…`);
+        const res = await fetch(`/api/cvs/${cvId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-tenant-id': currentTenant?.id || ''
+          }
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Error al eliminar el currículum.');
+        }
+
+        showAlert('success', `✓ Currículum de ${candidateName} y archivo asociado eliminados.`);
+
+        // Remover de la lista local en memoria y actualizar tabla
+        allCVs = allCVs.filter(item => item.id !== cvId);
+        sortAndRenderTable();
+
+        // Actualizar contadores globales y lista de recientes
+        await updateCVCount();
+        await loadRecentCVs();
+      } catch (err) {
+        console.error("Error al eliminar CV:", err);
+        showAlert('error', `Error al eliminar CV: ${err.message}`);
       }
     }
 

@@ -379,7 +379,7 @@ app.get('/api/cvs/all', requireAuth, async (req, res) => {
     console.log(`[GET /api/cvs/all] Consultando mt_cvs para tenant_id: ${activeTenantId}`);
     const { data: cvList, error } = await supabaseAdmin
       .from('mt_cvs')
-      .select('nombre, apellido, profesion, perfil_laboral, email, web_cv_link, created_at')
+      .select('id, nombre, apellido, profesion, perfil_laboral, email, web_cv_link, created_at')
       .eq('tenant_id', activeTenantId)
       .order('created_at', { ascending: false });
 
@@ -393,6 +393,105 @@ app.get('/api/cvs/all', requireAuth, async (req, res) => {
   } catch (err) {
     console.error("[GET /api/cvs/all] Excepción:", err);
     res.status(500).json({ error: 'Error al obtener la lista de currículums.' });
+  }
+});
+
+// Helper: Extraer la ruta relativa dentro del bucket 'Curriculums' a partir de web_cv_link o storage path
+function extractStoragePath(webCvLink) {
+  if (!webCvLink || typeof webCvLink !== 'string') return null;
+  let path = webCvLink.trim();
+
+  // Si es una URL completa (ej. https://.../storage/v1/object/Curriculums/tenant_id/archivo.pdf)
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    const match = path.match(/\/Curriculums\/(.+)$/i);
+    if (match && match[1]) {
+      path = decodeURIComponent(match[1]);
+    } else {
+      const parts = path.split('/Curriculums/');
+      if (parts.length > 1) {
+        path = decodeURIComponent(parts[1]);
+      }
+    }
+  }
+
+  // Quitar prefijo 'Curriculums/' si viene en la clave relativa
+  if (path.toLowerCase().startsWith('curriculums/')) {
+    path = path.slice('curriculums/'.length);
+  }
+
+  // Quitar parámetros de query (?token=...) si los tuviera
+  if (path.includes('?')) {
+    path = path.split('?')[0];
+  }
+
+  return path.trim() || null;
+}
+
+// Eliminación de CVs (Base de Datos mt_cvs y Supabase Storage) para Manager y Administrador
+app.delete('/api/cvs/:id', requireAuth, requireManagerOrAdmin, async (req, res) => {
+  try {
+    const cvId = req.params.id;
+    if (!cvId) {
+      return res.status(400).json({ error: 'ID de currículum no proporcionado.' });
+    }
+
+    const activeTenantId = resolveActiveTenantId(req);
+    if (!activeTenantId) {
+      return res.status(400).json({ error: 'El usuario no tiene una organización asignada.' });
+    }
+
+    // 1. Obtener y verificar que el CV exista y pertenezca a la empresa activa
+    const { data: cv, error: fetchError } = await supabaseAdmin
+      .from('mt_cvs')
+      .select('id, web_cv_link, nombre, apellido, tenant_id')
+      .eq('id', cvId)
+      .eq('tenant_id', activeTenantId)
+      .single();
+
+    if (fetchError || !cv) {
+      console.warn(`[DELETE /api/cvs/:id] CV no encontrado o ajeno al tenant: id=${cvId}, tenant=${activeTenantId}`);
+      return res.status(404).json({ error: 'Currículum no encontrado o no pertenece a su organización.' });
+    }
+
+    // 2. Intentar eliminar el archivo de Supabase Storage
+    const storagePath = extractStoragePath(cv.web_cv_link);
+    if (storagePath) {
+      try {
+        console.log(`[DELETE /api/cvs/:id] Eliminando de Storage: bucket='Curriculums', path='${storagePath}'`);
+        const { error: storageError } = await supabaseAdmin.storage
+          .from('Curriculums')
+          .remove([storagePath]);
+
+        if (storageError) {
+          console.warn(`[DELETE /api/cvs/:id] Advertencia en Supabase Storage (${storagePath}):`, storageError.message);
+        } else {
+          console.log(`[DELETE /api/cvs/:id] Archivo eliminado con éxito de Storage: ${storagePath}`);
+        }
+      } catch (storageEx) {
+        console.warn(`[DELETE /api/cvs/:id] Excepción al invocar Supabase Storage:`, storageEx);
+      }
+    } else {
+      console.log(`[DELETE /api/cvs/:id] El CV no contenía una ruta válida de Storage en web_cv_link.`);
+    }
+
+    // 3. Eliminar el registro en la tabla mt_cvs
+    const { error: deleteError } = await supabaseAdmin
+      .from('mt_cvs')
+      .delete()
+      .eq('id', cv.id)
+      .eq('tenant_id', activeTenantId);
+
+    if (deleteError) {
+      console.error(`[DELETE /api/cvs/:id] Error al eliminar en mt_cvs:`, deleteError);
+      return res.status(400).json({ error: 'Error al eliminar el registro: ' + deleteError.message });
+    }
+
+    const fullName = `${cv.nombre || ''} ${cv.apellido || ''}`.trim() || 'Candidato';
+    console.log(`[DELETE /api/cvs/:id] Éxito: CV ${cv.id} (${fullName}) eliminado por ${req.user.email}`);
+    res.json({ message: `Currículum de ${fullName} y archivo asociado eliminados correctamente.` });
+  } catch (err) {
+    console.error(`[DELETE /api/cvs/:id] Excepción en endpoint:`, err);
+    res.status(500).json({ error: 'Error interno al procesar la eliminación del currículum.' });
   }
 });
 
