@@ -2878,7 +2878,8 @@
           }
         } else {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || errData.message || `HTTP ${res.status}`);
+          const errorMsg = errData.Response || errData.response || errData.error || errData.message || `HTTP ${res.status}`;
+          throw new Error(errorMsg);
         }
       } catch (err) {
         clearInterval(progInt);
