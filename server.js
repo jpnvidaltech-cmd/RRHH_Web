@@ -302,6 +302,7 @@ app.get('/api/cvs', requireAuth, async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
+    console.log(`[GET /api/cvs] Éxito: devolviendo ${cvList?.length || 0} recientes para tenant_id: ${activeTenantId}`);
     res.json(cvList || []);
   } catch (err) {
     console.error("[GET /api/cvs] Excepción:", err);
@@ -326,6 +327,7 @@ app.get('/api/cvs/count', requireAuth, async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
+    console.log(`[GET /api/cvs/count] Éxito: devolviendo conteo ${count || 0} para tenant_id: ${activeTenantId}`);
     res.json({ count: count || 0 });
   } catch (err) {
     console.error("[GET /api/cvs/count] Excepción:", err);
@@ -352,6 +354,7 @@ app.get('/api/cvs/all', requireAuth, async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
+    console.log(`[GET /api/cvs/all] Éxito: devolviendo ${cvList?.length || 0} filas para tenant_id: ${activeTenantId}`);
     res.json(cvList || []);
   } catch (err) {
     console.error("[GET /api/cvs/all] Excepción:", err);

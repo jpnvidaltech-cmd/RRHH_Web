@@ -2584,8 +2584,7 @@
         if (btnChangePassword) btnChangePassword.style.display = 'flex';
         currentUserProfile = { role };
         applyUserRole(role);
-        loadRecentCVs();
-        updateCVCount();
+        refreshAllTenantData();
 
         // Actualizar información del usuario en cabecera
         userProfileInfo.style.display = 'flex';
@@ -3784,6 +3783,33 @@
       }
     }
 
+    // ─── REFRESH ALL TENANT DATA ─────────────────────────────────────────────
+    async function refreshAllTenantData() {
+      console.log(`[refreshAllTenantData] Refrescando datos para: ${currentTenant?.name} (${currentTenant?.id})`);
+      allCVs = [];
+
+      // 1. Actualizar el contador de CVs (KPI)
+      await updateCVCount();
+
+      // 2. Actualizar lista lateral de CVs recientes
+      await loadRecentCVs();
+
+      // 3. Si la vista activa es la tabla de candidatos, recargarla de inmediato
+      if (activeView === 'list') {
+        await loadCVList();
+      } else {
+        showState('empty');
+      }
+
+      // 4. Ocultar la tarjeta de último CV cargado
+      const cvResultSection = document.getElementById('cvResultSection');
+      if (cvResultSection) cvResultSection.style.display = 'none';
+
+      // 5. Limpiar buscador
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) searchInput.value = '';
+    }
+
     // ─── SWITCH TENANT MODAL LÓGICA (MULTITENANT) ───────────────────────────
     function openSwitchTenantModal() {
       const token = sessionStorage.getItem('rrhh_auth_token');
@@ -3853,15 +3879,11 @@
         currentTenant = data.tenant;
         const tenantNameSpan = document.getElementById('tenantNameSpan');
         if (tenantNameSpan) tenantNameSpan.textContent = currentTenant.name || 'Organización';
-        showAlert('success', `Cambiado a: ${currentTenant.name}`);
         closeSwitchTenantModal();
+        showAlert('success', `Cambiado a: ${currentTenant.name}`);
 
-        // Refrescar datos aislados de la nueva organización
-        loadRecentCVs();
-        updateCVCount();
-        const cvResultSection = document.getElementById('cvResultSection');
-        if (cvResultSection) cvResultSection.style.display = 'none';
-        showState('empty');
+        // Refrescar ABSOLUTAMENTE toda la información en pantalla (KPI, recientes, tabla)
+        await refreshAllTenantData();
       } catch (err) {
         showAlert('error', `Error al cambiar empresa: ${err.message}`);
       } finally {
