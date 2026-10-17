@@ -43,12 +43,65 @@ const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
 console.log("[Supabase Config] URL:", SUPABASE_URL);
 console.log("[Supabase Config] Service Role Key configurada:", SUPABASE_SERVICE_ROLE_KEY ? `SÍ (largo: ${SUPABASE_SERVICE_ROLE_KEY.length})` : "NO");
 
-// Middleware para verificar autenticación mediante el token de Supabase
+// Función auxiliar: asegurar que un usuario tenga perfil en mt_profiles
+async function ensureMtProfile(user) {
+  try {
+    const { data: profile, error } = await supabaseAdmin
+      .from('mt_profiles')
+      .select('tenant_id, role, mt_tenants(id, name, slug)')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      return profile;
+    }
+
+    // Si aún no existe en mt_profiles (por ejemplo usuarios existentes de main):
+    // Buscar la primera organización disponible para asociarlo automáticamente
+    const { data: defaultTenants } = await supabaseAdmin
+      .from('mt_tenants')
+      .select('id, name, slug')
+      .order('created_at', { ascending: true })
+      .limit(1);
+
+    if (defaultTenants && defaultTenants.length > 0) {
+      const defaultTenant = defaultTenants[0];
+
+      // Verificamos si en la tabla legacy 'profiles' tenía rol admin
+      const { data: legacyProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      const userRole = legacyProfile?.role === 'admin' ? 'admin' : 'usuario';
+
+      const { data: newProfile, error: insertErr } = await supabaseAdmin
+        .from('mt_profiles')
+        .insert({
+          id: user.id,
+          tenant_id: defaultTenant.id,
+          email: user.email,
+          role: userRole
+        })
+        .select('tenant_id, role, mt_tenants(id, name, slug)')
+        .single();
+
+      if (!insertErr && newProfile) {
+        console.log(`[Auto-Onboard MT] Usuario ${user.email} asociado a ${defaultTenant.name} como ${userRole}`);
+        return newProfile;
+      }
+    }
+  } catch (err) {
+    console.error("[ensureMtProfile] Error asegurando perfil:", err);
+  }
+  return null;
+}
+
+// Middleware para verificar autenticación y cargar contexto de Tenant
 async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
-  console.log(`[requireAuth] Ruta: ${req.path}, Método: ${req.method}, Authorization:`, authHeader ? 'Presente' : 'Ausente');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn(`[requireAuth] Falta token o no empieza con Bearer en ${req.path}`);
     return res.status(401).json({ error: 'Acceso no autorizado. Falta token.' });
   }
 
@@ -58,30 +111,41 @@ async function requireAuth(req, res, next) {
     if (error || !user) {
       return res.status(401).json({ error: 'Sesión inválida o expirada.' });
     }
+
     req.user = user;
+
+    // Cargar perfil multitenant
+    const profile = await ensureMtProfile(user);
+    if (profile) {
+      req.user.tenant_id = profile.tenant_id;
+      req.user.role = profile.role || 'usuario';
+      req.user.tenant = profile.mt_tenants;
+    } else {
+      req.user.tenant_id = null;
+      req.user.role = 'usuario';
+      req.user.tenant = null;
+    }
+
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Error al verificar sesión.' });
   }
 }
 
-// Middleware para verificar rol de Administrador
+// Middleware para verificar rol de Administrador o Superadmin
 async function requireAdmin(req, res, next) {
-  try {
-    const { data: profile, error } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', req.user.id)
-      .single();
-
-    if (error || !profile || profile.role !== 'admin') {
-      return res.status(403).json({ error: 'Acceso restringido. Se requiere rol de administrador.' });
-    }
-    req.userRole = profile.role;
-    next();
-  } catch (err) {
-    return res.status(500).json({ error: 'Error al verificar rol de usuario.' });
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+    return next();
   }
+  return res.status(403).json({ error: 'Acceso restringido. Se requiere rol de administrador o superadmin.' });
+}
+
+// Middleware para verificar rol de Superadmin
+async function requireSuperAdmin(req, res, next) {
+  if (req.user && req.user.role === 'superadmin') {
+    return next();
+  }
+  return res.status(403).json({ error: 'Acceso restringido. Se requiere rol de superadmin.' });
 }
 
 // ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE WEBHOOKS ─────────────────────────────
@@ -93,7 +157,7 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-// ─── ENDPOINTS: AUTENTICACIÓN ────────────────────────────────────────────────
+// ─── ENDPOINTS: AUTENTICACIÓN MULTITENANT ──────────────────────────────────────
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -110,46 +174,125 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    // Obtener rol del perfil
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single();
+    // Obtener o inicializar perfil multitenant
+    const profile = await ensureMtProfile(data.user);
 
-    const role = (profileError || !profile) ? 'usuario' : profile.role;
+    const role = profile?.role || 'usuario';
+    const tenantId = profile?.tenant_id || null;
+    const tenant = profile?.mt_tenants || null;
 
     res.json({
       session: data.session,
       user: data.user,
-      role
+      role,
+      tenantId,
+      tenant
     });
   } catch (err) {
+    console.error("Error en login:", err);
     res.status(500).json({ error: 'Error en el inicio de sesión.' });
   }
 });
 
 app.get('/api/auth/profile', requireAuth, async (req, res) => {
   try {
-    const { data: profile, error } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', req.user.id)
-      .single();
-
-    const role = (error || !profile) ? 'usuario' : profile.role;
-    res.json({ user: req.user, role });
+    res.json({
+      user: req.user,
+      role: req.user.role,
+      tenantId: req.user.tenant_id,
+      tenant: req.user.tenant
+    });
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener perfil.' });
   }
 });
 
-// ─── ENDPOINTS: GESTIÓN DE CVS ────────────────────────────────────────────────
+// Endpoint para conmutar de organización (utilizado en pruebas o por superadmin)
+app.post('/api/auth/switch-tenant', requireAuth, async (req, res) => {
+  const { tenant_id } = req.body;
+  if (!tenant_id) {
+    return res.status(400).json({ error: 'tenant_id es requerido.' });
+  }
+
+  try {
+    const { data: tenant, error } = await supabaseAdmin
+      .from('mt_tenants')
+      .select('id, name, slug')
+      .eq('id', tenant_id)
+      .single();
+
+    if (error || !tenant) {
+      return res.status(404).json({ error: 'Organización no encontrada.' });
+    }
+
+    // Actualizar el tenant activo del usuario en mt_profiles
+    const { error: updErr } = await supabaseAdmin
+      .from('mt_profiles')
+      .update({ tenant_id })
+      .eq('id', req.user.id);
+
+    if (updErr) {
+      return res.status(400).json({ error: updErr.message });
+    }
+
+    res.json({ message: 'Organización cambiada exitosamente.', tenant });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al cambiar organización.' });
+  }
+});
+
+// ─── ENDPOINTS: GESTIÓN DE ORGANIZACIONES (TENANTS) ───────────────────────────
+app.get('/api/tenants', requireAuth, async (req, res) => {
+  try {
+    // Si es superadmin o modo prueba devuelve todas las empresas disponibles
+    const { data: tenantsList, error } = await supabaseAdmin
+      .from('mt_tenants')
+      .select('id, name, slug, status, created_at')
+      .order('name', { ascending: true });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(tenantsList || []);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al listar organizaciones.' });
+  }
+});
+
+app.post('/api/tenants', requireAuth, requireSuperAdmin, async (req, res) => {
+  const { name, slug } = req.body;
+  if (!name || !slug) {
+    return res.status(400).json({ error: 'Nombre y slug son obligatorios.' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('mt_tenants')
+      .insert([{ name, slug: slug.toLowerCase().trim() }])
+      .select();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(201).json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al crear la organización.' });
+  }
+});
+
+// ─── ENDPOINTS: GESTIÓN DE CVS PARALELA (mt_cvs) ──────────────────────────────
 app.get('/api/cvs', requireAuth, async (req, res) => {
   try {
+    if (!req.user.tenant_id) {
+      return res.json([]);
+    }
+
     const { data: cvList, error } = await supabaseAdmin
-      .from('cvs')
+      .from('mt_cvs')
       .select('nombre, apellido, created_at, web_cv_link')
+      .eq('tenant_id', req.user.tenant_id)
       .order('created_at', { ascending: false })
       .limit(4);
 
@@ -165,9 +308,14 @@ app.get('/api/cvs', requireAuth, async (req, res) => {
 
 app.get('/api/cvs/count', requireAuth, async (req, res) => {
   try {
+    if (!req.user.tenant_id) {
+      return res.json({ count: 0 });
+    }
+
     const { count, error } = await supabaseAdmin
-      .from('cvs')
-      .select('*', { count: 'exact', head: true });
+      .from('mt_cvs')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', req.user.tenant_id);
 
     if (error) {
       return res.status(400).json({ error: error.message });
@@ -181,9 +329,14 @@ app.get('/api/cvs/count', requireAuth, async (req, res) => {
 
 app.get('/api/cvs/all', requireAuth, async (req, res) => {
   try {
+    if (!req.user.tenant_id) {
+      return res.json([]);
+    }
+
     const { data: cvList, error } = await supabaseAdmin
-      .from('cvs')
+      .from('mt_cvs')
       .select('nombre, apellido, profesion, perfil_laboral, email, web_cv_link, created_at')
+      .eq('tenant_id', req.user.tenant_id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -202,9 +355,16 @@ app.post('/api/cvs', requireAuth, requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Datos de CV e identificador de hash inválidos.' });
   }
 
+  if (!req.user.tenant_id) {
+    return res.status(400).json({ error: 'El usuario no tiene una organización asignada.' });
+  }
+
+  // Asignar el tenant_id del usuario conectado
+  cvData.tenant_id = req.user.tenant_id;
+
   try {
     const { data, error } = await supabaseAdmin
-      .from('cvs')
+      .from('mt_cvs')
       .insert([cvData])
       .select();
 
@@ -218,15 +378,53 @@ app.post('/api/cvs', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// ─── ENDPOINTS: GESTIÓN DE USUARIOS (ADMIN-ONLY) ──────────────────────────────
+// ─── ENDPOINTS: GESTIÓN DE USUARIOS MULTITENANT ───────────────────────────────
+app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    if (!req.user.tenant_id) {
+      return res.json([]);
+    }
+
+    let query = supabaseAdmin
+      .from('mt_profiles')
+      .select('email, role, updated_at, tenant_id, mt_tenants(name)')
+      .order('email', { ascending: true });
+
+    // Si no es superadmin, solo consulta usuarios de su misma organización
+    if (req.user.role !== 'superadmin') {
+      query = query.eq('tenant_id', req.user.tenant_id);
+    }
+
+    const { data: profilesList, error } = await query;
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json(profilesList || []);
+  } catch (err) {
+    console.error("Excepción en listado de usuarios:", err);
+    res.status(500).json({ error: 'Error interno al obtener usuarios del sistema.' });
+  }
+});
+
 app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password, role, tenant_id } = req.body;
   if (!email || !password || !role) {
     return res.status(400).json({ error: 'Faltan campos obligatorios: email, password, role.' });
   }
 
-  if (role !== 'admin' && role !== 'usuario') {
-    return res.status(400).json({ error: 'Rol inválido. Debe ser admin o usuario.' });
+  if (role !== 'admin' && role !== 'usuario' && role !== 'superadmin') {
+    return res.status(400).json({ error: 'Rol inválido. Debe ser admin, usuario o superadmin.' });
+  }
+
+  // Determinar la organización destino
+  const targetTenantId = (req.user.role === 'superadmin' && tenant_id)
+    ? tenant_id
+    : req.user.tenant_id;
+
+  if (!targetTenantId) {
+    return res.status(400).json({ error: 'Debe especificarse una organización para el usuario.' });
   }
 
   try {
@@ -243,16 +441,21 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: errMsg });
     }
 
-    // 2. Modificar el rol en la tabla de perfiles
+    // 2. Insertar o actualizar en mt_profiles
     const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .update({ role })
-      .eq('id', userData.user.id);
+      .from('mt_profiles')
+      .upsert({
+        id: userData.user.id,
+        tenant_id: targetTenantId,
+        email: userData.user.email,
+        role: role,
+        updated_at: new Date().toISOString()
+      });
 
     if (profileError) {
-      console.error("[POST /api/users] Error completo al actualizar rol:", profileError);
+      console.error("[POST /api/users] Error completo al guardar perfil mt:", profileError);
       const profileErrMsg = profileError.message || (typeof profileError === 'object' ? JSON.stringify(profileError) : String(profileError)) || 'Error desconocido de perfil';
-      return res.status(400).json({ error: `Usuario creado, pero no se pudo asignar el rol: ${profileErrMsg}` });
+      return res.status(400).json({ error: `Usuario creado, pero error en perfil: ${profileErrMsg}` });
     }
 
     res.status(201).json({
@@ -260,30 +463,13 @@ app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
       user: {
         id: userData.user.id,
         email: userData.user.email,
-        role: role
+        role: role,
+        tenant_id: targetTenantId
       }
     });
   } catch (err) {
     console.error("Excepción en creación de usuario:", err);
     res.status(500).json({ error: 'Error interno del servidor al crear usuario.' });
-  }
-});
-
-app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const { data: profilesList, error } = await supabaseAdmin
-      .from('profiles')
-      .select('email, role, updated_at')
-      .order('email', { ascending: true });
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json(profilesList || []);
-  } catch (err) {
-    console.error("Excepción en listado de usuarios:", err);
-    res.status(500).json({ error: 'Error interno al obtener usuarios del sistema.' });
   }
 });
 
@@ -299,7 +485,6 @@ app.put('/api/auth/change-password', requireAuth, async (req, res) => {
   }
 
   try {
-    // Actualizar la contraseña del usuario logueado en Supabase Auth
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
       req.user.id,
       { password: newPassword }
@@ -326,5 +511,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor Express ejecutándose en el puerto ${PORT}`);
+  console.log(`Servidor Express ejecutándose en el puerto ${PORT} [Modo Multitenant Activo]`);
 });

@@ -441,6 +441,56 @@
       border: 1px solid rgba(245, 158, 11, .3);
     }
 
+    /* ─── TENANT CAPSULE (MULTITENANT) ────────────────────────────────── */
+    .tenant-badge-wrapper {
+      display: flex;
+      align-items: center;
+    }
+
+    .tenant-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(37, 99, 235, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+
+    .tenant-capsule:hover {
+      background: rgba(37, 99, 235, 0.25);
+      border-color: rgba(96, 165, 250, 0.6);
+      transform: translateY(-1px);
+    }
+
+    .tenant-icon {
+      font-size: 13px;
+    }
+
+    .tenant-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #93c5fd;
+      white-space: nowrap;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tenant-switch-arrow {
+      font-size: 10px;
+      color: rgba(147, 197, 253, 0.7);
+      transition: transform 0.2s ease;
+    }
+
+    .tenant-capsule:hover .tenant-switch-arrow {
+      color: #fff;
+      transform: translateY(1px);
+    }
+
     /* ─── SIDEBAR ─────────────────────────────────────────────────────── */
     .sidebar {
       background: var(--navy-mid);
@@ -2244,6 +2294,13 @@
         </div>
       </div>
       <div class="topbar-user-area">
+        <div class="tenant-badge-wrapper" id="tenantBadgeWrapper" style="display: none;">
+          <div class="tenant-capsule" id="tenantCapsule" onclick="openSwitchTenantModal()" title="Hacé clic para cambiar o ver tu Organización">
+            <span class="tenant-icon">🏢</span>
+            <span class="tenant-name" id="tenantNameSpan">—</span>
+            <span class="tenant-switch-arrow">▾</span>
+          </div>
+        </div>
         <div class="user-profile-info" id="userProfileInfo" style="display: none;">
           <span class="user-email" id="userEmailSpan">—</span>
           <span class="user-role-badge" id="userRoleBadge">—</span>
@@ -2473,13 +2530,15 @@
     let currentUser = null;
     let currentUserProfile = null;
 
+    let currentTenant = null;
+
     async function checkUserSession() {
       // Cargar la configuración de los webhooks primero
       await loadConfig();
 
       const token = sessionStorage.getItem('rrhh_auth_token');
       if (!token) {
-        handleAuthState(null, 'usuario');
+        handleAuthState(null, 'usuario', null);
         return;
       }
 
@@ -2490,14 +2549,14 @@
 
         if (res.ok) {
           const data = await res.json();
-          handleAuthState(data.user, data.role);
+          handleAuthState(data.user, data.role, data.tenant);
         } else {
           sessionStorage.removeItem('rrhh_auth_token');
-          handleAuthState(null, 'usuario');
+          handleAuthState(null, 'usuario', null);
         }
       } catch (err) {
         console.error("Error al obtener la sesión del usuario:", err);
-        handleAuthState(null, 'usuario');
+        handleAuthState(null, 'usuario', null);
       }
     }
 
@@ -2509,12 +2568,15 @@
       loginError.style.display = 'block';
     }
 
-    function handleAuthState(user, role) {
+    function handleAuthState(user, role, tenant) {
       currentUser = user;
+      currentTenant = tenant;
       const loginOverlay = document.getElementById('loginOverlay');
       const btnSignOut = document.getElementById('btnSignOut');
       const btnChangePassword = document.getElementById('btnChangePassword');
       const userProfileInfo = document.getElementById('userProfileInfo');
+      const tenantBadgeWrapper = document.getElementById('tenantBadgeWrapper');
+      const tenantNameSpan = document.getElementById('tenantNameSpan');
 
       if (user) {
         loginOverlay.style.display = 'none';
@@ -2529,20 +2591,34 @@
         userProfileInfo.style.display = 'flex';
         document.getElementById('userEmailSpan').textContent = user.email || '';
         const roleBadge = document.getElementById('userRoleBadge');
-        roleBadge.textContent = role === 'admin' ? 'Admin' : 'Usuario';
-        if (role === 'admin') {
+        if (role === 'superadmin') {
+          roleBadge.textContent = 'SuperAdmin';
+          roleBadge.className = 'user-role-badge role-admin';
+        } else if (role === 'admin') {
+          roleBadge.textContent = 'Admin';
           roleBadge.className = 'user-role-badge role-admin';
         } else {
+          roleBadge.textContent = 'Usuario';
           roleBadge.className = 'user-role-badge';
+        }
+
+        // Actualizar badge de organización
+        if (tenantBadgeWrapper) {
+          tenantBadgeWrapper.style.display = 'flex';
+          if (tenantNameSpan) {
+            tenantNameSpan.textContent = tenant?.name || 'Organización';
+          }
         }
       } else {
         loginOverlay.style.display = 'flex';
         btnSignOut.style.display = 'none';
         if (btnChangePassword) btnChangePassword.style.display = 'none';
         if (userProfileInfo) userProfileInfo.style.display = 'none';
+        if (tenantBadgeWrapper) tenantBadgeWrapper.style.display = 'none';
         const topbarAdminUsers = document.getElementById('topbarAdminUsers');
         if (topbarAdminUsers) topbarAdminUsers.style.display = 'none';
         currentUserProfile = null;
+        currentTenant = null;
         sessionStorage.removeItem('rrhh_auth_token');
       }
     }
@@ -2552,7 +2628,7 @@
       const restrictedUploadMessage = document.getElementById('restrictedUploadMessage');
       const topbarAdminUsers = document.getElementById('topbarAdminUsers');
 
-      if (role === 'admin') {
+      if (role === 'admin' || role === 'superadmin') {
         uploadZone.style.display = 'block';
         restrictedUploadMessage.style.display = 'none';
         if (topbarAdminUsers) topbarAdminUsers.style.display = 'flex';
@@ -2592,7 +2668,7 @@
 
         // Guardar el token de la sesión
         sessionStorage.setItem('rrhh_auth_token', data.session.access_token);
-        handleAuthState(data.user, data.role);
+        handleAuthState(data.user, data.role, data.tenant);
       } catch (err) {
         loginError.textContent = `Error: ${err.message}`;
         loginError.style.display = 'block';
@@ -2604,7 +2680,7 @@
 
     document.getElementById('btnSignOut').addEventListener('click', () => {
       sessionStorage.removeItem('rrhh_auth_token');
-      handleAuthState(null, 'usuario');
+      handleAuthState(null, 'usuario', null);
     });
 
     async function loadRecentCVs() {
@@ -2755,6 +2831,10 @@
       formData.append('submittedAt', isoWithOffset());
       formData.append('formMode', 'test');
       formData.append('session_id', SESSION_ID);
+      if (currentTenant && currentTenant.id) {
+        formData.append('tenant_id', currentTenant.id);
+        formData.append('tenant_slug', currentTenant.slug || '');
+      }
 
       try {
         const res = await fetch(CONFIG.webhookCargaCv, {
@@ -2973,7 +3053,9 @@
         "Texto describiendo perfil": query,
         "submittedAt": isoWithOffset(),
         "formMode": "test",
-        "session_id": SESSION_ID
+        "session_id": SESSION_ID,
+        "tenant_id": currentTenant?.id || null,
+        "tenant_slug": currentTenant?.slug || null
       }];
 
       try {
@@ -3465,7 +3547,8 @@
         const payload = {
           path: cvLinkOrPath,
           session_id: SESSION_ID,
-          email: currentUser?.email || 'anonimo@sistema.com'
+          email: currentUser?.email || 'anonimo@sistema.com',
+          tenant_id: currentTenant?.id || null
         };
 
         const res = await fetch(CONFIG.webhookObtenerCv, {
@@ -3690,6 +3773,92 @@
       }
     }
 
+    // ─── SWITCH TENANT MODAL LÓGICA (MULTITENANT) ───────────────────────────
+    function openSwitchTenantModal() {
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token) return;
+
+      const select = document.getElementById('selectTenant');
+      select.innerHTML = '<option value="">Cargando organizaciones…</option>';
+      document.getElementById('switchTenantModal').style.display = 'flex';
+
+      fetch('/api/tenants', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(tenants => {
+          select.innerHTML = '';
+          if (!Array.isArray(tenants) || tenants.length === 0) {
+            select.innerHTML = '<option value="">No hay organizaciones disponibles</option>';
+            return;
+          }
+          tenants.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name + (t.status !== 'active' ? ` (${t.status})` : '');
+            if (currentTenant && currentTenant.id === t.id) {
+              opt.selected = true;
+            }
+            select.appendChild(opt);
+          });
+        })
+        .catch(err => {
+          console.error("Error al cargar organizaciones:", err);
+          select.innerHTML = '<option value="">Error al cargar empresas</option>';
+        });
+    }
+
+    function closeSwitchTenantModal() {
+      document.getElementById('switchTenantModal').style.display = 'none';
+    }
+
+    async function applySwitchTenant() {
+      const select = document.getElementById('selectTenant');
+      const tenantId = select.value;
+      if (!tenantId) return;
+
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token) return;
+
+      const btn = document.getElementById('btnApplySwitchTenant');
+      btn.disabled = true;
+      btn.textContent = 'Cambiando…';
+
+      try {
+        const res = await fetch('/api/auth/switch-tenant', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ tenant_id: tenantId })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'No se pudo cambiar de organización.');
+        }
+
+        currentTenant = data.tenant;
+        const tenantNameSpan = document.getElementById('tenantNameSpan');
+        if (tenantNameSpan) tenantNameSpan.textContent = currentTenant.name || 'Organización';
+        showAlert('success', `Cambiado a: ${currentTenant.name}`);
+        closeSwitchTenantModal();
+
+        // Refrescar datos aislados de la nueva organización
+        loadRecentCVs();
+        updateCVCount();
+        const cvResultSection = document.getElementById('cvResultSection');
+        if (cvResultSection) cvResultSection.style.display = 'none';
+        showState('empty');
+      } catch (err) {
+        showAlert('error', `Error al cambiar empresa: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Cambiar Empresa';
+      }
+    }
+
     // ─── ALERTS ──────────────────────────────────────────────────────────────
     function showAlert(type, message) {
       const container = document.getElementById('alertContainer');
@@ -3704,6 +3873,31 @@
       }, 4000);
     }
   </script>
+
+  <!-- Modal: Cambiar de Organización (Multitenant) -->
+  <div class="modal" id="switchTenantModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🏢 Organización Activa</h3>
+        <button class="btn-close-modal" onclick="closeSwitchTenantModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">
+          Estás visualizando la plataforma para la organización seleccionada. Los candidatos, búsquedas y estadísticas están estrictamente aislados.
+        </p>
+        <div class="form-group">
+          <label for="selectTenant">Seleccionar Organización:</label>
+          <select id="selectTenant" class="form-select">
+            <!-- Dinámico -->
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeSwitchTenantModal()">Cerrar</button>
+        <button type="button" class="btn-primary" id="btnApplySwitchTenant" onclick="applySwitchTenant()">Cambiar Empresa</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal: Agregar Usuario -->
   <div class="modal" id="addUserModal" style="display: none;">
