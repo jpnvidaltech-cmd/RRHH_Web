@@ -2184,6 +2184,107 @@
     }
 
     /* CV Table and List View styling */
+    .cv-filter-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .cv-filter-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .filter-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filter-icon {
+      position: absolute;
+      left: 12px;
+      font-size: 14px;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .filter-control {
+      width: 100%;
+      height: 38px;
+      background: var(--bg-input, rgba(15, 23, 42, 0.6));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0 12px 0 36px;
+      color: var(--text-main, #f8fafc);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: var(--trans, all 0.2s ease);
+    }
+
+    .filter-control:focus {
+      border-color: var(--blue, #2563eb);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    .select-control {
+      cursor: pointer;
+      appearance: auto;
+    }
+
+    .cv-filter-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .filter-badge {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted, #94a3b8);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .btn-clear-filter {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted, #94a3b8);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--trans, all 0.2s ease);
+      white-space: nowrap;
+    }
+
+    .btn-clear-filter:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
     .list-container {
       padding: 1.5rem 2rem;
       overflow-y: auto;
@@ -2562,6 +2663,34 @@
 
       <!-- Contenedor del Listado Completo de CVs -->
       <div id="listContainer" class="list-container" style="display: none;">
+        <!-- Barra de Filtros interactiva -->
+        <div id="cvFilterBar" class="cv-filter-bar">
+          <div class="cv-filter-inputs">
+            <div class="filter-input-wrapper">
+              <span class="filter-icon">🔍</span>
+              <input type="text" id="filterSearchText" class="filter-control" 
+                     placeholder="Buscar por nombre, email o palabra clave..." 
+                     oninput="applyCVFilters()" autocomplete="off">
+            </div>
+            
+            <div class="filter-input-wrapper">
+              <span class="filter-icon">💼</span>
+              <select id="filterProfessionSelect" class="filter-control select-control" 
+                      onchange="applyCVFilters()">
+                <option value="">Todas las profesiones</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cv-filter-meta">
+            <span class="filter-badge" id="filterResultBadge">Cargando candidatos…</span>
+            <button type="button" class="btn-clear-filter" id="btnClearFilters" 
+                    onclick="clearCVFilters()" title="Limpiar todos los filtros">
+              ✕ Limpiar
+            </button>
+          </div>
+        </div>
+
         <div class="list-card">
           <div class="table-responsive">
             <table class="cv-table">
@@ -3589,6 +3718,7 @@
 
     // ─── PAGINATION & SORTING STATE ───────────────────────────────────────────
     let allCVs = [];
+    let filteredCVs = [];
     let currentPage = 1;
     const itemsPerPage = 10;
     let currentSortColumn = 'created_at';
@@ -3659,6 +3789,92 @@
       }
     }
 
+    // ─── POPULATE PROFESSION FILTER ──────────────────────────────────────────
+    function populateProfessionFilter() {
+      const select = document.getElementById('filterProfessionSelect');
+      if (!select) return;
+      const currentSelection = select.value;
+
+      const professionsSet = new Set();
+      allCVs.forEach(cv => {
+        if (cv.profesion && typeof cv.profesion === 'string') {
+          const p = cv.profesion.trim();
+          if (p && p !== '—' && p !== '-') {
+            professionsSet.add(p);
+          }
+        }
+      });
+
+      const sortedProfessions = Array.from(professionsSet).sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base' })
+      );
+
+      select.innerHTML = '<option value="">Todas las profesiones</option>';
+      sortedProfessions.forEach(prof => {
+        const opt = document.createElement('option');
+        opt.value = prof;
+        opt.textContent = prof;
+        select.appendChild(opt);
+      });
+
+      if (currentSelection && sortedProfessions.includes(currentSelection)) {
+        select.value = currentSelection;
+      }
+    }
+
+    // ─── APPLY CV FILTERS ────────────────────────────────────────────────────
+    function applyCVFilters() {
+      const searchInput = document.getElementById('filterSearchText');
+      const professionSelect = document.getElementById('filterProfessionSelect');
+      const term = (searchInput?.value || '').toLowerCase().trim();
+      const selectedProf = (professionSelect?.value || '').trim();
+
+      filteredCVs = allCVs.filter(cv => {
+        // Filtro por profesión
+        if (selectedProf) {
+          const cvProf = (cv.profesion || '').trim();
+          if (cvProf.toLowerCase() !== selectedProf.toLowerCase()) {
+            return false;
+          }
+        }
+
+        // Filtro por término (nombre, apellido, email, perfil_laboral)
+        if (term) {
+          const fullName = `${cv.nombre || ''} ${cv.apellido || ''}`.toLowerCase();
+          const email = (cv.email || '').toLowerCase();
+          const perfil = (cv.perfil_laboral || '').toLowerCase();
+          const combined = `${fullName} ${email} ${perfil}`;
+          if (!combined.includes(term)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      // Actualizar badge de conteo
+      const badge = document.getElementById('filterResultBadge');
+      if (badge) {
+        if (term || selectedProf) {
+          badge.textContent = `Mostrando ${filteredCVs.length} de ${allCVs.length} candidatos`;
+        } else {
+          badge.textContent = `Total: ${allCVs.length} candidatos`;
+        }
+      }
+
+      currentPage = 1;
+      sortAndRenderTable();
+    }
+
+    // ─── CLEAR CV FILTERS ────────────────────────────────────────────────────
+    function clearCVFilters() {
+      const searchInput = document.getElementById('filterSearchText');
+      const professionSelect = document.getElementById('filterProfessionSelect');
+      if (searchInput) searchInput.value = '';
+      if (professionSelect) professionSelect.value = '';
+      applyCVFilters();
+    }
+
     // ─── LOAD CV LIST ────────────────────────────────────────────────────────
     async function loadCVList() {
       const token = sessionStorage.getItem('rrhh_auth_token');
@@ -3690,7 +3906,9 @@
         currentPage = 1;
         currentSortColumn = 'created_at';
         currentSortDirection = 'desc';
-        sortAndRenderTable();
+
+        populateProfessionFilter();
+        applyCVFilters();
       } catch (err) {
         console.error(err);
         document.getElementById('cvTableBody').innerHTML = `
@@ -3705,7 +3923,7 @@
 
     // ─── SORT & RENDER TABLE ─────────────────────────────────────────────────
     function sortAndRenderTable() {
-      allCVs.sort((a, b) => {
+      filteredCVs.sort((a, b) => {
         let valA = a[currentSortColumn] || '';
         let valB = b[currentSortColumn] || '';
 
@@ -3735,7 +3953,7 @@
         }
       });
 
-      const totalItems = allCVs.length;
+      const totalItems = filteredCVs.length;
       const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
       if (currentPage > totalPages) currentPage = totalPages;
@@ -3743,20 +3961,23 @@
 
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-      const paginatedItems = allCVs.slice(startIndex, endIndex);
+      const paginatedItems = filteredCVs.slice(startIndex, endIndex);
 
       const tbody = document.getElementById('cvTableBody');
       tbody.innerHTML = '';
 
       if (paginatedItems.length === 0) {
+        const isFiltering = (document.getElementById('filterSearchText')?.value || document.getElementById('filterProfessionSelect')?.value);
         tbody.innerHTML = `
           <tr>
             <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-dim);">
-              No hay currículums registrados en la base de datos.
+              ${isFiltering 
+                ? 'No se encontraron currículums que coincidan con los filtros aplicados. <button class="btn-clear-filter" style="margin-left: 8px; display: inline-block;" onclick="clearCVFilters()">✕ Limpiar filtros</button>' 
+                : 'No hay currículums registrados en la base de datos.'}
             </td>
           </tr>
         `;
-        document.getElementById('paginationInfo').textContent = 'Página 0 de 0';
+        document.getElementById('paginationInfo').textContent = 'Página 0 de 0 (0 registros)';
         document.getElementById('btnPrevPage').disabled = true;
         document.getElementById('btnNextPage').disabled = true;
         return;
@@ -3801,7 +4022,7 @@
         tbody.appendChild(tr);
       });
 
-      document.getElementById('paginationInfo').textContent = `Página ${currentPage} de ${totalPages} (Total: ${totalItems} registros)`;
+      document.getElementById('paginationInfo').textContent = `Página ${currentPage} de ${totalPages} (${totalItems} ${totalItems === 1 ? 'registro' : 'registros'})`;
       document.getElementById('btnPrevPage').disabled = (currentPage === 1);
       document.getElementById('btnNextPage').disabled = (currentPage === totalPages);
     }
@@ -3827,7 +4048,7 @@
     }
 
     function nextPage() {
-      const totalPages = Math.ceil(allCVs.length / itemsPerPage);
+      const totalPages = Math.ceil(filteredCVs.length / itemsPerPage);
       if (currentPage < totalPages) {
         currentPage++;
         sortAndRenderTable();
@@ -3908,9 +4129,10 @@
 
         showAlert('success', `✓ Currículum de ${candidateName} y archivo asociado eliminados.`);
 
-        // Remover de la lista local en memoria y actualizar tabla
+        // Remover de la lista local en memoria y actualizar tabla con filtros
         allCVs = allCVs.filter(item => item.id !== cvId);
-        sortAndRenderTable();
+        populateProfessionFilter();
+        applyCVFilters();
 
         // Actualizar contadores globales y lista de recientes
         await updateCVCount();
@@ -4266,6 +4488,11 @@
     async function refreshAllTenantData() {
       console.log(`[refreshAllTenantData] Refrescando datos para: ${currentTenant?.name} (${currentTenant?.id})`);
       allCVs = [];
+      filteredCVs = [];
+      const filterSearchText = document.getElementById('filterSearchText');
+      if (filterSearchText) filterSearchText.value = '';
+      const filterProfessionSelect = document.getElementById('filterProfessionSelect');
+      if (filterProfessionSelect) filterProfessionSelect.innerHTML = '<option value="">Todas las profesiones</option>';
 
       // 1. Actualizar el contador de CVs (KPI)
       await updateCVCount();
