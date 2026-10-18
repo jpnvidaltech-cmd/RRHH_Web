@@ -2188,31 +2188,44 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.25rem;
+      padding: 0.85rem 1.25rem;
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: row;
+      flex-wrap: nowrap;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
+      gap: 1.25rem;
       backdrop-filter: blur(12px);
+      width: 100%;
+      box-sizing: border-box;
+      flex-shrink: 0;
     }
 
     .cv-filter-inputs {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: row;
       align-items: center;
       gap: 12px;
       flex: 1;
-      min-width: 280px;
+      min-width: 0;
     }
 
     .filter-input-wrapper {
       position: relative;
       display: flex;
       align-items: center;
+      min-width: 0;
+    }
+
+    .filter-input-wrapper.filter-input-search {
+      flex: 2;
+      min-width: 220px;
+    }
+
+    .filter-input-wrapper.filter-input-profession {
       flex: 1;
-      min-width: 200px;
+      min-width: 180px;
+      max-width: 280px;
     }
 
     .filter-icon {
@@ -2249,6 +2262,7 @@
 
     .cv-filter-meta {
       display: flex;
+      flex-direction: row;
       align-items: center;
       gap: 12px;
       flex-shrink: 0;
@@ -2289,6 +2303,12 @@
       padding: 1.5rem 2rem;
       overflow-y: auto;
       flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      min-height: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .list-card {
@@ -2298,8 +2318,29 @@
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      height: 100%;
+      width: 100%;
+      box-sizing: border-box;
+      flex-grow: 1;
       min-height: 400px;
+    }
+
+    @media (max-width: 900px) {
+      .cv-filter-bar {
+        flex-wrap: wrap;
+      }
+      .cv-filter-inputs {
+        flex-direction: column;
+        width: 100%;
+      }
+      .filter-input-wrapper.filter-input-search,
+      .filter-input-wrapper.filter-input-profession {
+        width: 100%;
+        max-width: none;
+      }
+      .cv-filter-meta {
+        width: 100%;
+        justify-content: space-between;
+      }
     }
 
     .table-responsive {
@@ -2666,14 +2707,14 @@
         <!-- Barra de Filtros interactiva -->
         <div id="cvFilterBar" class="cv-filter-bar">
           <div class="cv-filter-inputs">
-            <div class="filter-input-wrapper">
+            <div class="filter-input-wrapper filter-input-search">
               <span class="filter-icon">🔍</span>
               <input type="text" id="filterSearchText" class="filter-control" 
                      placeholder="Buscar por nombre, email o palabra clave..." 
                      oninput="applyCVFilters()" autocomplete="off">
             </div>
             
-            <div class="filter-input-wrapper">
+            <div class="filter-input-wrapper filter-input-profession">
               <span class="filter-icon">💼</span>
               <select id="filterProfessionSelect" class="filter-control select-control" 
                       onchange="applyCVFilters()">
