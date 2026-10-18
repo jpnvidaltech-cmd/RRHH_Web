@@ -3182,8 +3182,31 @@
         let data;
         try { data = JSON.parse(rawText); }
         catch (e) { throw new Error(`JSON inválido: ${rawText.slice(0, 120)}`); }
-        const output = Array.isArray(data) ? data[0]?.output : data?.output;
+        let output = Array.isArray(data) ? data[0]?.output : data?.output;
         if (!output) throw new Error('Propiedad "output" no encontrada en la respuesta.');
+
+        // Desempaquetar si N8N devolvió un JSON anidado, pseudo-JSON o strings con saltos de línea escapados (\n)
+        if (typeof output === 'string') {
+          try {
+            const parsed = JSON.parse(output);
+            if (Array.isArray(parsed) && parsed[0]) {
+              output = parsed[0]?.output || parsed[0]?.text || parsed[0]?.message || (typeof parsed[0] === 'string' ? parsed[0] : Object.values(parsed[0])[0]);
+            } else if (typeof parsed === 'object' && parsed !== null) {
+              output = parsed.output || parsed.text || parsed.message || Object.values(parsed)[0];
+            }
+          } catch (e) {
+            // Continúa como texto si no es JSON válido
+          }
+
+          if (typeof output === 'string' && output.includes('\\n')) {
+            output = output.replace(/\\n/g, '\n').replace(/\\r/g, '').replace(/\\"/g, '"');
+          }
+
+          if (typeof output === 'string') {
+            output = output.replace(/^\s*\[?\s*\{?\s*["']?/, '').replace(/["']?\s*\}?\s*\]?\s*$/, '').trim();
+          }
+        }
+
         renderResults(output, query);
         showAlert('success', 'Análisis completado correctamente.');
       } catch (err) {
@@ -3226,7 +3249,15 @@
       extra.innerHTML = '';
 
       try {
-        const lines = text.split('\n');
+        let cleanText = text;
+        if (typeof cleanText === 'string') {
+          if (cleanText.includes('\\n')) {
+            cleanText = cleanText.replace(/\\n/g, '\n').replace(/\\r/g, '').replace(/\\"/g, '"');
+          }
+          cleanText = cleanText.replace(/^\s*\[?\s*\{?\s*["']?/, '').replace(/["']?\s*\}?\s*\]?\s*$/, '').trim();
+        }
+
+        const lines = cleanText.split('\n');
         const candidates = [];
         const comparisonLines = [];
         const ratingLines = [];
@@ -3267,7 +3298,7 @@
           const isScoreRankingLine = /:\s*\d+(?:\.\d+)?\s*\/\s*10|\(\s*\d+(?:\.\d+)?\s*\/\s*10/.test(trimmed);
 
           if (candMatch) {
-            const rawTitle = candMatch[2].replace(/\*\*/g, '').replace(/__/g, '').trim();
+            let rawTitle = candMatch[2].replace(/\*\*/g, '').replace(/__/g, '').trim();
 
             // Si ya tenemos candidatos con viñetas y esta nueva línea contiene un puntaje, es la sección de comparación
             if (candidates.length > 0 && isScoreRankingLine && candidates.some(c => c.bullets.length > 0)) {
@@ -3279,15 +3310,29 @@
 
             if (currentCandidate) candidates.push(currentCandidate);
 
+            // Separar notas en línea separadas por guiones largos (ej. "3. Nombre (...) – No es programadora...")
+            let inlineNote = '';
+            const dashMatch = rawTitle.match(/\s+[–—]\s+(.+)$|\s+--\s+(.+)$/);
+            if (dashMatch) {
+              inlineNote = (dashMatch[1] || dashMatch[2] || '').trim();
+              rawTitle = rawTitle.slice(0, dashMatch.index).trim();
+            }
+
             let embeddedScore = null;
-            let extraNote = '';
+            let extraNote = inlineNote;
             let cleanName = rawTitle;
 
             const scoreMatch = rawTitle.match(/\(?\s*(?:puntuaci[oó]n|score|calificaci[oó]n)?\s*:?\s*(\d+(?:\.\d+)?)\s*\/\s*10([^)]*)\)?/i);
             if (scoreMatch) {
               embeddedScore = parseFloat(scoreMatch[1]);
-              extraNote = (scoreMatch[2] || '').replace(/^[\s,;:-]+|[\s,;:-]+$/g, '').trim();
+              const scoreExtra = (scoreMatch[2] || '').replace(/^[\s,;:-]+|[\s,;:-]+$/g, '').trim();
+              if (scoreExtra) extraNote = extraNote ? `${extraNote} - ${scoreExtra}` : scoreExtra;
               cleanName = rawTitle.replace(/\(?\s*(?:puntuaci[oó]n|score|calificaci[oó]n)?\s*:?\s*\d+(?:\.\d+)?\s*\/\s*10[^)]*\)?/gi, '').trim();
+            }
+
+            const initialBullets = [];
+            if (inlineNote) {
+              initialBullets.push(inlineNote);
             }
 
             currentCandidate = {
@@ -3295,7 +3340,7 @@
               name: cleanName,
               embeddedScore: embeddedScore,
               extraNote: extraNote,
-              bullets: [],
+              bullets: initialBullets,
               cvLink: null
             };
             mode = 'candidates';
@@ -3370,13 +3415,18 @@
         ratingLines.forEach(parseScoreLine);
         comparisonLines.forEach(parseScoreLine);
 
-        // Búsqueda de puntaje por coincidencia de nombre
+        // Búsqueda de puntaje por coincidencia de nombre flexible
         function findScore(name) {
           if (!name) return null;
-          const first = name.toLowerCase().split(/\s+/)[0];
+          const cleanNameLower = name.toLowerCase();
+          const cleanNameBase = cleanNameLower.replace(/\s*\([^)]*\).*$/, '').trim();
+          const first = cleanNameBase.split(/\s+/)[0];
+
           for (const [key, val] of Object.entries(ratings)) {
             const k = key.toLowerCase();
-            if (k.startsWith(first) || k.includes(first) || name.toLowerCase().includes(k)) return val;
+            if (k.startsWith(first) || k.includes(first) || cleanNameLower.includes(k) || k.includes(cleanNameBase)) {
+              return val;
+            }
           }
           return null;
         }
@@ -3384,10 +3434,14 @@
         if (candidates.length > 0) {
           candidates.forEach(c => {
             const score = (c.embeddedScore !== null && c.embeddedScore !== undefined) ? c.embeddedScore : findScore(c.name);
-            const initials = c.name.split(/\s+/).map(w => w[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'CV';
+
+            // Separar nombre principal de detalles entre paréntesis: "Nombre (Rol, Ciudad, País)"
+            const dispName = c.name.replace(/\s*\([^)]*\).*$/, '').trim() || c.name;
+            const detailsInParens = (c.name.match(/\(([^)]+)\)/) || [])[1] || '';
+            const initials = dispName.split(/\s+/).map(w => w[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'CV';
 
             // Subtítulo de rol o perfil
-            const roleRaw = c.bullets[0] || c.extraNote || '';
+            const roleRaw = detailsInParens || c.bullets[0] || c.extraNote || '';
             const roleHint = roleRaw.replace(/^(Perfil|Profesión):\s*/i, '').trim();
 
             // Asegurar que el cuerpo de la tarjeta nunca quede vacío
@@ -3408,7 +3462,7 @@
               <div class="card-header">
                 <div class="candidate-avatar">${initials}</div>
                 <div class="candidate-meta">
-                  <div class="candidate-name">${escHtml(c.name)}</div>
+                  <div class="candidate-name">${escHtml(dispName)}</div>
                   <div class="candidate-role">${escHtml(roleHint.slice(0, 80))}${roleHint.length > 80 ? '…' : ''}</div>
                 </div>
                 ${score !== null ? `
