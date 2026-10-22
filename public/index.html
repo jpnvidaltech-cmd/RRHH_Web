@@ -377,7 +377,7 @@
                   <span class="material-symbols-outlined text-[16px]">restart_alt</span>
                   <span>Limpiar</span>
                 </button>
-                <button class="px-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface text-[13px] font-semibold shadow-xs hover:bg-surface-container-high transition-colors flex items-center gap-1.5 border border-surface-container" onclick="printReport()" title="Imprimir informe en PDF">
+                <button class="px-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface text-[13px] font-semibold shadow-xs hover:bg-surface-container-high transition-colors flex items-center gap-1.5 border border-surface-container hidden" id="btnExportPdfPrompt" onclick="printReport()" title="Imprimir informe en PDF">
                   <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
                   <span>Exportar Reporte PDF</span>
                 </button>
@@ -1784,6 +1784,7 @@
       document.getElementById('resultsArea').scrollTop = 0;
       document.getElementById('resultsContent').style.display = 'none';
       document.getElementById('resultsToolbar').style.display = 'none';
+      document.getElementById('btnExportPdfPrompt')?.classList.add('hidden');
       document.getElementById('emptyState').style.display = 'flex';
     }
 
@@ -1838,11 +1839,12 @@
       // Renderizar cuadros extra (Calificación Comparativa & Síntesis)
       renderComparisonBlocks(rawText, candidates);
 
-      // Mostrar barra y contenedor
+      // Mostrar barra, contenedor y habilitar botón de exportar reporte PDF
       document.getElementById('emptyState').style.display = 'none';
       document.getElementById('resultsContent').style.display = 'flex';
       const resultsToolbar = document.getElementById('resultsToolbar');
       resultsToolbar.style.display = 'flex';
+      document.getElementById('btnExportPdfPrompt')?.classList.remove('hidden');
       document.getElementById('resultsCount').textContent = `${candidates.length} candidato${candidates.length === 1 ? '' : 's'} evaluado${candidates.length === 1 ? '' : 's'} por idoneidad semántica`;
     }
 
