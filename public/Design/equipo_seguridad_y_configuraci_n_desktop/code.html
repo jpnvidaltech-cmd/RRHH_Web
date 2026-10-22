@@ -1,0 +1,442 @@
+<!DOCTYPE html><html lang="es" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-bright":"#faf9f6","on-tertiary-fixed":"#002113","on-secondary-container":"#721c09","surface-tint":"#545f73","surface-container-high":"#e9e8e5","surface-dim":"#dbdad7","secondary-container":"#fd8367","on-primary-container":"#8590a6","on-surface":"#1a1c1a","on-tertiary-fixed-variant":"#005236","surface-container-highest":"#e3e2df","tertiary-container":"#00301e","on-error":"#ffffff","on-secondary":"#ffffff","secondary":"#a13e28","error":"#ba1a1a","inverse-primary":"#bcc7de","surface-variant":"#e3e2df","on-surface-variant":"#45474c","outline":"#75777d","error-container":"#ffdad6","surface-container":"#efeeeb","tertiary-fixed":"#6ffbbe","on-error-container":"#93000a","primary":"#091426","surface":"#faf9f6","on-primary-fixed-variant":"#3c475a","primary-fixed-dim":"#bcc7de","tertiary":"#00190e","on-primary-fixed":"#111c2d","on-secondary-fixed-variant":"#822714","inverse-surface":"#2f312f","secondary-fixed":"#ffdad2","surface-container-lowest":"#ffffff","on-secondary-fixed":"#3d0600","surface-container-low":"#f4f3f0","tertiary-fixed-dim":"#4edea3","on-tertiary":"#ffffff","on-background":"#1a1c1a","on-tertiary-container":"#00a472","primary-container":"#1e293b","on-primary":"#ffffff","primary-fixed":"#d8e3fb","outline-variant":"#c5c6cd","inverse-on-surface":"#f2f1ee","background":"#faf9f6","secondary-fixed-dim":"#ffb4a3"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"gutter":"1.5rem","space-lg":"1.75rem","space-sm":"0.75rem","space-xl":"2.5rem","margin":"2rem","space-md":"1.25rem","space-xs":"0.375rem"},fontFamily:{"headline-xl":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"headline-xl-mobile":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"]},fontSize:{"headline-xl":["32px",{"lineHeight":"40px","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"body-md":["14px",{"lineHeight":"22px","fontWeight":"400"}],"headline-xl-mobile":["26px",{"lineHeight":"34px","fontWeight":"700"}],"label-sm":["11px",{"lineHeight":"14px","fontWeight":"600"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}],"label-lg":["14px",{"lineHeight":"20px","fontWeight":"600"}],"label-md":["12px",{"lineHeight":"16px","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 h-16 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md shrink-0"><div class="flex items-center gap-space-xs"><div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[20px]">hub</span></div><div class="flex flex-col"><span class="font-headline-md text-headline-md text-primary tracking-tight leading-none">Perfiles RRHH</span><span class="font-label-sm text-label-sm text-secondary tracking-wide uppercase">AI Talent Engine</span></div></div><div class="hidden 2xl:flex items-center gap-space-xs px-2.5 py-1 bg-surface-container rounded-full text-on-surface-variant font-label-sm text-label-sm"><span class="w-2 h-2 rounded-full bg-on-tertiary-container animate-pulse"></span><span class="">1,428 CVs indexados · IA v4.3 Activa</span></div><div class="hidden xl:flex items-center gap-1.5 px-space-sm py-1 bg-surface-container-low rounded-xl text-on-surface-variant font-label-sm text-label-sm border border-outline-variant/30"><span class="material-symbols-outlined text-outline text-[15px]">calendar_today</span><span class="">Sábado 17 Oct 2026</span><span class="text-outline">|</span><span class="font-mono font-medium text-on-surface">18:43</span><span class="text-outline">|</span><span class="text-outline">America/Buenos_Aires</span></div></div><div class="flex-1 max-w-xl mx-2 hidden lg:flex items-center gap-2"><div class="relative shrink-0"><button class="flex items-center gap-1.5 px-space-sm py-space-xs bg-surface-container-low hover:bg-surface-container text-on-surface rounded-xl font-label-sm text-label-sm transition-colors" title="Seleccionar Empresa activa"><span class="material-symbols-outlined text-secondary text-[16px]">corporate_fare</span><span class="font-semibold">Empresa Demo Beta</span><span class="material-symbols-outlined text-outline text-[16px]">expand_more</span></button></div></div><div class="flex items-center gap-space-sm shrink-0"><div class="hidden md:flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded-xl"><span class="font-label-sm text-label-sm text-on-surface-variant font-bold uppercase tracking-wider pl-1">Usuarios</span><button class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-container hover:bg-secondary hover:text-on-secondary text-primary transition-colors" onclick="openInviteModal()" title="Agregar Nuevo Usuario"><span class="material-symbols-outlined text-[16px]">add</span></button><button class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" title="Directorio de Reclutadores"><span class="material-symbols-outlined text-[16px]">group</span></button></div><div class="h-6 w-px bg-outline-variant/50 hidden sm:block"></div><div class="flex items-center gap-2"><div class="relative"><img class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container" data-alt="User Profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwV5kdxzjlZ9tzbBEJw0IyffLKQB-Rv-SA85U-M9BKiFpuZ2kX46c83_hfh_YGEGFtA8BNnoycM6dqo5w7Q36VqyZqTK7Q8979b6sSFqLV6AN610zqzC3YsOVYhrwMEvrSjppsazkGCTm3_XekV2LSgH9ACYKJpwuU-k8N0scD09EJg982pQNN0vLZsouaGT6_ogXvt-nQHmXqXbYK-lcKAfzeuccwqFq--d0GG8enpDcrslh9RqBc"><span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-on-tertiary-container rounded-full ring-2 ring-surface-container-lowest"></span></div><div class="hidden sm:flex flex-col text-left"><div class="flex items-center gap-1.5"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">jpnvidal@gmail.com</span><span class="px-1.5 py-0.2 bg-secondary-fixed text-on-secondary-fixed-variant rounded font-label-sm text-label-sm font-bold leading-none">ADMIN</span></div><span class="font-body-sm text-body-sm text-on-surface-variant leading-none mt-0.5">Juan Pablo Vidal</span></div><button class="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors" title="Llave de Seguridad &amp; Credenciales"><span class="material-symbols-outlined text-[18px]">key</span></button><button class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-error-container/60 hover:bg-error hover:text-on-error text-on-error-container font-label-sm text-label-sm transition-all shadow-xs" onclick="confirmLogout()" title="Cerrar Sesión Activa"><span class="material-symbols-outlined text-[16px]">logout</span><span class="hidden md:inline font-medium">Cerrar Sesión</span></button></div></div></div></header><aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 bg-surface-container-low z-40 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.02)]"><div class="px-space-sm flex flex-col gap-space-xs"><div class="px-space-sm py-space-xs mb-space-xs"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Navegación Principal</span></div><nav class="flex flex-col gap-1" data-active-classes="bg-primary text-on-primary shadow-sm"><a class="flex items-center gap-space-sm px-space-sm py-2.5 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="busqueda-semantica-y-comparativa-ia" href="#"><span class="material-symbols-outlined text-[20px]">psychology</span><span class="">Búsqueda &amp; Comparativa IA</span></a><a class="flex items-center gap-space-sm px-space-sm py-2.5 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="base-de-talento-e-ingesta-de-cvs" href="#"><span class="material-symbols-outlined text-[20px]">folder_shared</span><span class="">Base de Talento &amp; CVs</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-2.5 rounded-xl font-label-lg transition-all bg-primary text-on-primary shadow-sm" data-path="equipo-seguridad-y-configuracion" href="#"><span class="material-symbols-outlined text-[20px]">tune</span><span class="">Equipo &amp; Configuración</span></a></nav></div><div class="px-space-sm flex flex-col gap-space-xs"></div></aside><div class="pl-72"><main class="w-full min-h-screen pt-16 bg-background"><div class="flex flex-col w-full">
+<!-- Sub-header Breadcrumb & Canvas Scope Header -->
+<div class="w-full bg-surface-bright px-gutter py-space-md shadow-sm">
+<div class="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm">
+<span class="">Configuración Global</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-secondary font-bold">Seguridad &amp; Colaboración</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Centro de Control &amp; Seguridad</h1>
+
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+
+<button class="flex items-center gap-1.5 bg-primary hover:bg-primary-container text-on-primary px-space-md py-2 rounded-xl font-label-lg text-label-lg shadow-sm transition-all transform hover:-translate-y-0.5" id="btn-save-global" onclick="triggerNotification('Configuraciones guardadas y sincronizadas con éxito.')">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span class="">Guardar Cambios</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Notification Toast Container -->
+<div class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-space-sm bg-primary text-on-primary px-space-md py-space-sm rounded-xl shadow-xl" id="toast-banner">
+<span class="material-symbols-outlined text-tertiary-fixed text-[20px]">check_circle</span>
+<span class="font-label-lg text-label-lg" id="toast-text">Cambios aplicados correctamente.</span>
+</div>
+<!-- Main Canvas Grid (2 Columns Desktop Optimized) -->
+<div class="max-w-[1400px] w-full mx-auto px-gutter py-space-lg">
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- ================= COLUMNA IZQUIERDA (5 Col / 12) ================= -->
+<div class="xl:col-span-6 flex flex-col gap-space-lg">
+<!-- 1. Card de Perfil Administrador Activo -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm relative overflow-hidden group">
+<div class="absolute -right-12 -top-12 w-48 h-48 bg-secondary-fixed/30 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md pb-space-md">
+<div class="flex items-center gap-space-md">
+<div class="relative">
+<img class="w-16 h-16 rounded-xl object-cover shadow-xs" data-alt="Portrait photography of an executive talent acquisition director smiling, warm indoor studio lighting with linen architectural elements, soft navy blazer, natural skin tones, professional high resolution" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwV5kdxzjlZ9tzbBEJw0IyffLKQB-Rv-SA85U-M9BKiFpuZ2kX46c83_hfh_YGEGFtA8BNnoycM6dqo5w7Q36VqyZqTK7Q8979b6sSFqLV6AN610zqzC3YsOVYhrwMEvrSjppsazkGCTm3_XekV2LSgH9ACYKJpwuU-k8N0scD09EJg982pQNN0vLZsouaGT6_ogXvt-nQHmXqXbYK-lcKAfzeuccwqFq--d0GG8enpDcrslh9RqBc">
+<span class="absolute -bottom-1 -right-1 w-4 h-4 bg-on-tertiary-container rounded-full ring-2 ring-surface-container-lowest" title="Conectado"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-md text-headline-md text-primary">Juan Pablo Vidal</span>
+<span class="px-2 py-0.5 bg-secondary-fixed text-on-secondary-fixed-variant rounded-full font-label-sm text-label-sm">Admin Principal</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant">jpnvidal@gmail.com</span>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-outline mt-0.5">
+<span class="material-symbols-outlined text-[15px]">corporate_fare</span>
+<span class="">Empresa Demo Beta · Sede Central (Santiago)</span>
+</div>
+</div>
+</div>
+
+</div>
+<!-- Micro Metric Bento Ribbon -->
+
+</div>
+<!-- 2. Módulo Seguridad y Renovación de Contraseña -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-xs">
+<div class="w-9 h-9 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+<span class="material-symbols-outlined text-[20px]">lock_reset</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-primary leading-tight">Seguridad &amp; Contraseña</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Políticas de autenticación de credenciales maestras</span>
+</div>
+</div>
+<span class="px-space-xs py-0.5 bg-surface-container text-on-surface-variant rounded font-label-sm text-label-sm">FIPS 140-3 Compliant</span>
+</div>
+<!-- Alerta informativa de estado -->
+<div class="flex items-center gap-space-sm p-space-sm bg-surface-container-low rounded-xl">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">history_toggle_off</span>
+</div>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-on-surface">Última renovación de contraseña hace <strong class="text-secondary font-bold">42 días</strong>.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Recomendamos actualizarla cada 90 días para accesos con privilegios ejecutivos.</p>
+</div>
+</div>
+<!-- Campos de Formulario -->
+<form class="flex flex-col gap-space-sm" onsubmit="event.preventDefault(); triggerNotification('Contraseña actualizada con éxito');">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-1">Contraseña Actual</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-low rounded-xl px-space-sm py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest transition-colors pr-10" id="input-current" type="password" value="PasswordSeguro2024!">
+<button class="absolute right-3 text-outline hover:text-on-surface" onclick="togglePasswordVisibility('input-current', this)" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-1">Nueva Contraseña</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-low rounded-xl px-space-sm py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest transition-colors pr-10" id="input-new" oninput="checkStrength(this.value)" placeholder="••••••••••••" type="password">
+<button class="absolute right-3 text-outline hover:text-on-surface" onclick="togglePasswordVisibility('input-new', this)" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-1">Confirmar Contraseña</label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-low rounded-xl px-space-sm py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest transition-colors pr-10" id="input-confirm" placeholder="••••••••••••" type="password">
+<button class="absolute right-3 text-outline hover:text-on-surface" onclick="togglePasswordVisibility('input-confirm', this)" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Checklist interactivo de fortaleza -->
+<div class="p-space-sm bg-surface-container-low rounded-xl flex flex-col gap-space-xs mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Criterios de Robustez Requeridos</span>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-outline transition-colors" id="rule-length">
+<span class="material-symbols-outlined text-[16px] text-outline">radio_button_unchecked</span>
+<span class="">8+ caracteres</span>
+</div>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-outline transition-colors" id="rule-upper">
+<span class="material-symbols-outlined text-[16px] text-outline">radio_button_unchecked</span>
+<span class="">Mayúscula</span>
+</div>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-outline transition-colors" id="rule-symbol">
+<span class="material-symbols-outlined text-[16px] text-outline">radio_button_unchecked</span>
+<span class="">Símbolo (!@#)</span>
+</div>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-outline transition-colors" id="rule-number">
+<span class="material-symbols-outlined text-[16px] text-outline">radio_button_unchecked</span>
+<span class="">Al menos 1 núm</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-space-xs">
+<button class="px-space-md py-2 font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface" onclick="document.getElementById('input-new').value='';document.getElementById('input-confirm').value='';" type="button">Descartar</button>
+<button class="bg-primary hover:bg-primary-container text-on-primary px-space-md py-2 rounded-xl font-label-lg text-label-lg transition-all shadow-sm" type="submit">Actualizar Contraseña</button>
+</div>
+</form>
+</div>
+<!-- 3. Módulo Afinación del Motor Semántico de IA (v4.3) -->
+
+</div>
+<!-- ================= COLUMNA DERECHA (7 Col / 12) ================= -->
+<div class="xl:col-span-6 flex flex-col gap-space-lg">
+<!-- 1. Módulo Equipo de Reclutamiento y Permisos de Acceso -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-primary leading-tight">Equipo de Reclutamiento</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">4 Reclutadores con credenciales en esta organización</span>
+</div>
+</div>
+<button class="flex items-center gap-1.5 bg-primary hover:bg-primary-container text-on-primary px-space-sm py-2 rounded-xl font-label-md text-label-md transition-all shadow-xs" onclick="openInviteModal()">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+<span class="">+ Invitar Nuevo Usuario</span>
+</button>
+</div>
+<!-- Tabla / Lista de Colaboradores -->
+<div class="flex flex-col gap-space-xs">
+<!-- Colaborador 1: Camila Larraín -->
+<div class="flex items-center justify-between p-space-sm bg-surface-container-low hover:bg-surface-container transition-colors rounded-xl">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-lg text-label-lg flex items-center justify-center font-bold">
+                  CL
+                </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-lg text-label-lg text-on-surface">Camila Larraín</span>
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">c.larrain@demobeta.cl</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<select class="bg-surface-container-lowest px-2.5 py-1 rounded-lg font-label-sm text-label-sm text-on-surface focus:outline-none cursor-pointer">
+<option selected="">Administrador</option>
+<option>Recruiter Sr</option>
+<option>Visualizador / Auditor</option>
+</select>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleUserStatus(this, 'Camila Larraín')" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-high rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+<!-- Colaborador 2: Mateo Aránguiz -->
+<div class="flex items-center justify-between p-space-sm bg-surface-container-low hover:bg-surface-container transition-colors rounded-xl">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-high text-primary font-label-lg text-label-lg flex items-center justify-center font-bold">
+                  MA
+                </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-lg text-label-lg text-on-surface">Mateo Aránguiz</span>
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">mateo.rec@demobeta.cl</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<select class="bg-surface-container-lowest px-2.5 py-1 rounded-lg font-label-sm text-label-sm text-on-surface focus:outline-none cursor-pointer">
+<option>Administrador</option>
+<option selected="">Recruiter Sr</option>
+<option>Visualizador / Auditor</option>
+</select>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleUserStatus(this, 'Mateo Aránguiz')" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-high rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+<!-- Colaborador 3: Sofía Olivares -->
+<div class="flex items-center justify-between p-space-sm bg-surface-container-low hover:bg-surface-container transition-colors rounded-xl">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed font-label-lg text-label-lg flex items-center justify-center font-bold">
+                  SO
+                </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-lg text-label-lg text-on-surface">Sofía Olivares</span>
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">sofia.o@demobeta.cl</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<select class="bg-surface-container-lowest px-2.5 py-1 rounded-lg font-label-sm text-label-sm text-on-surface focus:outline-none cursor-pointer">
+<option>Administrador</option>
+<option selected="">Recruiter Sr</option>
+<option>Visualizador / Auditor</option>
+</select>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleUserStatus(this, 'Sofía Olivares')" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-high rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+<!-- Colaborador 4: Eduardo Toro (Inactivo) -->
+<div class="flex items-center justify-between p-space-sm bg-surface-container-low hover:bg-surface-container transition-colors rounded-xl opacity-75">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container text-outline font-label-lg text-label-lg flex items-center justify-center font-bold">
+                  ET
+                </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-lg text-label-lg text-on-surface">Eduardo Toro</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-outline font-label-sm text-label-sm">Inactivo</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">auditoria@external.com</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<select class="bg-surface-container-lowest px-2.5 py-1 rounded-lg font-label-sm text-label-sm text-on-surface focus:outline-none cursor-pointer">
+<option>Administrador</option>
+<option>Recruiter Sr</option>
+<option selected="">Visualizador / Auditor</option>
+</select>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" onchange="toggleUserStatus(this, 'Eduardo Toro')" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-high rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+
+</div>
+<!-- 2. Módulo Auditoría de Sesiones y Dispositivos Conectados -->
+
+</div>
+</div>
+</div>
+<!-- Modal de Invitación de Usuario (Nativo Tailwind) -->
+<div class="fixed inset-0 z-50 bg-primary/40 backdrop-blur-md hidden items-center justify-center p-gutter" id="invite-modal">
+<div class="bg-surface-container-lowest max-w-md w-full rounded-xl p-space-lg shadow-2xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<div class="w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">person_add</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary">Invitar Colaborador</h3>
+</div>
+<button class="text-outline hover:text-on-surface" onclick="closeInviteModal()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-space-sm">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-1">Nombre Completo</label>
+<input class="w-full bg-surface-container-low rounded-xl px-space-sm py-2 font-body-md text-body-md text-on-surface focus:outline-none" id="invite-name" placeholder="Ej. Ignacio Valenzuela" type="text">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-1">Correo Electrónico Corporativo</label>
+<input class="w-full bg-surface-container-low rounded-xl px-space-sm py-2 font-body-md text-body-md text-on-surface focus:outline-none" id="invite-email" placeholder="ignacio@demobeta.cl" type="email">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-1">Rol &amp; Permisos</label>
+<select class="w-full bg-surface-container-low rounded-xl px-space-sm py-2 font-body-md text-body-md text-on-surface focus:outline-none" id="invite-role">
+<option value="Admin">Administrador (Total acceso)</option>
+<option selected="" value="Recruiter">Recruiter Sr (Gestión y filtros IA)</option>
+<option value="Visualizador">Visualizador (Lectura y auditoría)</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-space-xs">
+<button class="px-space-md py-2 font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface" onclick="closeInviteModal()">Cancelar</button>
+<button class="bg-primary hover:bg-primary-container text-on-primary px-space-md py-2 rounded-xl font-label-lg text-label-lg transition-all shadow-sm" onclick="submitInvite()">Enviar Invitación</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function triggerNotification(msg) {
+    const toast = document.getElementById('toast-banner');
+    const toastText = document.getElementById('toast-text');
+    if (toast && toastText) {
+      toastText.innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+  }
+
+  function togglePasswordVisibility(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.innerText = 'visibility_off';
+    } else {
+      input.type = 'password';
+      icon.innerText = 'visibility';
+    }
+  }
+
+  function checkStrength(val) {
+    const ruleLength = document.getElementById('rule-length');
+    const ruleUpper = document.getElementById('rule-upper');
+    const ruleSymbol = document.getElementById('rule-symbol');
+    const ruleNumber = document.getElementById('rule-number');
+
+    updateRule(ruleLength, val.length >= 8);
+    updateRule(ruleUpper, /[A-Z]/.test(val));
+    updateRule(ruleSymbol, /[!@#$%^&*(),.?":{}|<>]/.test(val));
+    updateRule(ruleNumber, /[0-9]/.test(val));
+  }
+
+  function updateRule(element, passed) {
+    const icon = element.querySelector('.material-symbols-outlined');
+    if (passed) {
+      element.classList.remove('text-outline');
+      element.classList.add('text-on-tertiary-container');
+      icon.innerText = 'check_circle';
+      icon.classList.remove('text-outline');
+      icon.classList.add('text-on-tertiary-container');
+    } else {
+      element.classList.remove('text-on-tertiary-container');
+      element.classList.add('text-outline');
+      icon.innerText = 'radio_button_unchecked';
+      icon.classList.remove('text-on-tertiary-container');
+      icon.classList.add('text-outline');
+    }
+  }
+
+  function updateSensitivity(val) {
+    const badge = document.getElementById('slider-val-badge');
+    let label = 'Equilibrada';
+    if (val < 40) label = 'Flexible';
+    else if (val > 80) label = 'Estricta';
+    badge.innerText = `${val}% · ${label}`;
+  }
+
+  function setLanguage(button) {
+    const parent = button.parentElement;
+    parent.querySelectorAll('button').forEach(btn => {
+      btn.className = 'px-space-sm py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-all';
+    });
+    button.className = 'px-space-sm py-1 rounded-lg bg-surface-container-lowest text-on-surface font-label-sm text-label-sm shadow-xs transition-all';
+    triggerNotification(`Idioma de resúmenes IA cambiado a: ${button.innerText}`);
+  }
+
+  function toggleUserStatus(checkbox, user) {
+    const status = checkbox.checked ? 'activado' : 'desactivado';
+    triggerNotification(`Usuario ${user} ha sido ${status}.`);
+  }
+
+  function terminateSession(btn, device) {
+    const card = btn.closest('.p-space-md');
+    card.style.opacity = '0.3';
+    card.style.pointerEvents = 'none';
+    triggerNotification(`Sesión en ${device} terminada forzosamente.`);
+  }
+
+  function terminateAllOtherSessions() {
+    triggerNotification('Se han cerrado todas las sesiones secundarias en otros dispositivos.');
+  }
+
+  function confirmLogout() {
+    if (confirm('¿Estás seguro de que deseas cerrar tu sesión administrativa activa?')) {
+      triggerNotification('Cerrando sesión de Juan Pablo Vidal...');
+    }
+  }
+
+  function openInviteModal() {
+    const modal = document.getElementById('invite-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  function closeInviteModal() {
+    const modal = document.getElementById('invite-modal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+  }
+
+  function submitInvite() {
+    const email = document.getElementById('invite-email').value;
+    if (email) {
+      closeInviteModal();
+      triggerNotification(`Invitación formal despachada a: ${email}`);
+      document.getElementById('invite-email').value = '';
+      document.getElementById('invite-name').value = '';
+    } else {
+      alert('Por favor especifica un email válido.');
+    }
+  }
+</script></main></div>
+
+
+
+</body></html>
