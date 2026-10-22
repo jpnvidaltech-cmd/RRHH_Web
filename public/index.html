@@ -44,13 +44,14 @@
             "primary-fixed-dim": "#bcc7de",
             "on-primary-fixed": "#111c2d",
             "on-primary-fixed-variant": "#3c475a",
-            "secondary": "#a13e28",
-            "secondary-container": "#fd8367",
-            "on-secondary-container": "#721c09",
-            "secondary-fixed": "#ffdad2",
-            "secondary-fixed-dim": "#ffb4a3",
-            "on-secondary-fixed": "#3d0600",
-            "on-secondary-fixed-variant": "#822714",
+            "secondary": "#091426",
+            "secondary-container": "#1e293b",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#ffffff",
+            "secondary-fixed": "#e2e8f0",
+            "secondary-fixed-dim": "#cbd5e1",
+            "on-secondary-fixed": "#0f172a",
+            "on-secondary-fixed-variant": "#334155",
             "tertiary": "#00190e",
             "tertiary-container": "#00301e",
             "on-tertiary-container": "#00a472",
@@ -229,13 +230,13 @@
         </div>
         <div class="flex flex-col">
           <span class="font-bold text-[17px] text-primary tracking-tight leading-none">Perfiles RRHH</span>
-          <span class="text-[10px] text-secondary tracking-wider uppercase font-semibold">AI Talent Engine</span>
+          <span class="text-[10px] text-on-surface-variant tracking-wider uppercase font-bold">AI Talent Engine</span>
         </div>
       </div>
 
       <!-- Badge Contador de CVs y Estado del Motor IA -->
       <div class="hidden 2xl:flex items-center gap-1.5 px-3 py-1 bg-surface-container rounded-full text-on-surface-variant text-[12px] font-medium" id="topbarCvCountPill">
-        <span class="w-2 h-2 rounded-full bg-on-tertiary-container animate-pulse"></span>
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span id="topbarCvCountText">0 CVs indexados · IA Activa</span>
       </div>
 
@@ -253,7 +254,7 @@
     <!-- Zona 2: Selector / Indicador de Empresa (Multitenant) -->
     <div class="hidden lg:flex items-center gap-2" id="tenantBadgeWrapper">
       <button class="flex items-center gap-1.5 bg-surface-container-low hover:bg-surface-container px-3 py-1.5 rounded-xl border border-surface-container text-on-surface shadow-xs transition-all cursor-pointer group" id="tenantCapsule" onclick="openSwitchTenantModal()" title="Hacé clic para cambiar de Organización">
-        <div class="w-5 h-5 rounded-md bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+        <div class="w-5 h-5 rounded-md bg-surface-container flex items-center justify-center text-primary">
           <span class="material-symbols-outlined text-[13px]">apartment</span>
         </div>
         <span class="text-[12px] font-bold text-primary truncate max-w-[150px]" id="topbarTenantName">Organización Activa</span>
@@ -265,13 +266,13 @@
     <div class="flex items-center gap-2 shrink-0">
       <!-- Tarjeta del Usuario Conectado -->
       <div class="flex items-center gap-2 bg-surface-container-low/90 p-1 pr-2.5 rounded-2xl border border-surface-container" id="userProfileInfo" style="display: none;">
-        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary ring-2 ring-surface-container shrink-0 text-[12px] font-bold" id="userAvatarCircle">
+        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white ring-2 ring-surface-container shrink-0 text-[12px] font-bold" id="userAvatarCircle">
           <span class="material-symbols-outlined text-[17px]">person</span>
         </div>
         <div class="flex flex-col text-left">
           <div class="flex items-center gap-1.5">
             <span class="text-[12px] font-bold text-on-surface leading-tight truncate max-w-[130px]" id="userEmailSpan">—</span>
-            <span class="px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed text-[9px] font-bold tracking-wider uppercase leading-none" id="userRoleBadge">USUARIO</span>
+            <span class="px-1.5 py-0.5 rounded bg-primary text-white text-[9px] font-bold tracking-wider uppercase leading-none" id="userRoleBadge">USUARIO</span>
           </div>
         </div>
         <!-- Botón rápido cambio de contraseña -->
@@ -280,10 +281,10 @@
         </button>
       </div>
 
-      <!-- Botón Cerrar Sesión -->
-      <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low text-secondary hover:bg-secondary hover:text-on-secondary transition-all text-[12px] font-semibold border border-surface-container shadow-xs" id="btnSignOut" style="display: none;" title="Cerrar sesión activa">
-        <span class="material-symbols-outlined text-[16px]">logout</span>
-        <span class="hidden sm:inline">Cerrar Sesión</span>
+      <!-- Botón Cerrar Sesión (Ultra legible, sin perder texto ni estilo) -->
+      <button class="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-stone-700 hover:text-rose-600 border border-stone-200 hover:border-rose-200 transition-all text-[12px] font-semibold shadow-2xs active:scale-95" id="btnSignOut" style="display: none;" title="Cerrar sesión activa">
+        <span class="material-symbols-outlined text-[16px] text-stone-400 group-hover:text-rose-600 transition-colors">logout</span>
+        <span class="font-semibold text-stone-700 group-hover:text-rose-600 transition-colors">Cerrar Sesión</span>
       </button>
     </div>
   </header>
@@ -335,10 +336,10 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <div class="flex items-center gap-2 bg-surface-container-lowest px-4 py-1.5 rounded-full shadow-xs border border-surface-container">
-              <span class="material-symbols-outlined text-[16px] text-secondary">bolt</span>
+              <span class="material-symbols-outlined text-[16px] text-primary">bolt</span>
               <span class="text-[12px] text-on-surface font-semibold" id="searchHeaderStats">Base activa lista para análisis vectorial</span>
             </div>
-            <div class="flex items-center gap-2 bg-secondary-fixed text-on-secondary-fixed px-3.5 py-1.5 rounded-full shadow-xs">
+            <div class="flex items-center gap-2 bg-surface-container-high text-primary px-3.5 py-1.5 rounded-full shadow-xs">
               <span class="material-symbols-outlined text-[16px]">how_to_reg</span>
               <span class="text-[12px] font-bold" id="searchMatchCountBadge">Candidatos calificados en tiempo real</span>
             </div>
@@ -347,10 +348,10 @@
 
         <!-- Consola de Búsqueda Semántica Hero-grade -->
         <div class="relative bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm border border-surface-container/70 flex flex-col gap-space-md overflow-hidden">
-          <div class="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-secondary-fixed/40 blur-3xl pointer-events-none"></div>
+          <div class="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
 
           <div class="flex flex-col gap-1 relative z-10">
-            <div class="flex items-center gap-1.5 text-secondary">
+            <div class="flex items-center gap-1.5 text-primary">
               <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
               <span class="text-[11px] tracking-wider uppercase font-bold">Inteligencia Artificial Generativa & Vectorial</span>
             </div>
@@ -386,9 +387,9 @@
                   <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
                   <span>Exportar Reporte PDF</span>
                 </button>
-                <button class="px-5 py-2.5 rounded-xl bg-secondary text-on-secondary text-[14px] font-bold shadow-sm hover:opacity-95 transition-all flex items-center gap-2 active:scale-95" id="btnSearch">
+                <button class="px-5 py-2.5 rounded-xl bg-primary text-white text-[14px] font-bold shadow-sm hover:bg-primary-container transition-all flex items-center gap-2 active:scale-95" id="btnSearch">
                   <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin hidden" id="searchSpinner"></div>
-                  <span class="material-symbols-outlined text-[18px]" id="searchIcon">auto_awesome</span>
+                  <span class="material-symbols-outlined text-[18px] text-white" id="searchIcon">auto_awesome</span>
                   <span id="searchBtnText">Buscar con IA</span>
                 </button>
               </div>
@@ -403,7 +404,7 @@
           <!-- Toolbar superior de resultados (cuando hay resultados) -->
           <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-surface-container-lowest rounded-xl border border-surface-container shadow-xs" id="resultsToolbar" style="display: none;">
             <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-secondary text-[24px]">grade</span>
+              <span class="material-symbols-outlined text-primary text-[24px]">grade</span>
               <div>
                 <h2 class="text-[18px] font-bold text-primary leading-tight">Resultados del Análisis y Calificación IA</h2>
                 <div class="text-[12px] text-on-surface-variant font-medium" id="resultsCount"></div>
@@ -413,15 +414,15 @@
               <button class="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-[12px] font-semibold border border-surface-container flex items-center gap-1.5" onclick="clearSearch()">
                 <span class="material-symbols-outlined text-[15px]">restart_alt</span>Limpiar
               </button>
-              <button class="px-3.5 py-1.5 rounded-lg bg-secondary text-on-secondary hover:opacity-90 text-[12px] font-bold shadow-xs flex items-center gap-1.5" onclick="printReport()">
-                <span class="material-symbols-outlined text-[15px]">print</span>Imprimir Reporte (PDF)
+              <button class="px-3.5 py-1.5 rounded-lg bg-primary text-white hover:bg-primary-container text-[12px] font-bold shadow-xs flex items-center gap-1.5 transition-colors" onclick="printReport()">
+                <span class="material-symbols-outlined text-[15px] text-white">print</span>Imprimir Reporte (PDF)
               </button>
             </div>
           </div>
 
           <!-- Empty State (Inicial) -->
           <div class="bg-surface-container-lowest rounded-2xl p-12 text-center border border-dashed border-surface-container-high flex flex-col items-center justify-center gap-3" id="emptyState">
-            <div class="w-16 h-16 rounded-2xl bg-surface-container-low flex items-center justify-center text-secondary">
+            <div class="w-16 h-16 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary">
               <span class="material-symbols-outlined text-[36px]">psychology</span>
             </div>
             <h3 class="text-[18px] font-bold text-primary">Sin análisis activo</h3>
@@ -433,9 +434,9 @@
           <!-- Loading State (Cargando agente IA) -->
           <div class="bg-surface-container-lowest rounded-2xl p-14 text-center border border-surface-container shadow-sm flex flex-col items-center justify-center gap-4" id="loadingState" style="display: none;">
             <div class="flex items-center gap-2">
-              <div class="w-3.5 h-3.5 rounded-full bg-secondary animate-bounce" style="animation-delay: 0s;"></div>
-              <div class="w-3.5 h-3.5 rounded-full bg-secondary animate-bounce" style="animation-delay: 0.15s;"></div>
-              <div class="w-3.5 h-3.5 rounded-full bg-secondary animate-bounce" style="animation-delay: 0.3s;"></div>
+              <div class="w-3.5 h-3.5 rounded-full bg-primary animate-bounce" style="animation-delay: 0s;"></div>
+              <div class="w-3.5 h-3.5 rounded-full bg-primary animate-bounce" style="animation-delay: 0.15s;"></div>
+              <div class="w-3.5 h-3.5 rounded-full bg-primary animate-bounce" style="animation-delay: 0.3s;"></div>
             </div>
             <div class="text-[15px] font-semibold text-primary">El agente IA está evaluando los perfiles en la base de datos…</div>
             <span class="text-[12px] text-on-surface-variant">Sintetizando idoneidad técnica, experiencia y compatibilidad.</span>
@@ -460,8 +461,8 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
           <div class="flex flex-col">
             <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
-              <span class="text-[11px] font-bold text-secondary uppercase tracking-widest">Repositorio Central de Candidatos</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+              <span class="text-[11px] font-bold text-primary uppercase tracking-widest">Repositorio Central de Candidatos</span>
             </div>
             <h1 class="text-[28px] md:text-[32px] font-bold text-primary tracking-tight">Base de Talento & Carga de CVs</h1>
             <p class="text-[14px] text-on-surface-variant">Gestión de currículums enriquecidos semánticamente, normalización multi-formato y motor OCR de alta fidelidad.</p>
@@ -481,7 +482,7 @@
                 <span class="material-symbols-outlined text-[22px]">inventory_2</span>
               </div>
             </div>
-            <div class="mt-3 flex items-center gap-1.5 text-on-tertiary-container text-[12px] font-semibold">
+            <div class="mt-3 flex items-center gap-1.5 text-emerald-600 text-[12px] font-semibold">
               <span class="material-symbols-outlined text-[16px]">verified</span>
               <span>Indexados y disponibles para IA</span>
             </div>
@@ -496,7 +497,7 @@
                   <span class="text-[28px] font-bold text-primary tracking-tight">Multi-formato</span>
                 </div>
               </div>
-              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-secondary">
+              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary">
                 <span class="material-symbols-outlined text-[22px]">document_scanner</span>
               </div>
             </div>
@@ -542,13 +543,13 @@
           <!-- Drop Box Container -->
           <div class="group relative p-8 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col items-center justify-center text-center border-2 border-dashed border-surface-container-highest" id="uploadZone">
             <input class="absolute inset-0 opacity-0 cursor-pointer z-10" id="cvFileInput" type="file" accept=".pdf,.jpg,.jpeg,.png">
-            <div class="w-14 h-14 rounded-2xl bg-surface-container-lowest shadow-xs flex items-center justify-center text-secondary group-hover:scale-105 transition-transform mb-2">
+            <div class="w-14 h-14 rounded-2xl bg-surface-container-lowest shadow-xs flex items-center justify-center text-primary group-hover:scale-105 transition-transform mb-2">
               <span class="material-symbols-outlined text-[32px]">folder_open</span>
             </div>
             <h3 class="text-[15px] font-bold text-primary mb-1">Arrastrá o seleccioná uno o múltiples CVs para indexar</h3>
             <p class="text-[12px] text-on-surface-variant max-w-md mb-3">Admite documentos estructurados y escaneados en <strong class="text-on-surface">PDF, JPG, JPEG o PNG</strong>.</p>
-            <button class="px-4 py-2 rounded-xl bg-primary text-on-primary text-[13px] font-semibold hover:bg-primary-container transition-colors shadow-xs flex items-center gap-1.5 pointer-events-none" type="button">
-              <span class="material-symbols-outlined text-[18px]">upload_file</span>
+            <button class="px-4 py-2 rounded-xl bg-primary text-white text-[13px] font-semibold hover:bg-primary-container transition-colors shadow-xs flex items-center gap-1.5 pointer-events-none" type="button">
+              <span class="material-symbols-outlined text-[18px] text-white">upload_file</span>
               <span>Examinar Archivos</span>
             </button>
           </div>
@@ -565,14 +566,14 @@
           <!-- Barra de Progreso en Tiempo Real -->
           <div class="bg-surface-container-low p-3 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-surface-container hidden" id="progressWrap">
             <div class="flex items-center gap-2.5 w-full sm:w-auto">
-              <div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-secondary shrink-0">
+              <div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shrink-0">
                 <span class="material-symbols-outlined text-[18px]">hourglass_top</span>
               </div>
               <span class="text-[13px] font-semibold text-primary truncate" id="uploadStatus">Procesando archivo…</span>
             </div>
             <div class="flex items-center gap-3 w-full sm:w-64">
               <div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
-                <div class="bg-secondary h-full rounded-full w-0 transition-all duration-300" id="progressBar"></div>
+                <div class="bg-primary h-full rounded-full w-0 transition-all duration-300" id="progressBar"></div>
               </div>
             </div>
           </div>
@@ -677,7 +678,7 @@
           <div class="flex items-center gap-1.5 text-on-surface-variant text-[12px] font-medium">
             <span>Configuración Global</span>
             <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span class="text-secondary font-bold">Seguridad & Colaboración</span>
+            <span class="text-primary font-bold">Seguridad & Colaboración</span>
           </div>
           <h1 class="text-[28px] md:text-[32px] font-bold text-primary tracking-tight">Centro de Control & Seguridad</h1>
           <p class="text-[14px] text-on-surface-variant">Gestión de accesos jerárquicos (RBAC), credenciales del equipo y políticas de autenticación.</p>
@@ -691,13 +692,13 @@
             <!-- Card Perfil Activo -->
             <div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm border border-surface-container relative overflow-hidden">
               <div class="flex items-center gap-3">
-                <div class="w-14 h-14 rounded-2xl bg-primary text-on-primary font-bold text-[18px] flex items-center justify-center shadow-xs" id="teamProfileAvatar">
+                <div class="w-14 h-14 rounded-2xl bg-primary text-white font-bold text-[18px] flex items-center justify-center shadow-xs" id="teamProfileAvatar">
                   <span class="material-symbols-outlined text-[28px]">person</span>
                 </div>
                 <div class="flex flex-col min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="text-[15px] font-bold text-primary truncate" id="teamProfileEmail">usuario@sistema.com</span>
-                    <span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold uppercase tracking-wider" id="teamProfileRole">USUARIO</span>
+                    <span class="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider" id="teamProfileRole">USUARIO</span>
                   </div>
                   <span class="text-[12px] text-on-surface-variant mt-0.5" id="teamProfileTenant">Organización Multitenant</span>
                 </div>
@@ -707,7 +708,7 @@
             <!-- Card Renovación de Contraseña Propia -->
             <div class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm border border-surface-container flex flex-col gap-space-md">
               <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+                <div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-primary">
                   <span class="material-symbols-outlined text-[20px]">lock_reset</span>
                 </div>
                 <div>
@@ -765,7 +766,7 @@
                   <button class="px-4 py-2 rounded-xl text-[13px] font-medium text-on-surface-variant hover:text-on-surface" type="button" onclick="document.getElementById('changeNewPassword').value='';document.getElementById('changeConfirmPassword').value='';">
                     Descartar
                   </button>
-                  <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-xs" type="submit" id="btnSubmitChangePassword">
+                  <button class="bg-primary hover:bg-primary-container text-white px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-xs" type="submit" id="btnSubmitChangePassword">
                     Actualizar Contraseña
                   </button>
                 </div>
@@ -786,8 +787,8 @@
                     <span class="text-[12px] text-on-surface-variant" id="teamMembersSubtitle">Colaboradores registrados en esta organización</span>
                   </div>
                 </div>
-                <button class="flex items-center gap-1.5 bg-secondary text-on-secondary hover:opacity-95 px-3.5 py-2 rounded-xl text-[12px] font-bold shadow-xs transition-all active:scale-95" onclick="openAddUserModal()" id="btnOpenAddUser">
-                  <span class="material-symbols-outlined text-[16px]">person_add</span>
+                <button class="flex items-center gap-1.5 bg-primary text-white hover:bg-primary-container px-4 py-2 rounded-xl text-[12px] font-bold shadow-sm transition-all active:scale-95" onclick="openAddUserModal()" id="btnOpenAddUser">
+                  <span class="material-symbols-outlined text-[16px] text-white">person_add</span>
                   <span>+ Agregar Usuario</span>
                 </button>
               </div>
@@ -812,7 +813,7 @@
     <div class="bg-surface-container-lowest rounded-2xl max-w-md w-full p-space-lg shadow-xl border border-surface-container flex flex-col gap-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+          <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
             <span class="material-symbols-outlined text-[18px]">person_add</span>
           </div>
           <h3 class="text-[17px] font-bold text-primary">Agregar Nuevo Usuario</h3>
@@ -849,7 +850,7 @@
 
         <div class="flex items-center justify-end gap-2 pt-3 border-t border-surface-container">
           <button class="px-4 py-2 rounded-xl text-[13px] font-medium text-on-surface-variant hover:text-on-surface" type="button" onclick="closeAddUserModal()">Cancelar</button>
-          <button class="px-5 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary-container text-[13px] font-bold transition-all shadow-xs" type="submit" id="btnSubmitAddUser">Guardar Usuario</button>
+          <button class="px-5 py-2 rounded-xl bg-primary text-white hover:bg-primary-container text-[13px] font-bold transition-all shadow-xs" type="submit" id="btnSubmitAddUser">Guardar Usuario</button>
         </div>
       </form>
     </div>
@@ -860,7 +861,7 @@
     <div class="bg-surface-container-lowest rounded-2xl max-w-md w-full p-space-lg shadow-xl border border-surface-container flex flex-col gap-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+          <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
             <span class="material-symbols-outlined text-[18px]">apartment</span>
           </div>
           <h3 class="text-[17px] font-bold text-primary">Organización Activa</h3>
@@ -899,7 +900,7 @@
             <label class="block text-[11px] font-bold text-on-surface-variant mb-0.5" for="newTenantSlug">Slug Identificador (único)</label>
             <input class="w-full bg-surface-container-lowest rounded-lg px-2.5 py-1.5 text-[13px] text-on-surface border border-surface-container focus:outline-none" type="text" id="newTenantSlug" placeholder="ej: tech-corp">
           </div>
-          <button type="button" class="w-full py-1.5 rounded-lg bg-secondary text-on-secondary hover:opacity-95 text-[12px] font-bold transition-all mt-1" id="btnSubmitCreateTenant" onclick="handleCreateTenantSubmit()">
+          <button type="button" class="w-full py-2 rounded-lg bg-primary text-white hover:bg-primary-container text-[12px] font-bold transition-all mt-1 shadow-xs" id="btnSubmitCreateTenant" onclick="handleCreateTenantSubmit()">
             Crear y Conectar
           </button>
         </div>
@@ -907,7 +908,7 @@
 
       <div class="flex items-center justify-end gap-2 pt-3 border-t border-surface-container">
         <button class="px-4 py-2 rounded-xl text-[13px] font-medium text-on-surface-variant hover:text-on-surface" type="button" onclick="closeSwitchTenantModal()">Cerrar</button>
-        <button class="px-5 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary-container text-[13px] font-bold transition-all shadow-xs" type="button" id="btnApplySwitchTenant" onclick="applySwitchTenant()">Cambiar Empresa</button>
+        <button class="px-5 py-2 rounded-xl bg-primary text-white hover:bg-primary-container text-[13px] font-bold transition-all shadow-xs" type="button" id="btnApplySwitchTenant" onclick="applySwitchTenant()">Cambiar Empresa</button>
       </div>
     </div>
   </div>
@@ -917,7 +918,7 @@
     <div class="bg-surface-container-lowest rounded-2xl max-w-md w-full p-space-lg shadow-xl border border-surface-container flex flex-col gap-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+          <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
             <span class="material-symbols-outlined text-[18px]">key</span>
           </div>
           <h3 class="text-[17px] font-bold text-primary">Resetear Contraseña</h3>
@@ -945,7 +946,7 @@
 
         <div class="flex items-center justify-end gap-2 pt-3 border-t border-surface-container">
           <button class="px-4 py-2 rounded-xl text-[13px] font-medium text-on-surface-variant hover:text-on-surface" type="button" onclick="closeResetPasswordModal()">Cancelar</button>
-          <button class="px-5 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary-container text-[13px] font-bold transition-all shadow-xs" type="submit" id="btnSubmitResetPassword">Guardar Nueva Clave</button>
+          <button class="px-5 py-2 rounded-xl bg-primary text-white hover:bg-primary-container text-[13px] font-bold transition-all shadow-xs" type="submit" id="btnSubmitResetPassword">Guardar Nueva Clave</button>
         </div>
       </form>
     </div>
@@ -978,7 +979,7 @@
           </div>
         </div>
 
-        <button class="w-full mt-2 py-2.5 rounded-xl bg-secondary text-on-secondary font-bold text-[14px] hover:opacity-95 transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95" type="submit" id="btnLoginSubmit">
+        <button class="w-full mt-2 py-2.5 rounded-xl bg-primary text-white font-bold text-[14px] hover:bg-primary-container transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95" type="submit" id="btnLoginSubmit">
           <span id="loginBtnText">Ingresar a la Plataforma</span>
           <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin hidden" id="loginSpinner"></div>
         </button>
@@ -990,7 +991,7 @@
         </div>
 
         <button class="w-full py-2.5 rounded-xl bg-surface-container-high hover:bg-surface-dim text-primary font-bold text-[13px] transition-all flex items-center justify-center gap-2 shadow-xs" type="button" onclick="loginPreviewMode()">
-          <span class="material-symbols-outlined text-[18px] text-secondary">visibility</span>
+          <span class="material-symbols-outlined text-[18px] text-primary">visibility</span>
           <span>Explorar en Modo Preview (Demo)</span>
         </button>
       </form>
@@ -1073,7 +1074,16 @@
 
       if (emailEl) emailEl.textContent = currentUser.email || '—';
       const roleName = (currentUserProfile?.role || 'usuario').toUpperCase();
-      if (roleEl) roleEl.textContent = roleName;
+      if (roleEl) {
+        roleEl.textContent = roleName;
+        if (roleName === 'ADMIN' || roleName === 'SUPERADMIN') {
+          roleEl.className = 'px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider shadow-xs';
+        } else if (roleName === 'MANAGER') {
+          roleEl.className = 'px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold uppercase tracking-wider';
+        } else {
+          roleEl.className = 'px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold uppercase tracking-wider border border-surface-container-high';
+        }
+      }
       if (tenantEl) tenantEl.textContent = currentTenant?.name ? `Empresa: ${currentTenant.name}` : 'Organización Activa';
     }
 
@@ -1139,6 +1149,13 @@
         const roleBadge = document.getElementById('userRoleBadge');
         const roleUpper = (role || 'usuario').toUpperCase();
         roleBadge.textContent = roleUpper;
+        if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN') {
+          roleBadge.className = 'px-1.5 py-0.5 rounded bg-primary text-white text-[9px] font-bold tracking-wider uppercase leading-none';
+        } else if (roleUpper === 'MANAGER') {
+          roleBadge.className = 'px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold tracking-wider uppercase leading-none border border-emerald-300';
+        } else {
+          roleBadge.className = 'px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant text-[9px] font-bold tracking-wider uppercase leading-none border border-surface-container-high';
+        }
 
         if (topbarTenantName) {
           topbarTenantName.textContent = currentTenant?.name || 'Organización Activa';
@@ -1587,16 +1604,16 @@
     if (uploadZone && cvFileInput) {
       uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        uploadZone.classList.add('border-secondary', 'bg-surface-container');
+        uploadZone.classList.add('border-primary', 'bg-surface-container');
       });
 
       uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('border-secondary', 'bg-surface-container');
+        uploadZone.classList.remove('border-primary', 'bg-surface-container');
       });
 
       uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        uploadZone.classList.remove('border-secondary', 'bg-surface-container');
+        uploadZone.classList.remove('border-primary', 'bg-surface-container');
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
           handleFileUpload(e.dataTransfer.files[0]);
         }
@@ -1866,20 +1883,20 @@
       card.className = 'bg-surface-container-lowest rounded-2xl p-space-md shadow-xs border border-surface-container hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden';
 
       const scoreVal = cand.score !== null ? cand.score : 8.0;
-      let topBarColor = 'bg-secondary';
-      let scoreBadgeClass = 'bg-secondary-fixed text-on-secondary-fixed';
+      let topBarColor = 'bg-primary';
+      let scoreBadgeClass = 'bg-primary text-white';
       let matchLabel = 'Match Notable';
 
       if (scoreVal >= 9.0) {
-        topBarColor = 'bg-on-tertiary-container';
-        scoreBadgeClass = 'bg-tertiary-fixed text-on-tertiary-fixed';
+        topBarColor = 'bg-emerald-500';
+        scoreBadgeClass = 'bg-emerald-100 text-emerald-800';
         matchLabel = 'Match Sobresaliente';
       } else if (scoreVal >= 7.5) {
-        topBarColor = 'bg-secondary';
-        scoreBadgeClass = 'bg-secondary-fixed text-on-secondary-fixed';
+        topBarColor = 'bg-primary';
+        scoreBadgeClass = 'bg-primary text-white';
         matchLabel = 'Match Muy Alto';
       } else if (scoreVal >= 6.0) {
-        topBarColor = 'bg-surface-tint';
+        topBarColor = 'bg-slate-400';
         scoreBadgeClass = 'bg-surface-container-high text-on-surface';
         matchLabel = 'Match Intermedio';
       } else {
@@ -1907,7 +1924,7 @@
         <div class="flex flex-col gap-3">
           <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-11 h-11 rounded-xl bg-primary text-on-primary font-bold text-[15px] flex items-center justify-center shrink-0">
+              <div class="w-11 h-11 rounded-xl bg-primary text-white font-bold text-[15px] flex items-center justify-center shrink-0">
                 ${initials}
               </div>
               <div class="min-w-0">
@@ -1922,13 +1939,13 @@
 
           <!-- Match tag -->
           <div class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface text-[11px] flex items-center gap-1.5 font-bold">
-            <span class="material-symbols-outlined text-[15px] text-secondary">verified</span>
+            <span class="material-symbols-outlined text-[15px] text-primary">verified</span>
             <span>${matchLabel}</span>
           </div>
 
           <!-- Síntesis IA -->
           <div class="p-2.5 rounded-lg bg-surface-container-low text-on-surface text-[12px] leading-relaxed">
-            <span class="font-bold text-secondary">Síntesis IA:</span> ${escHtml(summaryText)}
+            <span class="font-bold text-primary">Síntesis IA:</span> ${escHtml(summaryText)}
           </div>
         </div>
 
@@ -1965,10 +1982,10 @@
           <div class="flex flex-col gap-1">
             <div class="flex items-center justify-between text-[13px]">
               <span class="font-bold text-on-surface truncate">${escHtml(c.name)}</span>
-              <span class="font-bold text-secondary">${score.toFixed(1)} / 10</span>
+              <span class="font-bold text-primary">${score.toFixed(1)} / 10</span>
             </div>
             <div class="w-full bg-surface-container rounded-full h-2 overflow-hidden">
-              <div class="h-full rounded-full bg-secondary transition-all duration-500" style="width: ${pct}%;"></div>
+              <div class="h-full rounded-full bg-primary transition-all duration-500" style="width: ${pct}%;"></div>
             </div>
           </div>
         `;
@@ -1986,7 +2003,7 @@
           </div>
           <div class="pt-2 border-t border-surface-container flex items-center justify-between text-[11px] text-on-surface-variant">
             <span>Scoring semántico ponderado</span>
-            <span class="font-bold text-secondary">Top ${candidates.length} perfiles</span>
+            <span class="font-bold text-primary">Top ${candidates.length} perfiles</span>
           </div>
         </div>
 
@@ -1999,13 +2016,13 @@
           <div class="flex flex-col gap-2.5 py-1 text-[13px] text-on-surface">
             ${candidates.map(c => `
               <div class="flex items-start gap-2 leading-relaxed">
-                <span class="text-secondary font-bold text-[12px] mt-0.5">▶</span>
+                <span class="text-primary font-bold text-[12px] mt-0.5">▶</span>
                 <p><strong class="font-bold text-primary">${escHtml(c.name)} (${c.score ? c.score + '/10' : 'Evaluado'}):</strong> Idoneidad comprobada para el perfil solicitado.</p>
               </div>
             `).join('')}
           </div>
           <div class="pt-2 border-t border-surface-container flex items-center justify-between text-[11px] text-on-surface-variant">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>Evaluación generativa sintetizada</span>
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-primary">auto_awesome</span>Evaluación generativa sintetizada</span>
           </div>
         </div>
       `;
@@ -2029,7 +2046,7 @@
       tbody.innerHTML = `
         <tr>
           <td colspan="7" class="py-12 text-center text-on-surface-variant">
-            <div class="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
             Cargando candidatos registrados…
           </td>
         </tr>
@@ -2263,7 +2280,7 @@
               <div class="w-8 h-8 rounded-full bg-surface-container-high text-primary font-bold text-[11px] flex items-center justify-center shrink-0">
                 ${initials}
               </div>
-              <span class="font-bold text-primary group-hover:text-secondary transition-colors">${escHtml(nombreCompleto)}</span>
+              <span class="font-bold text-primary group-hover:text-on-surface-variant transition-colors">${escHtml(nombreCompleto)}</span>
             </div>
           </td>
           <td class="py-3 px-4">
@@ -2452,7 +2469,7 @@
 
           userCard.innerHTML = `
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[12px] font-bold flex items-center justify-center">
+              <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-800 text-[12px] font-bold flex items-center justify-center">
                 ${initials}
               </div>
               <div class="flex flex-col">
@@ -2461,7 +2478,7 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${role === 'ADMIN' ? 'bg-secondary-fixed text-on-secondary-fixed' : role === 'MANAGER' ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-surface-container-high text-on-surface'}">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${role === 'ADMIN' ? 'bg-primary text-white shadow-xs' : role === 'MANAGER' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-surface-container-high text-on-surface'}">
                 ${role}
               </span>
               ${canManage ? `
@@ -2500,7 +2517,7 @@
 
           userCard.innerHTML = `
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[12px] font-bold flex items-center justify-center">
+              <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-800 text-[12px] font-bold flex items-center justify-center">
                 ${initials}
               </div>
               <div class="flex flex-col">
@@ -2509,7 +2526,7 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${role === 'ADMIN' ? 'bg-secondary-fixed text-on-secondary-fixed' : role === 'MANAGER' ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-surface-container-high text-on-surface'}">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${role === 'ADMIN' ? 'bg-primary text-white shadow-xs' : role === 'MANAGER' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-surface-container-high text-on-surface'}">
                 ${role}
               </span>
               <button class="p-1 rounded-lg text-outline hover:text-primary hover:bg-surface-container-high transition-colors" onclick="openResetPasswordModal('${u.id}', '${escHtml(email)}')" title="Resetear contraseña">
