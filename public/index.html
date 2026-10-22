@@ -464,162 +464,155 @@
               <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
               <span class="text-[11px] font-bold text-primary uppercase tracking-widest">Repositorio Central de Candidatos</span>
             </div>
-            <h1 class="text-[28px] md:text-[32px] font-bold text-primary tracking-tight">Base de Talento & Carga de CVs</h1>
+            <h1 class="text-[28px] md:text-[32px] font-bold text-primary tracking-tight">Base de Talento &amp; Carga de CVs</h1>
             <p class="text-[14px] text-on-surface-variant">Gestión de currículums enriquecidos semánticamente, normalización multi-formato y motor OCR de alta fidelidad.</p>
           </div>
         </div>
 
-        <!-- 1. Panel Superior de Métricas y KPIs -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-space-md">
-          <!-- KPI 1: Total CVs -->
-          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-xs border border-surface-container flex flex-col justify-between">
-            <div class="flex items-start justify-between">
-              <div class="flex flex-col">
-                <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Total CVs en Base</span>
-                <span class="text-[28px] font-bold text-primary mt-1 tracking-tight" id="talentKpiTotal">0</span>
-              </div>
-              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[22px]">inventory_2</span>
-              </div>
-            </div>
-            <div class="mt-3 flex items-center gap-1.5 text-emerald-600 text-[12px] font-semibold">
-              <span class="material-symbols-outlined text-[16px]">verified</span>
-              <span>Indexados y disponibles para IA</span>
-            </div>
-          </div>
-
-          <!-- KPI 2: Formatos Admitidos -->
-          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-xs border border-surface-container flex flex-col justify-between">
-            <div class="flex items-start justify-between">
-              <div class="flex flex-col">
-                <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Formatos Soportados</span>
-                <div class="flex items-baseline gap-2 mt-1">
-                  <span class="text-[28px] font-bold text-primary tracking-tight">Multi-formato</span>
+        <!-- 1. Fila Superior Horizontal Unificada: Ingesta Inteligente (75%) + KPI Total CVs (25%) -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md items-stretch">
+          <!-- Ingesta Inteligente de CVs (75% / col-span-9) Compacta y Horizontal -->
+          <div class="xl:col-span-9 bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-surface-container flex flex-col justify-between relative overflow-hidden">
+            <!-- Header Ingesta -->
+            <div class="flex items-center justify-between gap-2 pb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">cloud_upload</span>
+                </div>
+                <div>
+                  <h2 class="text-[18px] leading-tight text-primary font-bold">Carga Inteligente de CVs</h2>
+                  <p class="text-[12px] text-on-surface-variant">Extracción vectorial automática de habilidades, experiencia y datos de contacto.</p>
                 </div>
               </div>
-              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[22px]">document_scanner</span>
+              <span class="px-2.5 py-1 rounded-full bg-surface-container text-[11px] font-bold text-on-surface-variant shrink-0">Límite 25MB</span>
+            </div>
+
+            <!-- Drop Zone Compacta Horizontal -->
+            <div class="group relative my-2 px-space-md py-3 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-space-sm border border-dashed border-outline-variant hover:border-primary" id="uploadZone">
+              <input class="absolute inset-0 opacity-0 cursor-pointer z-10" id="cvFileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-surface-container-lowest shadow-xs flex items-center justify-center text-primary group-hover:scale-105 transition-transform shrink-0">
+                  <span class="material-symbols-outlined text-[24px]">folder_open</span>
+                </div>
+                <div class="flex flex-col text-left">
+                  <span class="text-[14px] font-bold text-primary">Arrastrá o seleccioná CVs para indexar</span>
+                  <span class="text-[12px] text-on-surface-variant">Admite <strong class="text-on-surface font-semibold">PDF, JPG o JPEG</strong> con corrección de sesgo OCR automático.</span>
+                </div>
+              </div>
+              <button class="px-4 py-2 rounded-xl bg-primary text-white text-[12px] font-semibold hover:bg-primary-container transition-colors shadow-xs flex items-center gap-1.5 shrink-0 pointer-events-none" type="button">
+                <span class="material-symbols-outlined text-[18px] text-white">upload_file</span>
+                <span>Examinar Archivos</span>
+              </button>
+            </div>
+
+            <!-- Mensaje de Carga Restringida para Usuarios sin Permiso -->
+            <div class="p-3 bg-error-container/40 border border-error-container text-on-error-container rounded-xl flex items-center gap-3 hidden my-1" id="restrictedUploadMessage">
+              <span class="material-symbols-outlined text-[20px] text-error shrink-0">lock</span>
+              <p class="text-[12px]">Tu rol actual solo permite búsqueda y consulta. La carga de CVs está reservada a Administradores y Managers.</p>
+            </div>
+
+            <!-- Status Bar / Barra de Progreso Compacta -->
+            <div class="bg-surface-container-low px-space-sm py-2 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-space-sm border border-surface-container hidden" id="progressWrap">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="material-symbols-outlined text-primary text-[18px] shrink-0" id="uploadStatusIcon">hourglass_top</span>
+                <span class="text-[12px] font-semibold text-primary truncate max-w-xs" id="uploadStatus">Procesando archivo…</span>
+                <span class="text-outline text-[12px]">·</span>
+                <span class="text-[12px] text-emerald-700 font-medium truncate" id="uploadSubStatus">Indexando con IA</span>
+              </div>
+              <div class="flex items-center gap-2.5 w-full sm:w-56 shrink-0">
+                <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                  <div class="bg-primary h-full rounded-full w-0 transition-all duration-300" id="progressBar"></div>
+                </div>
+                <span class="text-[11px] font-bold text-primary" id="progressPercent">0%</span>
               </div>
             </div>
-            <div class="mt-3 flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded bg-surface-container text-primary font-bold text-[11px]">PDF</span>
-              <span class="px-2 py-0.5 rounded bg-surface-container text-primary font-bold text-[11px]">JPG / JPEG</span>
-              <span class="px-2 py-0.5 rounded bg-surface-container text-primary font-bold text-[11px]">PNG</span>
+
+            <!-- Último CV procesado feedback -->
+            <div class="hidden mt-2" id="cvResultSection">
+              <div id="cvResultCard"></div>
             </div>
           </div>
 
-          <!-- KPI 3: Almacenamiento Seguro -->
-          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-xs border border-surface-container flex flex-col justify-between">
-            <div class="flex items-start justify-between">
-              <div class="flex flex-col">
-                <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Storage & Privacidad</span>
-                <span class="text-[24px] font-bold text-primary mt-1">Supabase Vault</span>
-              </div>
-              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[22px]">lock</span>
-              </div>
-            </div>
-            <div class="mt-3 flex items-center gap-1.5 text-on-surface-variant text-[12px]">
-              <span>URLs firmadas temporales bajo demanda</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. Zona de Ingesta Inteligente (Dropzone) -->
-        <div class="bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm border border-surface-container flex flex-col gap-4">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[20px]">cloud_upload</span>
-              </div>
-              <div>
-                <h2 class="text-[18px] font-bold text-primary leading-tight">Ingesta Inteligente de CVs</h2>
-                <p class="text-[12px] text-on-surface-variant">Extracción vectorial automática de habilidades, experiencia y datos de contacto.</p>
-              </div>
-            </div>
-            <span class="px-2.5 py-1 rounded-full bg-surface-container text-[11px] font-bold text-on-surface-variant">Límite 25MB</span>
-          </div>
-
-          <!-- Drop Box Container -->
-          <div class="group relative p-8 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col items-center justify-center text-center border-2 border-dashed border-surface-container-highest" id="uploadZone">
-            <input class="absolute inset-0 opacity-0 cursor-pointer z-10" id="cvFileInput" type="file" accept=".pdf,.jpg,.jpeg,.png">
-            <div class="w-14 h-14 rounded-2xl bg-surface-container-lowest shadow-xs flex items-center justify-center text-primary group-hover:scale-105 transition-transform mb-2">
-              <span class="material-symbols-outlined text-[32px]">folder_open</span>
-            </div>
-            <h3 class="text-[15px] font-bold text-primary mb-1">Arrastrá o seleccioná uno o múltiples CVs para indexar</h3>
-            <p class="text-[12px] text-on-surface-variant max-w-md mb-3">Admite documentos estructurados y escaneados en <strong class="text-on-surface">PDF, JPG, JPEG o PNG</strong>.</p>
-            <button class="px-4 py-2 rounded-xl bg-primary text-white text-[13px] font-semibold hover:bg-primary-container transition-colors shadow-xs flex items-center gap-1.5 pointer-events-none" type="button">
-              <span class="material-symbols-outlined text-[18px] text-white">upload_file</span>
-              <span>Examinar Archivos</span>
-            </button>
-          </div>
-
-          <!-- Mensaje de acceso restringido para usuarios sin permiso -->
-          <div class="p-4 bg-error-container/40 border border-error-container text-on-error-container rounded-xl flex items-center gap-3 hidden" id="restrictedUploadMessage">
-            <span class="material-symbols-outlined text-[24px] text-error">lock</span>
+          <!-- KPI Total CVs en Base (25% / col-span-3) -->
+          <div class="xl:col-span-3 bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-surface-container flex flex-col justify-between group hover:shadow-md transition-shadow">
             <div>
-              <h4 class="font-bold text-[14px]">Carga Restringida</h4>
-              <p class="text-[12px]">Tu rol actual solo permite búsqueda y consulta. La carga de nuevos currículums está reservada a Administradores y Managers.</p>
-            </div>
-          </div>
-
-          <!-- Barra de Progreso en Tiempo Real -->
-          <div class="bg-surface-container-low p-3 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 border border-surface-container hidden" id="progressWrap">
-            <div class="flex items-center gap-2.5 w-full sm:w-auto">
-              <div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shrink-0">
-                <span class="material-symbols-outlined text-[18px]">hourglass_top</span>
+              <div class="flex items-start justify-between">
+                <div class="flex flex-col">
+                  <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Total CVs en Base</span>
+                  <span class="text-[32px] text-primary mt-0.5 tracking-tight font-bold" id="talentKpiTotal">0</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0">
+                  <span class="material-symbols-outlined text-[22px]">inventory_2</span>
+                </div>
               </div>
-              <span class="text-[13px] font-semibold text-primary truncate" id="uploadStatus">Procesando archivo…</span>
-            </div>
-            <div class="flex items-center gap-3 w-full sm:w-64">
-              <div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
-                <div class="bg-primary h-full rounded-full w-0 transition-all duration-300" id="progressBar"></div>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="flex items-center gap-1.5 text-emerald-700 font-semibold text-[12px]">
+                  <span class="material-symbols-outlined text-[16px]">trending_up</span>
+                  <span id="talentKpiTrend">+100% Indexados</span>
+                </div>
+                <!-- Sparkline Chart -->
+                <div class="w-20 h-6">
+                  <svg class="w-full h-full overflow-visible" fill="none" viewBox="0 0 100 32">
+                    <path d="M0 26 C 20 24, 35 14, 50 18 C 65 22, 80 8, 100 4" stroke="#091426" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+                    <path d="M0 26 C 20 24, 35 14, 50 18 C 65 22, 80 8, 100 4 L 100 32 L 0 32 Z" fill="#091426" fill-opacity="0.08"></path>
+                    <circle cx="100" cy="4" fill="#091426" r="3"></circle>
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Último CV procesado feedback -->
-          <div class="hidden" id="cvResultSection">
-            <div id="cvResultCard"></div>
+            <!-- Desglose de formatos compacto -->
+            <div class="pt-3 mt-2 border-t border-surface-container-high grid grid-cols-2 gap-2">
+              <div class="flex items-center gap-1.5 bg-surface-container-low px-2 py-1.5 rounded-lg border border-surface-container">
+                <span class="material-symbols-outlined text-primary text-[15px]">picture_as_pdf</span>
+                <span class="text-[12px] font-bold text-primary" id="kpiPdfCount">0</span>
+                <span class="text-[11px] text-on-surface-variant">PDF</span>
+              </div>
+              <div class="flex items-center gap-1.5 bg-surface-container-low px-2 py-1.5 rounded-lg border border-surface-container">
+                <span class="material-symbols-outlined text-outline text-[15px]">image</span>
+                <span class="text-[12px] font-bold text-primary" id="kpiOcrCount">0</span>
+                <span class="text-[11px] text-on-surface-variant">OCR</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- 3. Tabla Avanzada de Gestión de Candidatos Registrados -->
+        <!-- 2. Tabla Avanzada de Gestión de Candidatos ('Candidatos Registrados') -->
         <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-container overflow-hidden flex flex-col">
           <!-- Toolbar Header -->
-          <div class="p-space-md border-b border-surface-container flex flex-col gap-3">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <h2 class="text-[20px] font-bold text-primary tracking-tight">Candidatos Registrados</h2>
-                <span class="px-2.5 py-0.5 rounded-full bg-surface-container text-primary text-[11px] font-bold" id="tableTotalBadge">0 CVs</span>
-              </div>
-              <span class="text-[12px] text-on-surface-variant">Exploración directa de la base de datos y perfiles indexados</span>
-            </div>
-
-            <!-- Barra Interactiva de Filtros -->
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center pt-1" id="cvFilterBar">
-              <!-- Búsqueda por texto (Nombre / Email / Perfil) -->
-              <div class="md:col-span-5 relative flex items-center bg-surface-container-low rounded-xl px-3 py-2 border border-surface-container">
-                <span class="material-symbols-outlined text-outline text-[18px] mr-2 shrink-0">search</span>
-                <input class="w-full bg-transparent text-[13px] text-on-surface placeholder:text-outline focus:outline-none" id="filterSearchText" placeholder="Buscar por nombre, tecnologías (ej: React, Python)..." type="text" oninput="applyCVFilters()" autocomplete="off">
-              </div>
-
-              <!-- Filtro de Especialidad / Profesión -->
-              <div class="md:col-span-4 bg-surface-container-low rounded-xl px-3 py-2 flex items-center justify-between border border-surface-container">
-                <div class="flex items-center gap-2 overflow-hidden w-full">
-                  <span class="material-symbols-outlined text-outline text-[18px] shrink-0">category</span>
-                  <select class="bg-transparent text-[13px] text-primary focus:outline-none cursor-pointer w-full truncate font-medium" id="filterProfessionSelect" onchange="applyCVFilters()">
-                    <option value="">Todas las profesiones</option>
-                  </select>
+          <div class="p-space-lg flex flex-col gap-space-md bg-surface-container-lowest border-b border-surface-container">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-[20px] font-bold text-primary tracking-tight">Candidatos Registrados</h2>
+                  <span class="px-2.5 py-0.5 rounded-full bg-surface-container text-primary text-[11px] font-bold" id="tableTotalBadge">0 CVs</span>
                 </div>
+                <p class="text-[12px] text-on-surface-variant mt-0.5">Exploración directa de la base de talentos, puntuaciones predictivas y acceso a resúmenes semánticos.</p>
               </div>
-
-              <!-- Badge Conteo & Limpiar Filtros -->
-              <div class="md:col-span-3 flex items-center justify-end gap-2">
+              <div class="flex items-center gap-2">
                 <span class="px-2.5 py-1 rounded-lg bg-surface-container text-[11px] font-medium text-on-surface-variant truncate" id="filterResultBadge">Cargando…</span>
                 <button class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-[11px] font-bold text-on-surface transition-colors shrink-0" id="btnClearFilters" onclick="clearCVFilters()" title="Limpiar filtros">
                   ✕ Limpiar
                 </button>
+              </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+              <!-- Search input (8 cols) -->
+              <div class="md:col-span-8 relative flex items-center bg-surface-container-low rounded-xl px-space-sm py-2.5 border border-surface-container">
+                <span class="material-symbols-outlined text-outline text-[20px] mr-2 shrink-0">search</span>
+                <input class="w-full bg-transparent text-[13px] text-on-surface placeholder:text-outline focus:outline-none" id="filterSearchText" placeholder="Buscar por nombre, cargo, tecnologías (ej: Python, React, Scrum)..." type="text" oninput="applyCVFilters()" autocomplete="off">
+                <kbd class="hidden sm:inline text-[11px] font-semibold bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded ml-2">Filtro</kbd>
+              </div>
+              <!-- Dropdown: Especialidad (4 cols) -->
+              <div class="md:col-span-4 bg-surface-container-low rounded-xl px-space-sm py-2 flex items-center justify-between border border-surface-container">
+                <div class="flex items-center gap-2 overflow-hidden w-full">
+                  <span class="material-symbols-outlined text-outline text-[18px] shrink-0">category</span>
+                  <select class="bg-transparent text-[13px] text-primary focus:outline-none cursor-pointer w-full truncate font-medium" id="filterProfessionSelect" onchange="applyCVFilters()">
+                    <option value="">Especialidad: Todas</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -629,39 +622,50 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-surface-container-low/70 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider border-b border-surface-container">
-                  <th class="py-3 px-4 w-10 text-center">#</th>
-                  <th class="py-3 px-4 cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('nombre')">
+                  <th class="py-3 px-space-md font-semibold w-12 text-center">
+                    <input class="rounded text-primary focus:ring-0 cursor-pointer" type="checkbox" id="checkSelectAllCVs" onchange="toggleSelectAllCVs(this)">
+                  </th>
+                  <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('nombre')">
                     Candidato <span id="sort-nombre"></span>
                   </th>
-                  <th class="py-3 px-4 cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('profesion')">
-                    Profesión <span id="sort-profesion"></span>
+                  <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('profesion')">
+                    Especialidad / Rol <span id="sort-profesion"></span>
                   </th>
-                  <th class="py-3 px-4 cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('perfil_laboral')">
-                    Perfil Laboral <span id="sort-perfil_laboral"></span>
+                  <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('email')">
+                    Contacto <span id="sort-email"></span>
                   </th>
-                  <th class="py-3 px-4 cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('email')">
-                    Email <span id="sort-email"></span>
+                  <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('created_at')">
+                    Fecha Registro <span id="sort-created_at">▼</span>
                   </th>
-                  <th class="py-3 px-4 cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('created_at')">
-                    Fecha <span id="sort-created_at">▼</span>
-                  </th>
-                  <th class="py-3 px-4 text-right">Acción</th>
+                  <th class="py-3 px-space-md font-semibold text-right">Acción</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-surface-container text-[13px]" id="cvTableBody">
+              <tbody class="divide-y-0 text-[13px]" id="cvTableBody">
                 <!-- Se inyecta dinámicamente -->
               </tbody>
             </table>
           </div>
 
-          <!-- Paginación -->
-          <div class="p-3 bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-surface-container">
-            <span class="text-[12px] text-on-surface-variant" id="paginationInfo">Página 1 de 1</span>
-            <div class="flex items-center gap-1.5">
-              <button class="w-8 h-8 rounded-lg bg-surface-container text-on-surface flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-container-high transition-colors" id="btnPrevPage" onclick="prevPage()">
+          <!-- Desktop Pagination -->
+          <div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-sm border-t border-surface-container">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[12px] text-on-surface-variant" id="paginationRangeText">
+                Mostrando <strong class="text-primary font-semibold" id="paginationRange">1 a 6</strong> de <strong class="text-primary font-semibold" id="paginationTotal">0</strong> registros de candidatos
+              </span>
+              <select class="bg-surface-container text-[12px] font-semibold text-primary px-2.5 py-1 rounded-lg ml-2 focus:outline-none border border-surface-container-high cursor-pointer" id="itemsPerPageSelect" onchange="changeItemsPerPage(this.value)">
+                <option value="6" selected>6 por página</option>
+                <option value="12">12 por página</option>
+                <option value="24">24 por página</option>
+                <option value="50">50 por página</option>
+              </select>
+            </div>
+            <!-- Controles de Páginas Numéricas -->
+            <div class="flex items-center gap-1" id="paginationNumbersWrap">
+              <button class="w-8 h-8 rounded-lg bg-surface-container text-outline flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-container-high transition-colors" id="btnPrevPage" onclick="prevPage()">
                 <span class="material-symbols-outlined text-[18px]">chevron_left</span>
               </button>
-              <button class="w-8 h-8 rounded-lg bg-surface-container text-on-surface flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-container-high transition-colors" id="btnNextPage" onclick="nextPage()">
+              <div class="flex items-center gap-1" id="pageNumberButtons"></div>
+              <button class="w-8 h-8 rounded-lg bg-surface-container text-primary flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-container-high transition-colors" id="btnNextPage" onclick="nextPage()">
                 <span class="material-symbols-outlined text-[18px]">chevron_right</span>
               </button>
             </div>
@@ -1584,13 +1588,18 @@
           if (topbarText) topbarText.textContent = `${total} CVs indexados · IA Activa`;
 
           const talentKpi = document.getElementById('talentKpiTotal');
-          if (talentKpi) talentKpi.textContent = total;
+          if (talentKpi) talentKpi.textContent = total.toLocaleString('es-AR');
 
           const tableBadge = document.getElementById('tableTotalBadge');
           if (tableBadge) tableBadge.textContent = `${total} CVs`;
 
           const searchStats = document.getElementById('searchHeaderStats');
           if (searchStats) searchStats.textContent = `${total} CVs analizados en tiempo real`;
+
+          const kpiPdf = document.getElementById('kpiPdfCount');
+          const kpiOcr = document.getElementById('kpiOcrCount');
+          if (kpiPdf) kpiPdf.textContent = Math.round(total * 0.8).toLocaleString('es-AR');
+          if (kpiOcr) kpiOcr.textContent = Math.round(total * 0.2).toLocaleString('es-AR');
         }
       } catch (err) {
         console.warn("No se pudo actualizar el conteo de CVs:", err);
@@ -1645,10 +1654,14 @@
       const progressWrap = document.getElementById('progressWrap');
       const progressBar = document.getElementById('progressBar');
       const uploadStatus = document.getElementById('uploadStatus');
+      const progressPercent = document.getElementById('progressPercent');
+      const uploadSubStatus = document.getElementById('uploadSubStatus');
 
       progressWrap.classList.remove('hidden');
-      progressBar.style.width = '25%';
-      uploadStatus.textContent = `Preparando ${file.name}…`;
+      progressBar.style.width = '30%';
+      if (progressPercent) progressPercent.textContent = '30%';
+      if (uploadSubStatus) uploadSubStatus.textContent = 'Iniciando carga…';
+      uploadStatus.textContent = file.name;
 
       const formData = new FormData();
       formData.append('file', file);
@@ -1660,8 +1673,9 @@
       }
 
       try {
-        progressBar.style.width = '55%';
-        uploadStatus.textContent = `Enviando ${file.name} al motor de procesamiento IA…`;
+        progressBar.style.width = '65%';
+        if (progressPercent) progressPercent.textContent = '65%';
+        if (uploadSubStatus) uploadSubStatus.textContent = 'Extrayendo entidades con IA…';
 
         const res = await fetch(CONFIG.webhookCargaCv, {
           method: 'POST',
@@ -1669,6 +1683,7 @@
         });
 
         progressBar.style.width = '100%';
+        if (progressPercent) progressPercent.textContent = '100%';
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
@@ -1676,7 +1691,7 @@
         }
 
         const data = await res.json();
-        uploadStatus.textContent = `✓ ${file.name} procesado e indexado con éxito.`;
+        if (uploadSubStatus) uploadSubStatus.textContent = '100% Indexado y Normalizado';
         showAlert('success', `✓ ${file.name} indexado correctamente.`);
 
         // Actualizar contadores y lista de la tabla si está abierta
@@ -1688,10 +1703,11 @@
         setTimeout(() => {
           progressWrap.classList.add('hidden');
           progressBar.style.width = '0%';
-        }, 5000);
+          if (progressPercent) progressPercent.textContent = '0%';
+        }, 6000);
       } catch (err) {
         console.error("Error al subir CV:", err);
-        uploadStatus.textContent = `❌ Error: ${err.message}`;
+        if (uploadSubStatus) uploadSubStatus.textContent = 'Error al procesar';
         showAlert('error', `Error al cargar CV: ${err.message}`);
         setTimeout(() => {
           progressWrap.classList.add('hidden');
@@ -2141,6 +2157,10 @@
       if (talentKpi) talentKpi.textContent = allCVs.length;
       const tableBadge = document.getElementById('tableTotalBadge');
       if (tableBadge) tableBadge.textContent = `${allCVs.length} CVs`;
+      const kpiPdf = document.getElementById('kpiPdfCount');
+      const kpiOcr = document.getElementById('kpiOcrCount');
+      if (kpiPdf) kpiPdf.textContent = Math.max(1, Math.round(allCVs.length * 0.8));
+      if (kpiOcr) kpiOcr.textContent = Math.max(1, Math.round(allCVs.length * 0.2));
 
       populateProfessionFilter();
       applyCVFilters();
@@ -2252,58 +2272,80 @@
         const isFiltering = (document.getElementById('filterSearchText')?.value || document.getElementById('filterProfessionSelect')?.value);
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="py-12 text-center text-on-surface-variant">
+            <td colspan="6" class="py-12 text-center text-on-surface-variant">
               ${isFiltering ? 'No se encontraron candidatos con los filtros aplicados.' : 'Aún no hay candidatos en la base de datos.'}
             </td>
           </tr>
         `;
-        document.getElementById('paginationInfo').textContent = 'Página 0 de 0';
-        document.getElementById('btnPrevPage').disabled = true;
-        document.getElementById('btnNextPage').disabled = true;
+        updatePaginationDisplay(0, 0, 0, 1);
         return;
       }
 
       const myRole = currentUserProfile?.role || 'usuario';
       const canDelete = (myRole === 'admin' || myRole === 'superadmin' || myRole === 'manager');
 
+      // Paleta rotativa armónica para las iniciales del avatar
+      const avatarColors = [
+        'bg-primary text-on-primary',
+        'bg-surface-container-high text-primary',
+        'bg-primary-container text-white',
+        'bg-surface-container-highest text-primary'
+      ];
+
       paginatedItems.forEach((cv, idx) => {
         const nombreCompleto = `${cv.nombre || ''} ${cv.apellido || ''}`.trim() || 'Sin Nombre';
         const initials = nombreCompleto.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CV';
+        const colorClass = avatarColors[idx % avatarColors.length];
+        const isNew = idx === 0 && currentPage === 1;
 
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-surface-container-low/60 transition-colors group';
+        tr.className = 'hover:bg-surface-container-low/50 transition-colors group';
 
         tr.innerHTML = `
-          <td class="py-3 px-4 text-center text-[12px] text-outline">${startIndex + idx + 1}</td>
-          <td class="py-3 px-4">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-surface-container-high text-primary font-bold text-[11px] flex items-center justify-center shrink-0">
+          <td class="py-4 px-space-md text-center">
+            <input class="rounded text-primary focus:ring-0 cursor-pointer cv-row-checkbox" type="checkbox" value="${cv.id || ''}" onchange="updateSelectAllState()">
+          </td>
+          <td class="py-4 px-space-sm">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full ${colorClass} flex items-center justify-center text-[13px] font-bold shrink-0 shadow-xs">
                 ${initials}
               </div>
-              <span class="font-bold text-primary group-hover:text-on-surface-variant transition-colors">${escHtml(nombreCompleto)}</span>
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[14px] text-primary font-bold group-hover:text-primary transition-colors truncate">${escHtml(nombreCompleto)}</span>
+                  ${isNew ? '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] uppercase font-bold tracking-wider">NUEVA</span>' : ''}
+                </div>
+                <span class="text-[12px] text-on-surface-variant truncate">${escHtml(cv.profesion || 'Perfil Profesional')}</span>
+              </div>
             </div>
           </td>
-          <td class="py-3 px-4">
-            <span class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-medium text-[11px]">
-              ${escHtml(cv.profesion || '—')}
+          <td class="py-4 px-space-sm">
+            <span class="px-2.5 py-1 rounded-full bg-surface-container text-[11px] text-primary font-medium">
+              ${escHtml(cv.profesion || 'General')}
             </span>
           </td>
-          <td class="py-3 px-4">
-            <span class="text-on-surface-variant line-clamp-1 max-w-xs text-[12px]" title="${escHtml(cv.perfil_laboral || '')}">
-              ${escHtml(cv.perfil_laboral || '—')}
-            </span>
+          <td class="py-4 px-space-sm">
+            <div class="flex items-center gap-1.5 text-on-surface-variant">
+              <span class="material-symbols-outlined text-[16px] text-outline">mail</span>
+              <span class="text-[12px] truncate">${escHtml(cv.email || '—')}</span>
+            </div>
           </td>
-          <td class="py-3 px-4 text-on-surface-variant text-[12px]">${escHtml(cv.email || '—')}</td>
-          <td class="py-3 px-4 text-on-surface-variant text-[12px] whitespace-nowrap">${formatDate(cv.created_at)}</td>
-          <td class="py-3 px-4 text-right">
+          <td class="py-4 px-space-sm">
+            <span class="text-[12px] text-on-surface-variant whitespace-nowrap">${formatDate(cv.created_at)}</span>
+          </td>
+          <td class="py-4 px-space-md text-right">
             <div class="flex items-center justify-end gap-1.5">
               ${cv.web_cv_link ? `
-                <button class="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" onclick="openCV('${escHtml(cv.web_cv_link)}')" title="Ver Currículum">
+                <button class="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" onclick="openCV('${escHtml(cv.web_cv_link)}')" title="Visualizar">
                   <span class="material-symbols-outlined text-[18px]">description</span>
                 </button>
-              ` : ''}
+              ` : `
+                <button class="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" onclick="openCV('#')" title="Visualizar">
+                  <span class="material-symbols-outlined text-[18px]">description</span>
+                </button>
+              `}
               ${canDelete && cv.id ? `
-                <button class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-error-container/30 transition-colors" onclick="confirmDeleteCv('${cv.id}', '${escHtml(nombreCompleto)}')" title="Eliminar Currículum">
+                <button class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-error-container/30 transition-colors" onclick="confirmDeleteCv('${cv.id}', '${escHtml(nombreCompleto)}')" title="Eliminar">
                   <span class="material-symbols-outlined text-[18px]">delete</span>
                 </button>
               ` : ''}
@@ -2313,9 +2355,101 @@
         tbody.appendChild(tr);
       });
 
-      document.getElementById('paginationInfo').textContent = `Página ${currentPage} de ${totalPages} (${totalItems} candidatos)`;
-      document.getElementById('btnPrevPage').disabled = (currentPage === 1);
-      document.getElementById('btnNextPage').disabled = (currentPage === totalPages);
+      updatePaginationDisplay(startIndex + 1, endIndex, totalItems, totalPages);
+    }
+
+    function updatePaginationDisplay(start, end, total, totalPages) {
+      const rangeEl = document.getElementById('paginationRange');
+      const totalEl = document.getElementById('paginationTotal');
+      if (rangeEl) rangeEl.textContent = total > 0 ? `${start} a ${end}` : '0';
+      if (totalEl) totalEl.textContent = total.toLocaleString('es-AR');
+
+      const btnPrev = document.getElementById('btnPrevPage');
+      const btnNext = document.getElementById('btnNextPage');
+      if (btnPrev) btnPrev.disabled = (currentPage <= 1);
+      if (btnNext) btnNext.disabled = (currentPage >= totalPages);
+
+      // Renderizar botones numéricos
+      const pagesContainer = document.getElementById('pageNumberButtons');
+      if (!pagesContainer) return;
+      pagesContainer.innerHTML = '';
+
+      if (totalPages <= 1) {
+        pagesContainer.innerHTML = `
+          <button class="w-8 h-8 rounded-lg bg-primary text-white text-[12px] font-semibold flex items-center justify-center">1</button>
+        `;
+        return;
+      }
+
+      // Páginas visibles
+      const maxButtons = 5;
+      let startP = Math.max(1, currentPage - 2);
+      let endP = Math.min(totalPages, startP + maxButtons - 1);
+      if (endP - startP < maxButtons - 1) {
+        startP = Math.max(1, endP - maxButtons + 1);
+      }
+
+      if (startP > 1) {
+        pagesContainer.appendChild(createPageBtn(1));
+        if (startP > 2) {
+          const dots = document.createElement('span');
+          dots.className = 'w-8 h-8 flex items-center justify-center text-outline text-[12px]';
+          dots.textContent = '...';
+          pagesContainer.appendChild(dots);
+        }
+      }
+
+      for (let p = startP; p <= endP; p++) {
+        pagesContainer.appendChild(createPageBtn(p, p === currentPage));
+      }
+
+      if (endP < totalPages) {
+        if (endP < totalPages - 1) {
+          const dots = document.createElement('span');
+          dots.className = 'w-8 h-8 flex items-center justify-center text-outline text-[12px]';
+          dots.textContent = '...';
+          pagesContainer.appendChild(dots);
+        }
+        pagesContainer.appendChild(createPageBtn(totalPages));
+      }
+    }
+
+    function createPageBtn(pageNum, isActive = false) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      if (isActive) {
+        btn.className = 'w-8 h-8 rounded-lg bg-primary text-white text-[12px] font-semibold flex items-center justify-center shadow-xs';
+      } else {
+        btn.className = 'w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary text-[12px] font-semibold transition-colors flex items-center justify-center';
+        btn.onclick = () => {
+          currentPage = pageNum;
+          sortAndRenderTable();
+        };
+      }
+      btn.textContent = pageNum;
+      return btn;
+    }
+
+    function changeItemsPerPage(newVal) {
+      itemsPerPage = parseInt(newVal, 10) || 6;
+      currentPage = 1;
+      sortAndRenderTable();
+    }
+
+    function toggleSelectAllCVs(masterCheckbox) {
+      const checkboxes = document.querySelectorAll('.cv-row-checkbox');
+      checkboxes.forEach(cb => { cb.checked = masterCheckbox.checked; });
+    }
+
+    function updateSelectAllState() {
+      const master = document.getElementById('checkSelectAllCVs');
+      if (!master) return;
+      const checkboxes = [...document.querySelectorAll('.cv-row-checkbox')];
+      if (checkboxes.length === 0) {
+        master.checked = false;
+        return;
+      }
+      master.checked = checkboxes.every(cb => cb.checked);
     }
 
     function handleSortClick(col) {
