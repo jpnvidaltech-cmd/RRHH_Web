@@ -14,6 +14,18 @@
   <!-- Google Material Symbols Outlined -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 
+  <!-- Anti-flicker Theme Initialization -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('rrhh_theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script id="tailwind-config">
@@ -22,48 +34,48 @@
       theme: {
         extend: {
           colors: {
-            "surface-bright": "#faf9f6",
-            "surface-dim": "#dbdad7",
-            "surface-container-lowest": "#ffffff",
-            "surface-container-low": "#f4f3f0",
-            "surface-container": "#efeeeb",
-            "surface-container-high": "#e9e8e5",
-            "surface-container-highest": "#e3e2df",
-            "surface": "#faf9f6",
-            "surface-variant": "#e3e2df",
-            "on-surface": "#1a1c1a",
-            "on-surface-variant": "#45474c",
-            "outline": "#75777d",
-            "outline-variant": "#c5c6cd",
-            "surface-tint": "#545f73",
-            "primary": "#091426",
-            "primary-container": "#1e293b",
-            "on-primary": "#ffffff",
-            "on-primary-container": "#8590a6",
-            "primary-fixed": "#d8e3fb",
-            "primary-fixed-dim": "#bcc7de",
-            "on-primary-fixed": "#111c2d",
-            "on-primary-fixed-variant": "#3c475a",
-            "secondary": "#091426",
-            "secondary-container": "#1e293b",
-            "on-secondary": "#ffffff",
-            "on-secondary-container": "#ffffff",
-            "secondary-fixed": "#e2e8f0",
-            "secondary-fixed-dim": "#cbd5e1",
-            "on-secondary-fixed": "#0f172a",
-            "on-secondary-fixed-variant": "#334155",
-            "tertiary": "#00190e",
-            "tertiary-container": "#00301e",
-            "on-tertiary-container": "#00a472",
-            "tertiary-fixed": "#6ffbbe",
-            "tertiary-fixed-dim": "#4edea3",
-            "on-tertiary-fixed": "#002113",
-            "on-tertiary-fixed-variant": "#005236",
-            "error": "#ba1a1a",
-            "error-container": "#ffdad6",
-            "on-error-container": "#93000a",
-            "background": "#faf9f6",
-            "on-background": "#1a1c1a"
+            "surface-bright": "var(--surface-bright)",
+            "surface-dim": "var(--surface-dim)",
+            "surface-container-lowest": "var(--surface-container-lowest)",
+            "surface-container-low": "var(--surface-container-low)",
+            "surface-container": "var(--surface-container)",
+            "surface-container-high": "var(--surface-container-high)",
+            "surface-container-highest": "var(--surface-container-highest)",
+            "surface": "var(--surface)",
+            "surface-variant": "var(--surface-variant)",
+            "on-surface": "var(--on-surface)",
+            "on-surface-variant": "var(--on-surface-variant)",
+            "outline": "var(--outline)",
+            "outline-variant": "var(--outline-variant)",
+            "surface-tint": "var(--surface-tint)",
+            "primary": "var(--primary)",
+            "primary-container": "var(--primary-container)",
+            "on-primary": "var(--on-primary)",
+            "on-primary-container": "var(--on-primary-container)",
+            "primary-fixed": "var(--primary-fixed)",
+            "primary-fixed-dim": "var(--primary-fixed-dim)",
+            "on-primary-fixed": "var(--on-primary-fixed)",
+            "on-primary-fixed-variant": "var(--on-primary-fixed-variant)",
+            "secondary": "var(--secondary)",
+            "secondary-container": "var(--secondary-container)",
+            "on-secondary": "var(--on-secondary)",
+            "on-secondary-container": "var(--on-secondary-container)",
+            "secondary-fixed": "var(--secondary-fixed)",
+            "secondary-fixed-dim": "var(--secondary-fixed-dim)",
+            "on-secondary-fixed": "var(--on-secondary-fixed)",
+            "on-secondary-fixed-variant": "var(--on-secondary-fixed-variant)",
+            "tertiary": "var(--tertiary)",
+            "tertiary-container": "var(--tertiary-container)",
+            "on-tertiary-container": "var(--on-tertiary-container)",
+            "tertiary-fixed": "var(--tertiary-fixed)",
+            "tertiary-fixed-dim": "var(--tertiary-fixed-dim)",
+            "on-tertiary-fixed": "var(--on-tertiary-fixed)",
+            "on-tertiary-fixed-variant": "var(--on-tertiary-fixed-variant)",
+            "error": "var(--error)",
+            "error-container": "var(--error-container)",
+            "on-error-container": "var(--on-error-container)",
+            "background": "var(--background)",
+            "on-background": "var(--on-background)"
           },
           borderRadius: {
             "DEFAULT": "0.375rem",
@@ -92,11 +104,124 @@
   </script>
 
   <style>
+    /* ─── VARIABLES DE COLOR: MODO CLARO (WARM MINIMAL) ─── */
+    :root {
+      --background: #faf9f6;
+      --on-background: #1a1c1a;
+      --surface: #faf9f6;
+      --surface-bright: #faf9f6;
+      --surface-dim: #dbdad7;
+      --surface-container-lowest: #ffffff;
+      --surface-container-low: #f4f3f0;
+      --surface-container: #efeeeb;
+      --surface-container-high: #e9e8e5;
+      --surface-container-highest: #e3e2df;
+      --surface-variant: #e3e2df;
+      --on-surface: #1a1c1a;
+      --on-surface-variant: #45474c;
+      --outline: #75777d;
+      --outline-variant: #c5c6cd;
+      --surface-tint: #545f73;
+      --primary: #091426;
+      --primary-container: #1e293b;
+      --on-primary: #ffffff;
+      --on-primary-container: #8590a6;
+      --primary-fixed: #d8e3fb;
+      --primary-fixed-dim: #bcc7de;
+      --on-primary-fixed: #111c2d;
+      --on-primary-fixed-variant: #3c475a;
+      --secondary: #091426;
+      --secondary-container: #1e293b;
+      --on-secondary: #ffffff;
+      --on-secondary-container: #ffffff;
+      --secondary-fixed: #e2e8f0;
+      --secondary-fixed-dim: #cbd5e1;
+      --on-secondary-fixed: #0f172a;
+      --on-secondary-fixed-variant: #334155;
+      --tertiary: #00190e;
+      --tertiary-container: #00301e;
+      --on-tertiary-container: #00a472;
+      --tertiary-fixed: #6ffbbe;
+      --tertiary-fixed-dim: #4edea3;
+      --on-tertiary-fixed: #002113;
+      --on-tertiary-fixed-variant: #005236;
+      --error: #ba1a1a;
+      --error-container: #ffdad6;
+      --on-error-container: #93000a;
+      --border-subtle: #efeeeb;
+      --border-dash: #c5c6cd;
+      --sparkline-stroke: #091426;
+      --sparkline-fill: #091426;
+      --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --scrollbar-thumb: #c5c6cd;
+      --scrollbar-thumb-hover: #75777d;
+      --signout-bg: #ffffff;
+      --signout-border: #e2e8f0;
+      --signout-text: #44403c;
+    }
+
+    /* ─── VARIABLES DE COLOR: MODO OSCURO (PALETA ORIGINAL ELEGANTE & SUAVE) ─── */
+    html.dark {
+      --background: #0f1a2e;
+      --on-background: #f8fafc;
+      --surface: #0f1a2e;
+      --surface-bright: #162035;
+      --surface-dim: #0b1322;
+      --surface-container-lowest: #162035;
+      --surface-container-low: #121d32;
+      --surface-container: #1a2740;
+      --surface-container-high: #203152;
+      --surface-container-highest: #283c64;
+      --surface-variant: #1a2740;
+      --on-surface: #f8fafc;
+      --on-surface-variant: #94a3b8;
+      --outline: #64748b;
+      --outline-variant: #334155;
+      --surface-tint: #3b82f6;
+      --primary: #3b82f6;
+      --primary-container: #1d4ed8;
+      --on-primary: #ffffff;
+      --on-primary-container: #dbeafe;
+      --primary-fixed: #1e293b;
+      --primary-fixed-dim: #334155;
+      --on-primary-fixed: #f8fafc;
+      --on-primary-fixed-variant: #94a3b8;
+      --secondary: #3b82f6;
+      --secondary-container: #1e293b;
+      --on-secondary: #ffffff;
+      --on-secondary-container: #f8fafc;
+      --secondary-fixed: #1e293b;
+      --secondary-fixed-dim: #334155;
+      --on-secondary-fixed: #f8fafc;
+      --on-secondary-fixed-variant: #94a3b8;
+      --tertiary: #10b981;
+      --tertiary-container: #064e3b;
+      --on-tertiary-container: #34d399;
+      --tertiary-fixed: #065f46;
+      --tertiary-fixed-dim: #047857;
+      --on-tertiary-fixed: #ecfdf5;
+      --on-tertiary-fixed-variant: #6ee7b7;
+      --error: #ef4444;
+      --error-container: #450a0a;
+      --on-error-container: #fca5a5;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-dash: rgba(255, 255, 255, 0.16);
+      --sparkline-stroke: #38bdf8;
+      --sparkline-fill: #38bdf8;
+      --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      --scrollbar-thumb: #334155;
+      --scrollbar-thumb-hover: #475569;
+      --signout-bg: #1a2740;
+      --signout-border: #334155;
+      --signout-text: #f8fafc;
+    }
+
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #faf9f6;
-      color: #1a1c1a;
+      background-color: var(--background);
+      color: var(--on-surface);
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
 
     /* Scrollbar sutil y moderno */
@@ -108,11 +233,11 @@
       background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-      background: #c5c6cd;
+      background: var(--scrollbar-thumb);
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #75777d;
+      background: var(--scrollbar-thumb-hover);
     }
 
     /* Toast Alert Notification */
@@ -262,8 +387,13 @@
       </button>
     </div>
 
-    <!-- Zona 3: Píldora de Perfil de Usuario, Llave y Logout -->
+    <!-- Zona 3: Toggle Tema, Píldora de Perfil, Llave y Logout -->
     <div class="flex items-center gap-2 shrink-0">
+      <!-- Botón Toggle Tema Oscuro / Claro -->
+      <button class="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all border border-surface-container shadow-2xs" id="btnThemeToggle" onclick="toggleTheme()" title="Cambiar a Modo Oscuro" aria-label="Cambiar tema">
+        <span class="material-symbols-outlined text-[19px]" id="themeIcon">dark_mode</span>
+      </button>
+
       <!-- Tarjeta del Usuario Conectado -->
       <div class="flex items-center gap-2 bg-surface-container-low/90 p-1 pr-2.5 rounded-2xl border border-surface-container" id="userProfileInfo" style="display: none;">
         <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white ring-2 ring-surface-container shrink-0 text-[12px] font-bold" id="userAvatarCircle">
@@ -281,10 +411,10 @@
         </button>
       </div>
 
-      <!-- Botón Cerrar Sesión (Ultra legible, sin perder texto ni estilo) -->
-      <button class="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-stone-700 hover:text-rose-600 border border-stone-200 hover:border-rose-200 transition-all text-[12px] font-semibold shadow-2xs active:scale-95" id="btnSignOut" style="display: none;" title="Cerrar sesión activa">
-        <span class="material-symbols-outlined text-[16px] text-stone-400 group-hover:text-rose-600 transition-colors">logout</span>
-        <span class="font-semibold text-stone-700 group-hover:text-rose-600 transition-colors">Cerrar Sesión</span>
+      <!-- Botón Cerrar Sesión (Ultra legible, dinámico para Dark y Light) -->
+      <button class="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-surface-container hover:bg-rose-50 dark:hover:bg-rose-950/40 text-stone-700 dark:text-stone-200 hover:text-rose-600 dark:hover:text-rose-400 border border-stone-200 dark:border-surface-container-high hover:border-rose-200 dark:hover:border-rose-800 transition-all text-[12px] font-semibold shadow-2xs active:scale-95" id="btnSignOut" style="display: none;" title="Cerrar sesión activa">
+        <span class="material-symbols-outlined text-[16px] text-stone-400 dark:text-stone-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">logout</span>
+        <span class="font-semibold text-stone-700 dark:text-stone-200 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">Cerrar Sesión</span>
       </button>
     </div>
   </header>
@@ -546,10 +676,10 @@
                 </div>
                 <!-- Sparkline Chart -->
                 <div class="w-20 h-6">
-                  <svg class="w-full h-full overflow-visible" fill="none" viewBox="0 0 100 32">
-                    <path d="M0 26 C 20 24, 35 14, 50 18 C 65 22, 80 8, 100 4" stroke="#091426" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
-                    <path d="M0 26 C 20 24, 35 14, 50 18 C 65 22, 80 8, 100 4 L 100 32 L 0 32 Z" fill="#091426" fill-opacity="0.08"></path>
-                    <circle cx="100" cy="4" fill="#091426" r="3"></circle>
+                  <svg class="w-full h-full overflow-visible" fill="none" viewBox="0 0 100 32" id="talentKpiSparkline">
+                    <path d="M0 26 C 20 24, 35 14, 50 18 C 65 22, 80 8, 100 4" stroke="currentColor" class="text-primary" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+                    <path d="M0 26 C 20 24, 35 14, 50 18 C 65 22, 80 8, 100 4 L 100 32 L 0 32 Z" fill="currentColor" class="text-primary opacity-10"></path>
+                    <circle cx="100" cy="4" fill="currentColor" class="text-primary" r="3"></circle>
                   </svg>
                 </div>
               </div>
@@ -1547,6 +1677,38 @@
         icon.textContent = 'visibility';
       }
     }
+
+    // ─── TEMA OSCURO / CLARO (DARK MODE) ────────────────────────────────────
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('rrhh_theme', isDark ? 'dark' : 'light');
+      syncThemeUI(isDark);
+    }
+
+    function syncThemeUI(isDark) {
+      if (typeof isDark === 'undefined') {
+        isDark = document.documentElement.classList.contains('dark');
+      }
+      const icon = document.getElementById('themeIcon');
+      const btn = document.getElementById('btnThemeToggle');
+      if (icon) {
+        icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+      }
+      if (btn) {
+        btn.title = isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro';
+      }
+
+      // Actualizar color de stroke del sparkline si existe
+      const sparklines = document.querySelectorAll('#talentKpiSparkline path');
+      sparklines.forEach(p => {
+        if (p.getAttribute('stroke')) {
+          p.setAttribute('stroke', isDark ? '#38bdf8' : '#091426');
+        }
+      });
+    }
+
+    // Sincronizar UI al cargar
+    syncThemeUI();
 
     // ─── LIVE CLOCK & DATETIME ───────────────────────────────────────────────
     function updateClock() {
