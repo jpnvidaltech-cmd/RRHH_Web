@@ -653,9 +653,8 @@
                 Mostrando <strong class="text-primary font-semibold" id="paginationRange">1 a 6</strong> de <strong class="text-primary font-semibold" id="paginationTotal">0</strong> registros de candidatos
               </span>
               <select class="bg-surface-container text-[12px] font-semibold text-primary px-2.5 py-1 rounded-lg ml-2 focus:outline-none border border-surface-container-high cursor-pointer" id="itemsPerPageSelect" onchange="changeItemsPerPage(this.value)">
-                <option value="6" selected>6 por página</option>
-                <option value="12">12 por página</option>
-                <option value="24">24 por página</option>
+                <option value="10" selected>10 por página</option>
+                <option value="20">20 por página</option>
                 <option value="50">50 por página</option>
               </select>
             </div>
@@ -2050,7 +2049,7 @@
     let allCVs = [];
     let filteredCVs = [];
     let currentPage = 1;
-    const itemsPerPage = 8;
+    let itemsPerPage = 10;
     let currentSortColumn = 'created_at';
     let currentSortDirection = 'desc';
 
@@ -2431,7 +2430,7 @@
     }
 
     function changeItemsPerPage(newVal) {
-      itemsPerPage = parseInt(newVal, 10) || 6;
+      itemsPerPage = parseInt(newVal, 10) || 10;
       currentPage = 1;
       sortAndRenderTable();
     }
