@@ -315,13 +315,7 @@
       </button>
     </div>
 
-    <!-- Pie del sidebar -->
-    <div class="px-space-md py-space-xs flex flex-col gap-2">
-      <div class="p-3 bg-surface-container rounded-xl text-center">
-        <span class="text-[11px] text-on-surface-variant block">Motor de Búsqueda Semántica</span>
-        <span class="text-[12px] font-bold text-primary">v1.4 · Powered by Supabase</span>
-      </div>
-    </div>
+
   </aside>
 
   <!-- ── CONTENEDOR PRINCIPAL DINÁMICO (pl-72) ── -->
@@ -629,10 +623,13 @@
                     Candidato <span id="sort-nombre"></span>
                   </th>
                   <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('profesion')">
-                    Especialidad / Rol <span id="sort-profesion"></span>
+                    Profesión <span id="sort-profesion"></span>
+                  </th>
+                  <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('perfil_laboral')">
+                    Perfil Laboral <span id="sort-perfil_laboral"></span>
                   </th>
                   <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('email')">
-                    Contacto <span id="sort-email"></span>
+                    Email <span id="sort-email"></span>
                   </th>
                   <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('created_at')">
                     Fecha Registro <span id="sort-created_at">▼</span>
@@ -963,7 +960,7 @@
       </div>
       <div>
         <h2 class="text-[22px] font-bold text-primary tracking-tight">Iniciar Sesión</h2>
-        <p class="text-[13px] text-on-surface-variant mt-0.5">Accedé al Asistente RRHH con tus credenciales de Supabase</p>
+        <p class="text-[13px] text-on-surface-variant mt-0.5">Accede al Asistente RRHH con tus credenciales</p>
       </div>
 
       <form id="loginForm" class="w-full flex flex-col gap-3 text-left">
@@ -2271,7 +2268,7 @@
         const isFiltering = (document.getElementById('filterSearchText')?.value || document.getElementById('filterProfessionSelect')?.value);
         tbody.innerHTML = `
           <tr>
-            <td colspan="6" class="py-12 text-center text-on-surface-variant">
+            <td colspan="7" class="py-12 text-center text-on-surface-variant">
               ${isFiltering ? 'No se encontraron candidatos con los filtros aplicados.' : 'Aún no hay candidatos en la base de datos.'}
             </td>
           </tr>
@@ -2314,20 +2311,23 @@
                   <span class="text-[14px] text-primary font-bold group-hover:text-primary transition-colors truncate">${escHtml(nombreCompleto)}</span>
                   ${isNew ? '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] uppercase font-bold tracking-wider">NUEVA</span>' : ''}
                 </div>
-                <span class="text-[12px] text-on-surface-variant truncate">${escHtml(cv.profesion || 'Perfil Profesional')}</span>
               </div>
             </div>
           </td>
           <td class="py-4 px-space-sm">
-            <span class="px-2.5 py-1 rounded-full bg-surface-container text-[11px] text-primary font-medium">
-              ${escHtml(cv.profesion || 'General')}
+            <span class="text-[13px] font-semibold text-primary">
+              ${escHtml(cv.profesion || '—')}
             </span>
           </td>
-          <td class="py-4 px-space-sm">
-            <div class="flex items-center gap-1.5 text-on-surface-variant">
-              <span class="material-symbols-outlined text-[16px] text-outline">mail</span>
-              <span class="text-[12px] truncate">${escHtml(cv.email || '—')}</span>
+          <td class="py-4 px-space-sm max-w-[280px]">
+            <div class="cursor-pointer group/perfil" onclick="this.querySelector('.perfil-text').classList.toggle('line-clamp-2')">
+              <p class="perfil-text text-[12px] text-on-surface-variant line-clamp-2 group-hover/perfil:line-clamp-none transition-all duration-200 leading-relaxed select-text">
+                ${escHtml(cv.perfil_laboral || '—')}
+              </p>
             </div>
+          </td>
+          <td class="py-4 px-space-sm">
+            <span class="text-[12px] text-on-surface-variant truncate">${escHtml(cv.email || '—')}</span>
           </td>
           <td class="py-4 px-space-sm">
             <span class="text-[12px] text-on-surface-variant whitespace-nowrap">${formatDate(cv.created_at)}</span>
