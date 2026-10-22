@@ -245,7 +245,7 @@
         <span class="material-symbols-outlined text-outline text-[15px]">schedule</span>
         <span id="datePart">—</span>
         <span class="text-outline">|</span>
-        <span class="font-bold text-primary font-mono" id="timePart">00:00:00</span>
+        <span class="font-bold text-primary font-mono" id="timePart">00:00</span>
         <span class="text-outline">|</span>
         <span id="tzBadge">America/Buenos_Aires</span>
       </div>
@@ -1559,7 +1559,7 @@
         datePart.textContent = now.toLocaleDateString('es-AR', optionsDate);
       }
       if (timePart) {
-        timePart.textContent = now.toLocaleTimeString('es-AR', { hour12: false, timeZone: 'America/Buenos_Aires' });
+        timePart.textContent = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Buenos_Aires' });
       }
     }
     setInterval(updateClock, 1000);
