@@ -216,6 +216,83 @@
       --signout-text: #f8fafc;
     }
 
+    /* ─── TIPOGRAFÍA ELEGANTE MODO OSCURO (TITULOS BLANCOS, SUBTITULOS GRISES) ─── */
+    html.dark h1,
+    html.dark h2,
+    html.dark h3,
+    html.dark h4,
+    html.dark h5,
+    html.dark h6 {
+      color: #ffffff !important;
+    }
+
+    /* Subtítulos, encabezados de tabla y textos secundarios en paleta de grises suaves (#94a3b8) */
+    html.dark th {
+      color: #94a3b8 !important;
+    }
+
+    /* Títulos de marcas, KPIs y nombres principales en modo oscuro */
+    html.dark .text-title-white,
+    html.dark .brand-name,
+    html.dark .candidate-name,
+    html.dark #topbarTenantName,
+    html.dark #talentKpiTotal,
+    html.dark #kpiPdfCount,
+    html.dark #kpiOcrCount,
+    html.dark #paginationRange,
+    html.dark #paginationTotal,
+    html.dark #timePart {
+      color: #ffffff !important;
+    }
+
+    /* ─── TAGS DE ROL / PERFIL (SECCIÓN PERFILES & EQUIPO SEGÚN ADJUNTO 2) ─── */
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.15rem 0.55rem;
+      border-radius: 0.375rem;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+
+    /* MODO CLARO */
+    .role-badge-admin {
+      background-color: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+    .role-badge-manager {
+      background-color: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    .role-badge-usuario {
+      background-color: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    /* MODO OSCURO (ADJUNTO 2: AMARILLO/DORADO ADMIN, VERDE MANAGER, AZUL/CELESTE USUARIO) */
+    html.dark .role-badge-admin {
+      background-color: rgba(245, 158, 11, 0.16) !important;
+      color: #fbbf24 !important;
+      border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    }
+    html.dark .role-badge-manager {
+      background-color: rgba(16, 185, 129, 0.16) !important;
+      color: #34d399 !important;
+      border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    }
+    html.dark .role-badge-usuario {
+      background-color: rgba(37, 99, 235, 0.18) !important;
+      color: #38bdf8 !important; /* Celeste / azul claro de alta legibilidad según petición */
+      border: 1px solid rgba(59, 130, 246, 0.35) !important;
+    }
+
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       background-color: var(--background);
@@ -354,7 +431,7 @@
           <img src="Logo/Gemini_Generated_Image_v2.png" alt="Perfiles RRHH Logo" class="w-full h-full object-contain rounded-lg">
         </div>
         <div class="flex flex-col">
-          <span class="font-bold text-[17px] text-primary tracking-tight leading-none">Perfiles RRHH</span>
+          <span class="font-bold text-[17px] text-primary dark:text-white tracking-tight leading-none brand-name">Perfiles RRHH</span>
           <span class="text-[10px] text-on-surface-variant tracking-wider uppercase font-bold">AI Talent Engine</span>
         </div>
       </div>
@@ -370,7 +447,7 @@
         <span class="material-symbols-outlined text-outline text-[15px]">schedule</span>
         <span id="datePart">—</span>
         <span class="text-outline">|</span>
-        <span class="font-bold text-primary font-mono" id="timePart">00:00</span>
+        <span class="font-bold text-primary dark:text-white font-mono" id="timePart">00:00</span>
         <span class="text-outline">|</span>
         <span id="tzBadge">America/Buenos_Aires</span>
       </div>
@@ -382,7 +459,7 @@
         <div class="w-5 h-5 rounded-md bg-surface-container flex items-center justify-center text-primary">
           <span class="material-symbols-outlined text-[13px]">apartment</span>
         </div>
-        <span class="text-[12px] font-bold text-primary truncate max-w-[150px]" id="topbarTenantName">Organización Activa</span>
+        <span class="text-[12px] font-bold text-primary dark:text-white truncate max-w-[150px]" id="topbarTenantName">Organización Activa</span>
         <span class="material-symbols-outlined text-[15px] text-outline group-hover:text-primary transition-colors" id="topbarTenantArrow">expand_more</span>
       </button>
     </div>
@@ -401,8 +478,8 @@
         </div>
         <div class="flex flex-col text-left">
           <div class="flex items-center gap-1.5">
-            <span class="text-[12px] font-bold text-on-surface leading-tight truncate max-w-[130px]" id="userEmailSpan">—</span>
-            <span class="px-1.5 py-0.5 rounded bg-primary text-white text-[9px] font-bold tracking-wider uppercase leading-none" id="userRoleBadge">USUARIO</span>
+            <span class="text-[12px] font-bold text-on-surface dark:text-white leading-tight truncate max-w-[130px]" id="userEmailSpan">—</span>
+            <span class="role-badge role-badge-usuario" id="userRoleBadge">USUARIO</span>
           </div>
         </div>
         <!-- Botón rápido cambio de contraseña -->
@@ -708,8 +785,8 @@
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm">
               <div>
                 <div class="flex items-center gap-2">
-                  <h2 class="text-[20px] font-bold text-primary tracking-tight">Candidatos Registrados</h2>
-                  <span class="px-2.5 py-0.5 rounded-full bg-surface-container text-primary text-[11px] font-bold" id="tableTotalBadge">0 CVs</span>
+                  <h2 class="text-[20px] font-bold text-primary dark:text-white tracking-tight">Candidatos Registrados</h2>
+                  <span class="px-2.5 py-0.5 rounded-full bg-surface-container text-primary dark:text-slate-200 text-[11px] font-bold" id="tableTotalBadge">0 CVs</span>
                 </div>
                 <p class="text-[12px] text-on-surface-variant mt-0.5">Exploración directa de la base de talentos, puntuaciones predictivas y acceso a resúmenes semánticos.</p>
               </div>
@@ -733,7 +810,7 @@
               <div class="md:col-span-4 bg-surface-container-low rounded-xl px-space-sm py-2 flex items-center justify-between border border-surface-container">
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                   <span class="material-symbols-outlined text-outline text-[18px] shrink-0">category</span>
-                  <select class="bg-transparent text-[13px] text-primary focus:outline-none cursor-pointer w-full truncate font-medium" id="filterProfessionSelect" onchange="applyCVFilters()">
+                  <select class="bg-transparent text-[13px] text-primary dark:text-slate-200 focus:outline-none cursor-pointer w-full truncate font-medium" id="filterProfessionSelect" onchange="applyCVFilters()">
                     <option value="">Especialidad: Todas</option>
                   </select>
                 </div>
@@ -745,7 +822,7 @@
           <div class="w-full overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-surface-container-low/70 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider border-b border-surface-container">
+                <tr class="bg-surface-container-low/70 text-[11px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-wider border-b border-surface-container">
                   <th class="py-3 px-space-md font-semibold w-12 text-center">
                     <input class="rounded text-primary focus:ring-0 cursor-pointer" type="checkbox" id="checkSelectAllCVs" onchange="toggleSelectAllCVs(this)">
                   </th>
@@ -777,9 +854,9 @@
           <div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-sm border-t border-surface-container">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-[12px] text-on-surface-variant" id="paginationRangeText">
-                Mostrando <strong class="text-primary font-semibold" id="paginationRange">1 a 6</strong> de <strong class="text-primary font-semibold" id="paginationTotal">0</strong> registros de candidatos
+                Mostrando <strong class="text-primary dark:text-white font-semibold" id="paginationRange">1 a 6</strong> de <strong class="text-primary dark:text-white font-semibold" id="paginationTotal">0</strong> registros de candidatos
               </span>
-              <select class="bg-surface-container text-[12px] font-semibold text-primary px-2.5 py-1 rounded-lg ml-2 focus:outline-none border border-surface-container-high cursor-pointer" id="itemsPerPageSelect" onchange="changeItemsPerPage(this.value)">
+              <select class="bg-surface-container text-[12px] font-semibold text-primary dark:text-white px-2.5 py-1 rounded-lg ml-2 focus:outline-none border border-surface-container-high cursor-pointer" id="itemsPerPageSelect" onchange="changeItemsPerPage(this.value)">
                 <option value="10" selected>10 por página</option>
                 <option value="20">20 por página</option>
                 <option value="50">50 por página</option>
@@ -827,8 +904,8 @@
                 </div>
                 <div class="flex flex-col min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="text-[15px] font-bold text-primary truncate" id="teamProfileEmail">usuario@sistema.com</span>
-                    <span class="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider" id="teamProfileRole">USUARIO</span>
+                    <span class="text-[15px] font-bold text-primary dark:text-white truncate" id="teamProfileEmail">usuario@sistema.com</span>
+                    <span class="role-badge role-badge-usuario" id="teamProfileRole">USUARIO</span>
                   </div>
                   <span class="text-[12px] text-on-surface-variant mt-0.5" id="teamProfileTenant">Organización Multitenant</span>
                 </div>
@@ -921,6 +998,15 @@
                   <span class="material-symbols-outlined text-[16px] text-white">person_add</span>
                   <span>+ Agregar Usuario</span>
                 </button>
+              </div>
+
+              <!-- Encabezado de Columnas (Estilo Adjunto 2) -->
+              <div class="hidden sm:flex items-center justify-between px-3 py-2 text-[11px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-wider border-b border-surface-container">
+                <span>Email / Usuario</span>
+                <div class="flex items-center gap-14 pr-2">
+                  <span>Rol / Perfil</span>
+                  <span>Acciones</span>
+                </div>
               </div>
 
               <!-- Lista de Usuarios de la Organización -->
@@ -1207,11 +1293,11 @@
       if (roleEl) {
         roleEl.textContent = roleName;
         if (roleName === 'ADMIN' || roleName === 'SUPERADMIN') {
-          roleEl.className = 'px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold uppercase tracking-wider shadow-xs';
+          roleEl.className = 'role-badge role-badge-admin';
         } else if (roleName === 'MANAGER') {
-          roleEl.className = 'px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold uppercase tracking-wider';
+          roleEl.className = 'role-badge role-badge-manager';
         } else {
-          roleEl.className = 'px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold uppercase tracking-wider border border-surface-container-high';
+          roleEl.className = 'role-badge role-badge-usuario';
         }
       }
       if (tenantEl) tenantEl.textContent = currentTenant?.name ? `Empresa: ${currentTenant.name}` : 'Organización Activa';
@@ -1280,11 +1366,23 @@
         const roleUpper = (role || 'usuario').toUpperCase();
         roleBadge.textContent = roleUpper;
         if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN') {
-          roleBadge.className = 'px-1.5 py-0.5 rounded bg-primary text-white text-[9px] font-bold tracking-wider uppercase leading-none';
+          roleBadge.className = 'role-badge role-badge-admin';
         } else if (roleUpper === 'MANAGER') {
-          roleBadge.className = 'px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold tracking-wider uppercase leading-none border border-emerald-300';
+          roleBadge.className = 'role-badge role-badge-manager';
         } else {
-          roleBadge.className = 'px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant text-[9px] font-bold tracking-wider uppercase leading-none border border-surface-container-high';
+          roleBadge.className = 'role-badge role-badge-usuario';
+        }
+
+        const teamRoleBadge = document.getElementById('teamProfileRole');
+        if (teamRoleBadge) {
+          teamRoleBadge.textContent = roleUpper;
+          if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN') {
+            teamRoleBadge.className = 'role-badge role-badge-admin';
+          } else if (roleUpper === 'MANAGER') {
+            teamRoleBadge.className = 'role-badge role-badge-manager';
+          } else {
+            teamRoleBadge.className = 'role-badge role-badge-usuario';
+          }
         }
 
         if (topbarTenantName) {
@@ -2444,12 +2542,11 @@
       const myRole = currentUserProfile?.role || 'usuario';
       const canDelete = (myRole === 'admin' || myRole === 'superadmin' || myRole === 'manager');
 
-      // Paleta rotativa armónica para las iniciales del avatar
+      // Paleta rotativa armónica para las iniciales del avatar (estilo adjunto 1)
       const avatarColors = [
-        'bg-primary text-on-primary',
-        'bg-surface-container-high text-primary',
-        'bg-primary-container text-white',
-        'bg-surface-container-highest text-primary'
+        'bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-500/30',
+        'bg-indigo-100 text-indigo-800 border border-indigo-200 dark:bg-indigo-950/70 dark:text-indigo-300 dark:border-indigo-500/30',
+        'bg-sky-100 text-sky-800 border border-sky-200 dark:bg-sky-950/70 dark:text-sky-300 dark:border-sky-500/30'
       ];
 
       paginatedItems.forEach((cv, idx) => {
@@ -2472,29 +2569,29 @@
               </div>
               <div class="flex flex-col min-w-0">
                 <div class="flex items-center gap-1.5">
-                  <span class="text-[14px] text-primary font-bold group-hover:text-primary transition-colors truncate">${escHtml(nombreCompleto)}</span>
+                  <span class="text-[14px] text-on-surface dark:text-white font-bold group-hover:text-primary dark:group-hover:text-blue-400 transition-colors truncate candidate-name">${escHtml(nombreCompleto)}</span>
                   ${isNew ? '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] uppercase font-bold tracking-wider">NUEVA</span>' : ''}
                 </div>
               </div>
             </div>
           </td>
           <td class="py-4 px-space-sm">
-            <span class="text-[13px] font-semibold text-primary">
+            <span class="text-[13px] font-semibold text-on-surface dark:text-slate-200">
               ${escHtml(cv.profesion || '—')}
             </span>
           </td>
           <td class="py-4 px-space-sm max-w-[280px]">
             <div class="cursor-pointer group/perfil" onclick="this.querySelector('.perfil-text').classList.toggle('line-clamp-2')">
-              <p class="perfil-text text-[12px] text-on-surface-variant line-clamp-2 group-hover/perfil:line-clamp-none transition-all duration-200 leading-relaxed select-text">
+              <p class="perfil-text text-[12px] text-on-surface-variant dark:text-slate-400 line-clamp-2 group-hover/perfil:line-clamp-none transition-all duration-200 leading-relaxed select-text">
                 ${escHtml(cv.perfil_laboral || '—')}
               </p>
             </div>
           </td>
           <td class="py-4 px-space-sm">
-            <span class="text-[12px] text-on-surface-variant truncate">${escHtml(cv.email || '—')}</span>
+            <span class="text-[12px] text-on-surface dark:text-slate-200 font-medium truncate">${escHtml(cv.email || '—')}</span>
           </td>
           <td class="py-4 px-space-sm">
-            <span class="text-[12px] text-on-surface-variant whitespace-nowrap">${formatDate(cv.created_at)}</span>
+            <span class="text-[12px] text-on-surface-variant dark:text-slate-400 whitespace-nowrap font-mono">${formatDate(cv.created_at)}</span>
           </td>
           <td class="py-4 px-space-md text-right">
             <div class="flex items-center justify-end gap-1.5">
@@ -2645,7 +2742,10 @@
       if (!isoStr) return '—';
       try {
         const d = new Date(isoStr);
-        return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
       } catch (_) {
         return isoStr;
       }
@@ -2721,6 +2821,17 @@
       }
     }
 
+    function getRoleBadgeHtml(role) {
+      const r = (role || 'usuario').toUpperCase();
+      if (r === 'ADMIN' || r === 'SUPERADMIN') {
+        return `<span class="role-badge role-badge-admin">ADMIN</span>`;
+      } else if (r === 'MANAGER') {
+        return `<span class="role-badge role-badge-manager">MANAGER</span>`;
+      } else {
+        return `<span class="role-badge role-badge-usuario">USUARIO</span>`;
+      }
+    }
+
     // ─── GESTIÓN DE USUARIOS Y ROLES (VISTA 3) ───────────────────────────────
     async function loadSystemUsers() {
       const token = sessionStorage.getItem('rrhh_auth_token');
@@ -2763,31 +2874,36 @@
           const email = u.email || '—';
           const role = (u.role || 'usuario').toUpperCase();
           const initials = email.substring(0, 2).toUpperCase();
+          const isMe = (u.id === currentUser?.id || email === currentUser?.email);
 
           userCard.innerHTML = `
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-800 text-[12px] font-bold flex items-center justify-center">
+              <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 text-[12px] font-bold flex items-center justify-center shrink-0">
                 ${initials}
               </div>
               <div class="flex flex-col">
-                <span class="text-[13px] font-bold text-on-surface leading-tight">${escHtml(email)}</span>
-                <span class="text-[11px] text-on-surface-variant">Acceso registrado</span>
+                <span class="text-[13px] font-bold text-on-surface dark:text-white leading-tight">${escHtml(email)}</span>
+                <span class="text-[11px] text-on-surface-variant dark:text-slate-400">Acceso registrado</span>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${role === 'ADMIN' ? 'bg-primary text-white shadow-xs' : role === 'MANAGER' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-surface-container-high text-on-surface'}">
-                ${role}
-              </span>
-              ${canManage ? `
-                <button class="p-1 rounded-lg text-outline hover:text-primary hover:bg-surface-container-high transition-colors" onclick="openResetPasswordModal('${u.id}', '${escHtml(email)}')" title="Resetear contraseña">
-                  <span class="material-symbols-outlined text-[17px]">key</span>
-                </button>
-              ` : ''}
-              ${canManage && u.id !== currentUser?.id ? `
-                <button class="p-1 rounded-lg text-outline hover:text-error hover:bg-error-container/30 transition-colors" onclick="confirmDeleteUser('${u.id}', '${escHtml(email)}')" title="Eliminar usuario">
-                  <span class="material-symbols-outlined text-[17px]">delete</span>
-                </button>
-              ` : ''}
+              ${getRoleBadgeHtml(role)}
+              ${isMe ? `
+                <span class="text-[12px] text-on-surface-variant dark:text-slate-400 italic pr-2">(Tu cuenta)</span>
+              ` : `
+                ${canManage ? `
+                  <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-highest text-[11px] font-semibold text-on-surface dark:text-slate-200 transition-colors shadow-2xs" onclick="openResetPasswordModal('${u.id}', '${escHtml(email)}')" title="Resetear contraseña">
+                    <span class="text-[12px]">🔑</span>
+                    <span>Resetear</span>
+                  </button>
+                ` : ''}
+                ${canManage && u.id !== currentUser?.id ? `
+                  <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/50 text-[11px] font-semibold text-rose-600 dark:text-rose-400 transition-colors shadow-2xs" onclick="confirmDeleteUser('${u.id}', '${escHtml(email)}')" title="Eliminar usuario">
+                    <span class="text-[12px]">🗑</span>
+                    <span>Eliminar</span>
+                  </button>
+                ` : ''}
+              `}
             </div>
           `;
           container.appendChild(userCard);
@@ -2799,9 +2915,8 @@
         console.warn("API de usuarios no respondió, mostrando colaboradores demo para preview:", err);
         const demoUsers = [
           { id: 'u-1', email: 'jpnvidal@gmail.com', role: 'admin' },
-          { id: 'u-2', email: 'camila.larrain@empresa.com', role: 'manager' },
-          { id: 'u-3', email: 'mateo.recruiter@empresa.com', role: 'manager' },
-          { id: 'u-4', email: 'sofia.olivares@empresa.com', role: 'usuario' }
+          { id: 'u-2', email: 'pamela@test.com', role: 'manager' },
+          { id: 'u-3', email: 'test_b@test.com', role: 'usuario' }
         ];
 
         container.innerHTML = '';
@@ -2811,24 +2926,32 @@
           const email = u.email;
           const role = u.role.toUpperCase();
           const initials = email.substring(0, 2).toUpperCase();
+          const isMe = (email === 'jpnvidal@gmail.com' || email === currentUser?.email);
 
           userCard.innerHTML = `
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-800 text-[12px] font-bold flex items-center justify-center">
+              <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 text-[12px] font-bold flex items-center justify-center shrink-0">
                 ${initials}
               </div>
               <div class="flex flex-col">
-                <span class="text-[13px] font-bold text-on-surface leading-tight">${escHtml(email)}</span>
-                <span class="text-[11px] text-on-surface-variant">Acceso registrado</span>
+                <span class="text-[13px] font-bold text-on-surface dark:text-white leading-tight">${escHtml(email)}</span>
+                <span class="text-[11px] text-on-surface-variant dark:text-slate-400">Acceso registrado</span>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${role === 'ADMIN' ? 'bg-primary text-white shadow-xs' : role === 'MANAGER' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-surface-container-high text-on-surface'}">
-                ${role}
-              </span>
-              <button class="p-1 rounded-lg text-outline hover:text-primary hover:bg-surface-container-high transition-colors" onclick="openResetPasswordModal('${u.id}', '${escHtml(email)}')" title="Resetear contraseña">
-                <span class="material-symbols-outlined text-[17px]">key</span>
-              </button>
+              ${getRoleBadgeHtml(role)}
+              ${isMe ? `
+                <span class="text-[12px] text-on-surface-variant dark:text-slate-400 italic pr-2">(Tu cuenta)</span>
+              ` : `
+                <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-highest text-[11px] font-semibold text-on-surface dark:text-slate-200 transition-colors shadow-2xs" onclick="openResetPasswordModal('${u.id}', '${escHtml(email)}')" title="Resetear contraseña">
+                  <span class="text-[12px]">🔑</span>
+                  <span>Resetear</span>
+                </button>
+                <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/50 text-[11px] font-semibold text-rose-600 dark:text-rose-400 transition-colors shadow-2xs" onclick="confirmDeleteUser('${u.id}', '${escHtml(email)}')" title="Eliminar usuario">
+                  <span class="text-[12px]">🗑</span>
+                  <span>Eliminar</span>
+                </button>
+              `}
             </div>
           `;
           container.appendChild(userCard);
