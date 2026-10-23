@@ -317,6 +317,14 @@
       background: var(--scrollbar-thumb-hover);
     }
 
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
     /* Toast Alert Notification */
     .alert-container {
       position: fixed;
@@ -423,76 +431,89 @@
   <div class="alert-container" id="alertContainer"></div>
 
   <!-- ── TOPBAR GLOBAL ── -->
-  <header class="fixed top-0 left-0 right-0 h-16 z-50 bg-surface/95 backdrop-blur-xl border-b border-surface-container shadow-[0_1px_8px_rgba(0,0,0,0.03)] flex items-center justify-between px-4 xl:px-6">
-    <!-- Zona 1: Logo, Marca, Status IA y Reloj Local -->
-    <div class="flex items-center gap-3 shrink-0">
-      <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('search')">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-on-primary shadow-sm overflow-hidden bg-surface-container-lowest border border-surface-container p-0.5">
-          <img src="Logo/Gemini_Generated_Image_v2.png" alt="Perfiles RRHH Logo" class="w-full h-full object-contain rounded-lg">
+  <header class="fixed top-0 left-0 right-0 h-16 z-50 bg-surface/95 backdrop-blur-xl border-b border-surface-container shadow-[0_1px_8px_rgba(0,0,0,0.03)] flex items-center p-0">
+    <!-- Zona 1: Logo & Marca (w-72 idéntico al sidebar, con border-r divisor) -->
+    <div class="w-72 h-16 shrink-0 border-r border-surface-container flex items-center px-4 xl:px-6">
+      <div class="flex items-center gap-3 cursor-pointer select-none" onclick="switchView('search')" title="Ir a Búsqueda con IA">
+        <!-- Icono Logo Box estilo diseño adjunto -->
+        <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/50 border border-sky-100 dark:border-sky-800/50 flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-2xs shrink-0">
+          <span class="material-symbols-outlined text-[24px]">support_agent</span>
         </div>
         <div class="flex flex-col">
-          <span class="font-bold text-[17px] text-primary dark:text-white tracking-tight leading-none brand-name">Perfiles RRHH</span>
-          <span class="text-[10px] text-on-surface-variant tracking-wider uppercase font-bold">AI Talent Engine</span>
+          <span class="font-bold text-[16px] text-primary dark:text-white tracking-tight leading-tight brand-name">Perfiles RRHH</span>
+          <span class="text-[10px] text-on-surface-variant font-bold tracking-wider uppercase leading-none mt-0.5">AI TALENT ENGINE</span>
         </div>
-      </div>
-
-      <!-- Badge Contador de CVs y Estado del Motor IA -->
-      <div class="hidden 2xl:flex items-center gap-1.5 px-3 py-1 bg-surface-container rounded-full text-on-surface-variant text-[12px] font-medium" id="topbarCvCountPill">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="topbarCvCountText">0 CVs indexados · IA Activa</span>
-      </div>
-
-      <!-- Reloj Local y Timezone -->
-      <div class="hidden xl:flex items-center gap-1.5 px-3 py-1 bg-surface-container-low rounded-xl text-on-surface-variant text-[11px] font-medium border border-surface-container">
-        <span class="material-symbols-outlined text-outline text-[15px]">schedule</span>
-        <span id="datePart">—</span>
-        <span class="text-outline">|</span>
-        <span class="font-bold text-primary dark:text-white font-mono" id="timePart">00:00</span>
-        <span class="text-outline">|</span>
-        <span id="tzBadge">America/Buenos_Aires</span>
       </div>
     </div>
 
-    <!-- Zona 2: Selector / Indicador de Empresa (Multitenant) -->
-    <div class="hidden lg:flex items-center gap-2" id="tenantBadgeWrapper">
-      <button class="flex items-center gap-1.5 bg-surface-container-low hover:bg-surface-container px-3 py-1.5 rounded-xl border border-surface-container text-on-surface shadow-xs transition-all cursor-pointer group" id="tenantCapsule" onclick="openSwitchTenantModal()" title="Hacé clic para cambiar de Organización">
-        <div class="w-5 h-5 rounded-md bg-surface-container flex items-center justify-center text-primary">
-          <span class="material-symbols-outlined text-[13px]">apartment</span>
+    <!-- Zona 2: Indicadores y Controles del Top Bar (Orden y espaciado exacto al adjunto) -->
+    <div class="flex-1 h-16 flex items-center justify-between px-3 xl:px-6 overflow-x-auto no-scrollbar gap-2.5 xl:gap-3">
+      <!-- Grupo Izquierda: Reloj, KPI, Empresa, Selector Claro/Oscuro -->
+      <div class="flex items-center gap-2 xl:gap-3 flex-nowrap shrink-0">
+        <!-- 1. Reloj Local y Timezone -->
+        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-low rounded-full text-on-surface-variant text-[11px] font-medium border border-surface-container shadow-2xs shrink-0">
+          <span class="material-symbols-outlined text-outline text-[15px]">schedule</span>
+          <span id="datePart">—</span>
+          <span class="text-outline">|</span>
+          <span class="font-bold text-primary dark:text-white font-mono" id="timePart">00:00</span>
+          <span class="text-outline">|</span>
+          <span id="tzBadge">America/Buenos_Aires</span>
         </div>
-        <span class="text-[12px] font-bold text-primary dark:text-white truncate max-w-[150px]" id="topbarTenantName">Organización Activa</span>
-        <span class="material-symbols-outlined text-[15px] text-outline group-hover:text-primary transition-colors" id="topbarTenantArrow">expand_more</span>
-      </button>
-    </div>
 
-    <!-- Zona 3: Toggle Tema, Píldora de Perfil, Llave y Logout -->
-    <div class="flex items-center gap-2 shrink-0">
-      <!-- Botón Toggle Tema Oscuro / Claro -->
-      <button class="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all border border-surface-container shadow-2xs" id="btnThemeToggle" onclick="toggleTheme()" title="Cambiar a Modo Oscuro" aria-label="Cambiar tema">
-        <span class="material-symbols-outlined text-[19px]" id="themeIcon">dark_mode</span>
-      </button>
-
-      <!-- Tarjeta del Usuario Conectado -->
-      <div class="flex items-center gap-2 bg-surface-container-low/90 p-1 pr-2.5 rounded-2xl border border-surface-container" id="userProfileInfo" style="display: none;">
-        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white ring-2 ring-surface-container shrink-0 text-[12px] font-bold" id="userAvatarCircle">
-          <span class="material-symbols-outlined text-[17px]">person</span>
+        <!-- 2. KPI de CVs Indexados -->
+        <div class="flex items-center gap-2 px-3.5 py-1.5 bg-surface-container-low rounded-full text-on-surface-variant text-[11px] font-medium border border-surface-container shadow-2xs shrink-0" id="topbarCvCountPill">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="topbarCvCountText">0 CVs indexados · IA Activa</span>
         </div>
-        <div class="flex flex-col text-left">
+
+        <!-- 3. Empresa Activa (Multitenant) -->
+        <div class="flex items-center shrink-0" id="tenantBadgeWrapper">
+          <button class="flex items-center gap-2 bg-surface-container-low hover:bg-surface-container px-3.5 py-1.5 rounded-full border border-surface-container text-on-surface shadow-2xs transition-colors cursor-pointer group" id="tenantCapsule" onclick="openSwitchTenantModal()" title="Hacé clic para cambiar de Organización">
+            <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors">domain</span>
+            <span class="text-[12px] font-semibold text-primary dark:text-white truncate max-w-[150px]" id="topbarTenantName">Organización Activa</span>
+            <span class="material-symbols-outlined text-[16px] text-outline group-hover:text-primary transition-colors" id="topbarTenantArrow">expand_more</span>
+          </button>
+        </div>
+
+        <!-- 4. Selector de Opción Claro / Oscuro (Diseño de Botones Segmentado) -->
+        <div class="flex items-center bg-surface-container-low p-1 rounded-full border border-surface-container shadow-2xs shrink-0" id="themeSegmentedControl">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant text-outline shrink-0 ml-0.5 mr-0.5" title="Tema Claro / Oscuro">
+            <span class="material-symbols-outlined text-[16px]">contrast</span>
+          </span>
+          <button type="button" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer" id="btnThemeLight" onclick="setTheme('light')" title="Activar Modo Claro">
+            <span class="material-symbols-outlined text-[14px]">light_mode</span>
+            <span>Claro</span>
+          </button>
+          <button type="button" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer" id="btnThemeDark" onclick="setTheme('dark')" title="Activar Modo Oscuro">
+            <span class="material-symbols-outlined text-[14px]">dark_mode</span>
+            <span>Oscuro</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Grupo Derecha: Usuario y Cerrar Sesión -->
+      <div class="flex items-center gap-2.5 xl:gap-3 shrink-0 ml-auto">
+        <!-- 5. Tarjeta del Usuario Conectado -->
+        <div class="flex items-center gap-2 bg-surface-container-low p-1 pr-2.5 rounded-full border border-surface-container shadow-2xs" id="userProfileInfo" style="display: none;">
+          <div class="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center ring-1 ring-surface-container shrink-0 text-[11px] font-bold" id="userAvatarCircle">
+            <span class="material-symbols-outlined text-[16px]">person</span>
+          </div>
           <div class="flex items-center gap-1.5">
-            <span class="text-[12px] font-bold text-on-surface dark:text-white leading-tight truncate max-w-[130px]" id="userEmailSpan">—</span>
+            <span class="text-[12px] font-semibold text-primary dark:text-white leading-tight truncate max-w-[140px]" id="userEmailSpan">—</span>
             <span class="role-badge role-badge-usuario" id="userRoleBadge">USUARIO</span>
           </div>
+          <!-- Botón rápido cambio de contraseña -->
+          <button class="w-6 h-6 flex items-center justify-center rounded-full text-outline hover:text-primary hover:bg-surface-container transition-colors ml-0.5" onclick="openChangePasswordModal()" title="Cambiar mi contraseña">
+            <span class="material-symbols-outlined text-[14px]">vpn_key</span>
+          </button>
         </div>
-        <!-- Botón rápido cambio de contraseña -->
-        <button class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors ml-1" onclick="openChangePasswordModal()" title="Cambiar mi contraseña">
-          <span class="material-symbols-outlined text-[15px]">vpn_key</span>
+
+        <!-- 6. Botón Cerrar Sesión (Diseño Pill) -->
+        <button class="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-rose-50 dark:hover:bg-rose-950/40 text-stone-700 dark:text-stone-200 hover:text-rose-600 dark:hover:text-rose-400 border border-surface-container hover:border-rose-200 dark:hover:border-rose-800 transition-all text-[12px] font-semibold shadow-2xs active:scale-95 cursor-pointer" id="btnSignOut" style="display: none;" title="Cerrar sesión activa">
+          <span class="material-symbols-outlined text-[16px] text-stone-400 dark:text-stone-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">logout</span>
+          <span class="font-semibold">Cerrar Sesión</span>
         </button>
       </div>
-
-      <!-- Botón Cerrar Sesión (Ultra legible, dinámico para Dark y Light) -->
-      <button class="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-surface-container hover:bg-rose-50 dark:hover:bg-rose-950/40 text-stone-700 dark:text-stone-200 hover:text-rose-600 dark:hover:text-rose-400 border border-stone-200 dark:border-surface-container-high hover:border-rose-200 dark:hover:border-rose-800 transition-all text-[12px] font-semibold shadow-2xs active:scale-95" id="btnSignOut" style="display: none;" title="Cerrar sesión activa">
-        <span class="material-symbols-outlined text-[16px] text-stone-400 dark:text-stone-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">logout</span>
-        <span class="font-semibold text-stone-700 dark:text-stone-200 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">Cerrar Sesión</span>
-      </button>
     </div>
   </header>
 
@@ -1777,6 +1798,17 @@
     }
 
     // ─── TEMA OSCURO / CLARO (DARK MODE) ────────────────────────────────────
+    function setTheme(mode) {
+      const isDark = mode === 'dark';
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('rrhh_theme', isDark ? 'dark' : 'light');
+      syncThemeUI(isDark);
+    }
+
     function toggleTheme() {
       const isDark = document.documentElement.classList.toggle('dark');
       localStorage.setItem('rrhh_theme', isDark ? 'dark' : 'light');
@@ -1787,6 +1819,22 @@
       if (typeof isDark === 'undefined') {
         isDark = document.documentElement.classList.contains('dark');
       }
+      
+      const btnLight = document.getElementById('btnThemeLight');
+      const btnDark = document.getElementById('btnThemeDark');
+
+      if (btnLight && btnDark) {
+        if (!isDark) {
+          // Modo Claro activo (según imagen de diseño de referencia)
+          btnLight.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-900 text-white shadow-xs cursor-pointer transition-all';
+          btnDark.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer';
+        } else {
+          // Modo Oscuro activo
+          btnLight.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium text-slate-400 hover:text-slate-100 hover:bg-surface-container-high transition-all cursor-pointer';
+          btnDark.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-600 text-white shadow-xs cursor-pointer transition-all';
+        }
+      }
+
       const icon = document.getElementById('themeIcon');
       const btn = document.getElementById('btnThemeToggle');
       if (icon) {
