@@ -1240,7 +1240,7 @@
     // ─── CONFIGURACIÓN DINÁMICA DE WEBHOOKS ───────────────────────────────────
     let CONFIG = {
       webhookCargaCv: 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa',
-      webhookAgenteCv: 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa',
+      webhookAgenteCv: 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT',
       webhookObtenerCv: 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV'
     };
 
@@ -1941,6 +1941,16 @@
 
     const SESSION_ID = 'sess_' + Math.random().toString(36).substring(2, 9);
 
+    function isoWithOffset() {
+      const now = new Date();
+      const off = -now.getTimezoneOffset();
+      const sign = off >= 0 ? '+' : '-';
+      const hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, '0');
+      const mm = String(Math.abs(off) % 60).padStart(2, '0');
+      const pad = n => String(n).padStart(2, '0');
+      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${String(now.getMilliseconds()).padStart(3, '0')}${sign}${hh}:${mm}`;
+    }
+
     async function handleFileUpload(file) {
       const myRole = currentUserProfile?.role || 'usuario';
       if (myRole !== 'admin' && myRole !== 'superadmin' && myRole !== 'manager') {
@@ -2054,13 +2064,16 @@
       searchIcon.classList.add('hidden');
 
       try {
-        const payload = {
-          query: query,
-          session_id: SESSION_ID,
-          email: currentUser?.email || 'anonimo@sistema.com',
-          tenant_id: currentTenant?.id || null,
-          tenant_slug: currentTenant?.slug || null
-        };
+        const payload = [{
+          "Texto describiendo perfil": query,
+          "query": query,
+          "submittedAt": isoWithOffset(),
+          "formMode": "test",
+          "session_id": SESSION_ID,
+          "email": currentUser?.email || 'anonimo@sistema.com',
+          "tenant_id": currentTenant?.id || null,
+          "tenant_slug": currentTenant?.slug || null
+        }];
 
         const res = await fetch(CONFIG.webhookAgenteCv, {
           method: 'POST',
@@ -2072,7 +2085,23 @@
           throw new Error(`Error en el agente IA (${res.status})`);
         }
 
-        const data = await res.json();
+        const rawText = await res.text();
+        if (!rawText || !rawText.trim()) {
+          throw new Error('El agente IA en n8n devolvió una respuesta vacía.');
+        }
+
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (_) {
+          data = rawText;
+        }
+
+        // Si N8N devuelve un array [{ output: "..." }], extraemos el primer elemento
+        if (Array.isArray(data) && data[0]) {
+          data = data[0];
+        }
+
         renderSearchResults(data, query);
       } catch (err) {
         console.error("Error en la búsqueda IA:", err);
@@ -2160,35 +2189,73 @@
       const list = [];
       if (!text || typeof text !== 'string') return list;
 
-      // Regex para bloques de candidato (### 1. Nombre o similar)
-      const candidateRegex = /(?:###|\*\*)\s*(?:\d+[\.\)]\s*)?([^\n\r*#]+)[\s\S]*?(?=(?:###|\*\*)\s*\d+[\.\)]|###|---\s*$|$)/g;
+      // 1. Extraer puntuaciones de la sección de Comparación / Puntuación
+      const ratings = {};
+      const scoreRegex = /[-•*]?\s*([A-Za-zÁÉÍÓÚáéíóúñÑ\s]+?):\s*(\d+(?:\.\d+)?)(?:\/10)?/g;
+      let sMatch;
+      while ((sMatch = scoreRegex.exec(text)) !== null) {
+        const rawName = sMatch[1].trim();
+        const score = parseFloat(sMatch[2]);
+        const lower = rawName.toLowerCase();
+        if (score <= 10 && rawName.length > 2 && !lower.startsWith('experiencia') && !lower.startsWith('habilidad') && !lower.startsWith('idioma') && !lower.startsWith('educaci') && !lower.startsWith('webcvlink')) {
+          ratings[lower] = score;
+        }
+      }
+
+      // 2. Extraer bloques de candidatos
+      const candidateRegex = /(?:^|\n)(?:\d+[\.\)]|###|\*\*)\s*([^\n\r*#]+)[\s\S]*?(?=(?:\n\s*\d+[\.\)]|\n\s*###|\n\s*\*\*|Comparaci[oó]n|Puntuaci[oó]n|Calificaci[oó]n|---\s*$|$))/gi;
       const matches = [...text.matchAll(candidateRegex)];
 
       if (matches.length > 0) {
         matches.forEach(m => {
+          const rawHeader = m[1].replace(/[*#]/g, '').trim();
           const block = m[0];
-          const rawName = m[1].replace(/[*#]/g, '').trim();
-          if (rawName.toLowerCase().includes('resumen') || rawName.toLowerCase().includes('calificación') || rawName.toLowerCase().includes('comparación')) {
+
+          if (/resumen|calificaci[oó]n|comparaci[oó]n|puntuaci[oó]n|encontrado/i.test(rawHeader)) {
             return;
           }
 
-          // Extraer score
-          const scoreMatch = block.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
-          const score = scoreMatch ? parseFloat(scoreMatch[1]) : null;
+          // Separar nombre y rol si viene con paréntesis: "Nombre (Rol, Ciudad...)"
+          let name = rawHeader;
+          let role = 'Profesional Evaluado';
+          const parenMatch = rawHeader.match(/^([^()]+)\s*\(([^()]+)\)/);
+          if (parenMatch) {
+            name = parenMatch[1].trim();
+            const inside = parenMatch[2].split(',')[0].trim();
+            if (inside) role = inside;
+          }
 
-          // Extraer enlace a CV
-          const linkMatch = block.match(/(?:Enlace al CV|Ver CV|CV):\s*(?:\[([^\]]+)\]\(([^)]+)\)|([^\s\n\r]+))/i);
+          // Si el bloque tiene campo Profesión explícito
+          const roleMatch = block.match(/(?:Puesto|Profesión|Rol|Especialidad):\s*([^\n\r]+)/i);
+          if (roleMatch) {
+            role = roleMatch[1].trim();
+          }
+
+          // Score: Buscar en el bloque o en el mapa de ratings
+          let score = null;
+          const blockScoreMatch = block.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
+          if (blockScoreMatch) {
+            score = parseFloat(blockScoreMatch[1]);
+          } else {
+            // Buscar por coincidencia de nombre
+            const nameLower = name.toLowerCase();
+            for (const [rName, rScore] of Object.entries(ratings)) {
+              if (nameLower.includes(rName) || rName.includes(nameLower) || nameLower.split(' ')[0] === rName.split(' ')[0]) {
+                score = rScore;
+                break;
+              }
+            }
+          }
+
+          // Extraer enlace a CV (WebCVLink)
+          const linkMatch = block.match(/(?:WebCVLink|Enlace al CV|Ver CV|CV):\s*(?:\[([^\]]+)\]\(([^)]+)\)|([^\s\n\r]+))/i);
           let cvLink = '';
           if (linkMatch) {
             cvLink = linkMatch[2] || linkMatch[3] || linkMatch[1];
           }
 
-          // Extraer profesión o rol
-          const roleMatch = block.match(/(?:Puesto|Profesión|Rol|Especialidad):\s*([^\n\r]+)/i);
-          const role = roleMatch ? roleMatch[1].trim() : 'Profesional Evaluado';
-
           list.push({
-            name: rawName,
+            name: name,
             role: role,
             score: score,
             cvLink: cvLink,
