@@ -2269,7 +2269,7 @@
 
     function createCandidateCardElement(cand) {
       const card = document.createElement('div');
-      card.className = 'bg-surface-container-lowest rounded-2xl p-space-md shadow-xs border border-surface-container hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden';
+      card.className = 'bg-surface-container-lowest rounded-2xl p-space-md shadow-xs border border-surface-container hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden h-full';
 
       const scoreVal = cand.score !== null ? cand.score : 8.0;
       let topBarColor = 'bg-primary';
@@ -2278,11 +2278,11 @@
 
       if (scoreVal >= 9.0) {
         topBarColor = 'bg-emerald-500';
-        scoreBadgeClass = 'bg-emerald-100 text-emerald-800';
+        scoreBadgeClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300';
         matchLabel = 'Match Sobresaliente';
       } else if (scoreVal >= 7.5) {
         topBarColor = 'bg-primary';
-        scoreBadgeClass = 'bg-primary text-white';
+        scoreBadgeClass = 'bg-primary text-white dark:bg-slate-800 dark:text-white';
         matchLabel = 'Match Muy Alto';
       } else if (scoreVal >= 6.0) {
         topBarColor = 'bg-slate-400';
@@ -2296,29 +2296,48 @@
 
       const initials = cand.name.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CV';
 
-      // Limpiar texto para resumen
-      let summaryText = cand.rawBlock
-        .replace(/###[^\n\r]+/g, '')
-        .replace(/\*\*Enlace al CV[^\n\r]+/gi, '')
-        .replace(/\*\*[^*]+\*\*:\s*/g, '')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .replace(/[*_#]/g, '')
-        .trim();
-      if (summaryText.length > 200) {
-        summaryText = summaryText.substring(0, 200) + '…';
+      // Limpiar texto para resumen y desglosarlo completo sin límite arbitrario de caracteres
+      let lines = (cand.rawBlock || '').split('\n').map(l => l.trim()).filter(Boolean);
+      // Si la primera línea es el título/candidato (ej: "1. Nombre (...)"), la omitimos porque ya está en el encabezado
+      if (lines.length > 1 && /^(?:\d+[\.\)]|###|\*\*)/.test(lines[0])) {
+        lines = lines.slice(1);
       }
+
+      const formattedLines = [];
+      lines.forEach(l => {
+        // Omitir enlace WebCVLink del texto ya que tiene su propio botón de descarga
+        if (/^(?:WebCVLink|Enlace al CV|Ver CV|CV):/i.test(l)) return;
+
+        // Limpiar viñeta inicial y enlaces markdown
+        const cleanL = l.replace(/^[-•*]\s*/, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*#_]/g, '').trim();
+        if (!cleanL) return;
+
+        // Si tiene clave estructurada como "Experiencia:", "Habilidades:", etc., resaltarla
+        const colonIdx = cleanL.indexOf(':');
+        if (colonIdx > 0 && colonIdx < 30) {
+          const key = cleanL.substring(0, colonIdx).trim();
+          const val = cleanL.substring(colonIdx + 1).trim();
+          formattedLines.push(`<div><strong class="font-bold text-primary dark:text-white">${escHtml(key)}:</strong> <span class="text-on-surface-variant dark:text-stone-300">${escHtml(val)}</span></div>`);
+        } else {
+          formattedLines.push(`<div class="text-on-surface-variant dark:text-stone-300">${escHtml(cleanL)}</div>`);
+        }
+      });
+
+      const formattedContent = formattedLines.length > 0 
+        ? formattedLines.join('') 
+        : `<div class="text-on-surface-variant dark:text-stone-300 italic">Análisis detallado disponible para el candidato.</div>`;
 
       card.innerHTML = `
         <div class="absolute top-0 left-0 right-0 h-1.5 ${topBarColor}"></div>
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3 flex-1">
           <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="w-11 h-11 rounded-xl bg-primary text-white font-bold text-[15px] flex items-center justify-center shrink-0">
                 ${initials}
               </div>
               <div class="min-w-0">
-                <h3 class="text-[16px] font-bold text-primary truncate leading-tight">${escHtml(cand.name)}</h3>
-                <p class="text-[12px] text-on-surface-variant truncate">${escHtml(cand.role)}</p>
+                <h3 class="text-[16px] font-bold text-primary dark:text-white truncate leading-tight">${escHtml(cand.name)}</h3>
+                <p class="text-[12px] text-on-surface-variant dark:text-stone-400 truncate">${escHtml(cand.role)}</p>
               </div>
             </div>
             <span class="px-2.5 py-1 rounded-full ${scoreBadgeClass} text-[12px] font-bold whitespace-nowrap shadow-xs">
@@ -2327,26 +2346,31 @@
           </div>
 
           <!-- Match tag -->
-          <div class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface text-[11px] flex items-center gap-1.5 font-bold">
-            <span class="material-symbols-outlined text-[15px] text-primary">verified</span>
+          <div class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface text-[11px] flex items-center gap-1.5 font-bold shrink-0">
+            <span class="material-symbols-outlined text-[15px] text-primary dark:text-sky-400">verified</span>
             <span>${matchLabel}</span>
           </div>
 
-          <!-- Síntesis IA -->
-          <div class="p-2.5 rounded-lg bg-surface-container-low text-on-surface text-[12px] leading-relaxed">
-            <span class="font-bold text-primary">Síntesis IA:</span> ${escHtml(summaryText)}
+          <!-- Síntesis y Evaluación IA Completa y Flexible -->
+          <div class="p-3 rounded-xl bg-surface-container-low text-on-surface text-[12px] leading-relaxed flex-1 flex flex-col gap-1.5">
+            <div class="text-[11px] font-bold text-primary dark:text-white tracking-wide uppercase border-b border-surface-container pb-1">
+              Síntesis & Evaluación IA
+            </div>
+            <div class="flex flex-col gap-1.5 pt-0.5">
+              ${formattedContent}
+            </div>
           </div>
         </div>
 
-        <!-- Botón Ver CV -->
-        <div class="pt-4 mt-3 border-t border-surface-container flex items-center gap-2">
+        <!-- Botón Ver CV anclado en la parte inferior -->
+        <div class="pt-3 mt-3 border-t border-surface-container flex items-center gap-2 shrink-0">
           ${cand.cvLink ? `
-            <button class="w-full py-2 px-3 rounded-xl bg-surface-container-high hover:bg-surface-dim text-on-surface text-[12px] font-bold transition-colors flex items-center justify-center gap-1.5" onclick="openCV('${escHtml(cand.cvLink)}')">
+            <button class="w-full py-2.5 px-3 rounded-xl bg-surface-container-high hover:bg-surface-dim text-on-surface text-[12px] font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer" onclick="openCV('${escHtml(cand.cvLink)}')">
               <span class="material-symbols-outlined text-[16px]">description</span>
               <span>Ver Currículum</span>
             </button>
           ` : `
-            <span class="text-[11px] text-outline italic text-center w-full">Sin enlace directo adjunto</span>
+            <span class="text-[11px] text-outline italic text-center w-full py-1">Sin enlace directo adjunto</span>
           `}
         </div>
       `;
