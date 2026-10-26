@@ -2308,8 +2308,56 @@
       const list = [];
       if (!text || typeof text !== 'string') return list;
 
-      // 1. Extraer puntuaciones de la sección de Comparación / Puntuación
+      // 1. Extraer puntuaciones y textos comparativos de la sección de Comparación / Puntuación
       const ratings = {};
+      const comparisons = {};
+
+      const compSectionMatch = text.match(/(?:Comparaci[oó]n(?: y puntuaci[oó]n(?:es)?)?|Comparativa|Puntuaci[oó]n(?: y comparaci[oó]n(?:es)?)?|Evaluaci[oó]n comparativa|Calificaci[oó]n(?: y comparaci[oó]n(?:es)?)?):?\s*([\s\S]*?)(?:$|---|\n\s*###)/i);
+      const compTextSource = compSectionMatch ? compSectionMatch[1] : text;
+
+      let lastCandidateKey = null;
+      const compLines = compTextSource.split('\n');
+      for (let rawLine of compLines) {
+        const trimmed = rawLine.trim();
+        if (!trimmed) continue;
+        if (/^(?:Comparaci|Puntuaci|Calificaci|Evaluaci)/i.test(trimmed)) continue;
+
+        const cleanLine = trimmed.replace(/^(?:[-•*]|\d+[\.\)])\s*/, '').trim();
+        if (!cleanLine) continue;
+
+        // Match formato: [Nombre]: [Score/10] [separador] [Descripción]
+        const lineMatch = cleanLine.match(/^\*{0,2}([A-Za-zÁÉÍÓÚáéíóúñÑüÜ\s.'-]+?)\*{0,2}\s*(?:\((?:puntuaci[oó]n:?\s*)?(\d+(?:\.\d+)?)(?:\/10)?\))?\s*:\s*(?:(?:puntuaci[oó]n:?\s*)?(\d+(?:\.\d+)?)(?:\/10)?[.\-–—:]*\s*)?(.*)$/i);
+
+        if (lineMatch) {
+          const rawName = lineMatch[1].replace(/[*_]/g, '').trim();
+          const scoreVal = lineMatch[2] || lineMatch[3];
+          let desc = lineMatch[4] ? lineMatch[4].trim() : '';
+          const lower = rawName.toLowerCase();
+
+          if (rawName.length > 2 && !lower.startsWith('experiencia') && !lower.startsWith('habilidad') && !lower.startsWith('idioma') && !lower.startsWith('educaci') && !lower.startsWith('webcvlink') && !lower.startsWith('resumen') && !lower.startsWith('comparaci') && !lower.startsWith('calificaci') && !lower.startsWith('puntuaci')) {
+            if (scoreVal) {
+              const sc = parseFloat(scoreVal);
+              if (sc <= 10) ratings[lower] = sc;
+            }
+            if (desc) {
+              desc = desc.replace(/^(?:puntuaci[oó]n:?\s*)?(?:\d+(?:\.\d+)?)(?:\/10)?[.\-–—:\s]*/i, '');
+              desc = desc.replace(/^[.\-–—:\s]+/, '').trim();
+              if (desc) {
+                comparisons[lower] = desc;
+                lastCandidateKey = lower;
+                continue;
+              }
+            }
+          }
+        }
+
+        // Si es una línea continuada de la descripción anterior (sin viñeta y sin dos puntos de clave)
+        if (lastCandidateKey && !cleanLine.includes(':') && comparisons[lastCandidateKey]) {
+          comparisons[lastCandidateKey] += ' ' + cleanLine;
+        }
+      }
+
+      // Fallback para puntuaciones en caso de venir fuera del bloque de comparación
       const scoreRegex = /[-•*]?\s*([A-Za-zÁÉÍÓÚáéíóúñÑ\s]+?):\s*(\d+(?:\.\d+)?)(?:\/10)?/g;
       let sMatch;
       while ((sMatch = scoreRegex.exec(text)) !== null) {
@@ -2317,7 +2365,9 @@
         const score = parseFloat(sMatch[2]);
         const lower = rawName.toLowerCase();
         if (score <= 10 && rawName.length > 2 && !lower.startsWith('experiencia') && !lower.startsWith('habilidad') && !lower.startsWith('idioma') && !lower.startsWith('educaci') && !lower.startsWith('webcvlink')) {
-          ratings[lower] = score;
+          if (ratings[lower] === undefined) {
+            ratings[lower] = score;
+          }
         }
       }
 
@@ -2350,19 +2400,32 @@
             role = roleMatch[1].trim();
           }
 
+          // Normalización para búsquedas insensibles a tildes
+          const nameNorm = (name || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+          const firstName = nameNorm.split(' ')[0];
+
           // Score: Buscar en el bloque o en el mapa de ratings
           let score = null;
           const blockScoreMatch = block.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
           if (blockScoreMatch) {
             score = parseFloat(blockScoreMatch[1]);
           } else {
-            // Buscar por coincidencia de nombre
-            const nameLower = name.toLowerCase();
             for (const [rName, rScore] of Object.entries(ratings)) {
-              if (nameLower.includes(rName) || rName.includes(nameLower) || nameLower.split(' ')[0] === rName.split(' ')[0]) {
+              const rNorm = rName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+              if (nameNorm.includes(rNorm) || rNorm.includes(nameNorm) || (firstName && firstName === rNorm.split(' ')[0])) {
                 score = rScore;
                 break;
               }
+            }
+          }
+
+          // Comparación / Síntesis evaluativa
+          let comparisonText = '';
+          for (const [cName, cText] of Object.entries(comparisons)) {
+            const cNorm = cName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+            if (nameNorm.includes(cNorm) || cNorm.includes(nameNorm) || (firstName && firstName === cNorm.split(' ')[0])) {
+              comparisonText = cText;
+              break;
             }
           }
 
@@ -2378,7 +2441,8 @@
             role: role,
             score: score,
             cvLink: cvLink,
-            rawBlock: block
+            rawBlock: block,
+            comparisonText: comparisonText
           });
         });
       }
@@ -2549,7 +2613,7 @@
             ${candidates.map(c => `
               <div class="flex items-start gap-2 leading-relaxed">
                 <span class="text-primary font-bold text-[12px] mt-0.5">▶</span>
-                <p><strong class="font-bold text-primary">${escHtml(c.name)} (${c.score ? c.score + '/10' : 'Evaluado'}):</strong> Idoneidad comprobada para el perfil solicitado.</p>
+                <p><strong class="font-bold text-primary">${escHtml(c.name)} (${c.score ? c.score + '/10' : 'Evaluado'}):</strong> ${escHtml(c.comparisonText || 'Idoneidad comprobada para el perfil solicitado.')}</p>
               </div>
             `).join('')}
           </div>
