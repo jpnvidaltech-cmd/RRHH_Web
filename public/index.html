@@ -1216,20 +1216,11 @@
           </div>
         </div>
 
-        <button class="w-full mt-2 py-2.5 rounded-xl bg-primary text-white font-bold text-[14px] hover:bg-primary-container transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95" type="submit" id="btnLoginSubmit">
+        <div id="loginError" class="hidden text-[12px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 p-2.5 rounded-xl font-medium text-center"></div>
+
+        <button class="w-full mt-1 py-2.5 rounded-xl bg-primary text-white font-bold text-[14px] hover:bg-primary-container transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95" type="submit" id="btnLoginSubmit">
           <span id="loginBtnText">Ingresar a la Plataforma</span>
           <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin hidden" id="loginSpinner"></div>
-        </button>
-
-        <div class="relative flex py-1 items-center w-full">
-          <div class="flex-grow border-t border-surface-container"></div>
-          <span class="flex-shrink mx-2 text-[11px] text-outline uppercase font-semibold">o bien</span>
-          <div class="flex-grow border-t border-surface-container"></div>
-        </div>
-
-        <button class="w-full py-2.5 rounded-xl bg-surface-container-high hover:bg-surface-dim text-primary font-bold text-[13px] transition-all flex items-center justify-center gap-2 shadow-xs" type="button" onclick="loginPreviewMode()">
-          <span class="material-symbols-outlined text-[18px] text-primary">visibility</span>
-          <span>Explorar en Modo Preview (Demo)</span>
         </button>
       </form>
     </div>
@@ -1331,14 +1322,6 @@
       const token = sessionStorage.getItem('rrhh_auth_token');
       if (!token) {
         handleAuthState(null, 'usuario', null);
-        return;
-      }
-
-      if (token === 'preview_token_demo') {
-        const mockUser = { id: 'preview-user-id', email: 'jpnvidal@gmail.com' };
-        const mockTenant = { id: 'tenant-demo', name: 'Empresa Demo Beta', slug: 'empresa-demo-beta' };
-        handleAuthState(mockUser, 'admin', mockTenant);
-        loadMockData();
         return;
       }
 
@@ -1736,7 +1719,11 @@
 
         if (res.ok) {
           const data = await res.json();
-          sessionStorage.setItem('rrhh_auth_token', data.token || data.session?.access_token);
+          const authToken = data.token || data.session?.access_token;
+          if (!authToken) {
+            throw new Error('No se recibió token de autenticación del servidor.');
+          }
+          sessionStorage.setItem('rrhh_auth_token', authToken);
           currentTenant = data.tenant || null;
           handleAuthState(data.user, data.role, data.tenant);
           showAlert('success', `¡Bienvenido/a, ${data.user.email}!`);
@@ -1744,29 +1731,26 @@
         }
 
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Credenciales incorrectas');
+        const errMsg = errData.error || (res.status === 400 ? 'Email o contraseña incorrectos.' : 'Error al iniciar sesión.');
+        if (errorDiv) {
+          errorDiv.textContent = errMsg;
+          errorDiv.classList.remove('hidden');
+        }
+        showAlert('error', `Error de acceso: ${errMsg}`);
       } catch (err) {
-        console.warn("API de login no respondió (Modo Previsualización Activo):", err);
-        // Fallback para previsualización fluida
-        loginPreviewMode(email);
+        console.error("Error en login:", err);
+        const errMsg = err.message || 'No fue posible conectar con el servidor.';
+        if (errorDiv) {
+          errorDiv.textContent = errMsg;
+          errorDiv.classList.remove('hidden');
+        }
+        showAlert('error', `Error de conexión: ${errMsg}`);
       } finally {
         btnSubmit.disabled = false;
         spinner.classList.add('hidden');
         btnText.textContent = 'Ingresar a la Plataforma';
       }
     });
-
-    function loginPreviewMode(customEmail) {
-      const email = customEmail || document.getElementById('loginEmail')?.value.trim() || 'jpnvidal@gmail.com';
-      const mockUser = { id: 'preview-user-id', email: email };
-      currentTenant = { id: 'tenant-demo', name: 'Empresa Demo Beta', slug: 'empresa-demo-beta' };
-      sessionStorage.setItem('rrhh_auth_token', 'preview_token_demo');
-      handleAuthState(mockUser, 'admin', currentTenant);
-      showAlert('success', `✓ Acceso concedido como ${email} (ADMIN)`);
-
-      // Cargar datos de muestra para la previsualización
-      loadMockData();
-    }
 
     document.getElementById('btnSignOut')?.addEventListener('click', async () => {
       const token = sessionStorage.getItem('rrhh_auth_token');
@@ -1778,7 +1762,21 @@
           });
         } catch (_) {}
       }
-      sessionStorage.removeItem('rrhh_auth_token');
+      sessionStorage.clear();
+      currentUser = null;
+      currentUserProfile = null;
+      currentTenant = null;
+      const teamContainer = document.getElementById('teamUsersContainer');
+      if (teamContainer) teamContainer.innerHTML = '';
+      const loginEmail = document.getElementById('loginEmail');
+      const loginPassword = document.getElementById('loginPassword');
+      if (loginEmail) loginEmail.value = '';
+      if (loginPassword) loginPassword.value = '';
+      const loginError = document.getElementById('loginError');
+      if (loginError) {
+        loginError.classList.add('hidden');
+        loginError.textContent = '';
+      }
       handleAuthState(null, 'usuario');
       showAlert('info', 'Sesión cerrada correctamente.');
     });
@@ -2974,9 +2972,27 @@
     // ─── GESTIÓN DE USUARIOS Y ROLES (VISTA 3) ───────────────────────────────
     async function loadSystemUsers() {
       const token = sessionStorage.getItem('rrhh_auth_token');
+      const container = document.getElementById('teamUsersContainer');
+      if (!container) return;
+
+      const myRole = (currentUserProfile?.role || 'usuario').toLowerCase();
+
+      // Restricción para rol Usuario (Nivel 3): no gestiona cuentas de equipo
+      if (myRole === 'usuario') {
+        container.innerHTML = `
+          <div class="p-8 text-center text-on-surface-variant text-[13px] flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-[32px] text-outline">admin_panel_settings</span>
+            <p class="font-bold text-on-surface">Gestión de equipo restringida</p>
+            <p class="text-[12px] max-w-xs text-on-surface-variant">La administración de usuarios está reservada para Managers y Administradores de la organización. Podés gestionar tu contraseña personal en el panel izquierdo.</p>
+          </div>
+        `;
+        const subtitle = document.getElementById('teamMembersSubtitle');
+        if (subtitle) subtitle.textContent = 'Acceso de consulta (Solo contraseña personal)';
+        return;
+      }
+
       if (!token) return;
 
-      const container = document.getElementById('teamUsersContainer');
       container.innerHTML = `
         <div class="p-8 text-center text-on-surface-variant text-[13px]">
           <div class="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
@@ -2989,31 +3005,54 @@
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!res.ok) throw new Error('Error al cargar usuarios');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
 
         const users = await res.json();
         container.innerHTML = '';
 
-        if (users.length === 0) {
+        if (!Array.isArray(users) || users.length === 0) {
           container.innerHTML = `
             <div class="p-8 text-center text-on-surface-variant text-[13px]">
-              No hay otros colaboradores registrados.
+              No hay otros colaboradores registrados en esta organización.
             </div>
           `;
+          const subtitle = document.getElementById('teamMembersSubtitle');
+          if (subtitle) subtitle.textContent = '0 colaboradores';
           return;
         }
-
-        const myRole = currentUserProfile?.role || 'usuario';
-        const canManage = (myRole === 'admin' || myRole === 'superadmin' || myRole === 'manager');
 
         users.forEach(u => {
           const userCard = document.createElement('div');
           userCard.className = 'flex items-center justify-between p-3 bg-surface-container-low hover:bg-surface-container transition-colors rounded-xl border border-surface-container';
 
           const email = u.email || '—';
-          const role = (u.role || 'usuario').toUpperCase();
+          const roleUpper = (u.role || 'usuario').toUpperCase();
+          const targetRole = (u.role || 'usuario').toLowerCase();
           const initials = email.substring(0, 2).toUpperCase();
-          const isMe = (u.id === currentUser?.id || email === currentUser?.email);
+          const isMe = (u.id === currentUser?.id || email.toLowerCase() === (currentUser?.email || '').toLowerCase());
+
+          // Jerarquía de acciones según Roles y Permisos.md:
+          // - Admin/Superadmin: puede resetear y eliminar a 'manager' y 'usuario'. No sobre otros admins ni sobre sí mismo.
+          // - Manager: puede resetear y eliminar ÚNICAMENTE a 'usuario'. No sobre managers ni admins ni sobre sí mismo.
+          let canReset = false;
+          let canDelete = false;
+
+          if (!isMe) {
+            if (myRole === 'admin' || myRole === 'superadmin') {
+              if (targetRole === 'manager' || targetRole === 'usuario') {
+                canReset = true;
+                canDelete = true;
+              }
+            } else if (myRole === 'manager') {
+              if (targetRole === 'usuario') {
+                canReset = true;
+                canDelete = true;
+              }
+            }
+          }
 
           userCard.innerHTML = `
             <div class="flex items-center gap-3">
@@ -3026,17 +3065,17 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              ${getRoleBadgeHtml(role)}
+              ${getRoleBadgeHtml(roleUpper)}
               ${isMe ? `
                 <span class="text-[12px] text-on-surface-variant dark:text-slate-400 italic pr-2">(Tu cuenta)</span>
               ` : `
-                ${canManage ? `
+                ${canReset ? `
                   <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-highest text-[11px] font-semibold text-on-surface dark:text-slate-200 transition-colors shadow-2xs" onclick="openResetPasswordModal('${u.id}', '${escHtml(email)}')" title="Resetear contraseña">
                     <span class="text-[12px]">🔑</span>
                     <span>Resetear</span>
                   </button>
                 ` : ''}
-                ${canManage && u.id !== currentUser?.id ? `
+                ${canDelete ? `
                   <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/50 text-[11px] font-semibold text-rose-600 dark:text-rose-400 transition-colors shadow-2xs" onclick="confirmDeleteUser('${u.id}', '${escHtml(email)}')" title="Eliminar usuario">
                     <span class="text-[12px]">🗑</span>
                     <span>Eliminar</span>
@@ -3051,53 +3090,14 @@
         const subtitle = document.getElementById('teamMembersSubtitle');
         if (subtitle) subtitle.textContent = `${users.length} colaborador${users.length === 1 ? '' : 'es'} con credenciales activas`;
       } catch (err) {
-        console.warn("API de usuarios no respondió, mostrando colaboradores demo para preview:", err);
-        const demoUsers = [
-          { id: 'u-1', email: 'jpnvidal@gmail.com', role: 'admin' },
-          { id: 'u-2', email: 'pamela@test.com', role: 'manager' },
-          { id: 'u-3', email: 'test_b@test.com', role: 'usuario' }
-        ];
-
-        container.innerHTML = '';
-        demoUsers.forEach(u => {
-          const userCard = document.createElement('div');
-          userCard.className = 'flex items-center justify-between p-3 bg-surface-container-low hover:bg-surface-container transition-colors rounded-xl border border-surface-container';
-          const email = u.email;
-          const role = u.role.toUpperCase();
-          const initials = email.substring(0, 2).toUpperCase();
-          const isMe = (email === 'jpnvidal@gmail.com' || email === currentUser?.email);
-
-          userCard.innerHTML = `
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 text-[12px] font-bold flex items-center justify-center shrink-0">
-                ${initials}
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[13px] font-bold text-on-surface dark:text-white leading-tight">${escHtml(email)}</span>
-                <span class="text-[11px] text-on-surface-variant dark:text-slate-400">Acceso registrado</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              ${getRoleBadgeHtml(role)}
-              ${isMe ? `
-                <span class="text-[12px] text-on-surface-variant dark:text-slate-400 italic pr-2">(Tu cuenta)</span>
-              ` : `
-                <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-highest text-[11px] font-semibold text-on-surface dark:text-slate-200 transition-colors shadow-2xs" onclick="openResetPasswordModal('${u.id}', '${escHtml(email)}')" title="Resetear contraseña">
-                  <span class="text-[12px]">🔑</span>
-                  <span>Resetear</span>
-                </button>
-                <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/50 text-[11px] font-semibold text-rose-600 dark:text-rose-400 transition-colors shadow-2xs" onclick="confirmDeleteUser('${u.id}', '${escHtml(email)}')" title="Eliminar usuario">
-                  <span class="text-[12px]">🗑</span>
-                  <span>Eliminar</span>
-                </button>
-              `}
-            </div>
-          `;
-          container.appendChild(userCard);
-        });
-
+        console.error("Error al cargar colaboradores:", err);
+        container.innerHTML = `
+          <div class="p-6 text-center text-rose-600 dark:text-rose-400 text-[13px]">
+            No se pudieron consultar los colaboradores: ${err.message}
+          </div>
+        `;
         const subtitle = document.getElementById('teamMembersSubtitle');
-        if (subtitle) subtitle.textContent = `${demoUsers.length} colaboradores en modo preview`;
+        if (subtitle) subtitle.textContent = 'Error al consultar colaboradores';
       }
     }
 
@@ -3130,7 +3130,35 @@
     function openAddUserModal() {
       document.getElementById('newEmail').value = '';
       document.getElementById('newPassword').value = '';
-      document.getElementById('newRole').value = 'usuario';
+      const roleSelect = document.getElementById('newRole');
+      const myRole = (currentUserProfile?.role || 'usuario').toLowerCase();
+
+      if (roleSelect) {
+        roleSelect.innerHTML = '';
+
+        // Opción Usuario (todos los roles autorizados a crear usuarios)
+        const optUsuario = document.createElement('option');
+        optUsuario.value = 'usuario';
+        optUsuario.textContent = 'Usuario (Solo Consulta)';
+        roleSelect.appendChild(optUsuario);
+
+        // Opción Manager (managers y administradores pueden crear managers)
+        const optManager = document.createElement('option');
+        optManager.value = 'manager';
+        optManager.textContent = 'Manager (Carga y Gestión de CVs)';
+        roleSelect.appendChild(optManager);
+
+        // Opción Administrador (SOLO Admin o Superadmin pueden crear Administradores)
+        if (myRole === 'admin' || myRole === 'superadmin') {
+          const optAdmin = document.createElement('option');
+          optAdmin.value = 'admin';
+          optAdmin.textContent = 'Administrador (Control Total)';
+          roleSelect.appendChild(optAdmin);
+        }
+
+        roleSelect.value = 'usuario';
+      }
+
       document.getElementById('addUserModal').style.display = 'flex';
     }
 
