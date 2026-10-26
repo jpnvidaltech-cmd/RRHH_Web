@@ -605,10 +605,6 @@
                   <span class="material-symbols-outlined text-[16px]">restart_alt</span>
                   <span>Limpiar</span>
                 </button>
-                <button class="px-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface text-[13px] font-semibold shadow-xs hover:bg-surface-container-high transition-colors flex items-center gap-1.5 border border-surface-container hidden" id="btnExportPdfPrompt" onclick="printReport()" title="Imprimir informe en PDF">
-                  <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                  <span>Exportar Reporte PDF</span>
-                </button>
                 <button class="px-5 py-2.5 rounded-xl bg-primary text-white text-[14px] font-bold shadow-sm hover:bg-primary-container transition-all flex items-center gap-2 active:scale-95" id="btnSearch">
                   <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin hidden" id="searchSpinner"></div>
                   <span class="material-symbols-outlined text-[18px] text-white" id="searchIcon">auto_awesome</span>
@@ -632,7 +628,7 @@
                 <div class="text-[12px] text-on-surface-variant font-medium" id="resultsCount"></div>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 no-print">
               <button class="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-[12px] font-semibold border border-surface-container flex items-center gap-1.5" onclick="clearSearch()">
                 <span class="material-symbols-outlined text-[15px]">restart_alt</span>Limpiar
               </button>
@@ -2240,7 +2236,6 @@
       document.getElementById('resultsArea').scrollTop = 0;
       document.getElementById('resultsContent').style.display = 'none';
       document.getElementById('resultsToolbar').style.display = 'none';
-      document.getElementById('btnExportPdfPrompt')?.classList.add('hidden');
       document.getElementById('emptyState').style.display = 'flex';
     }
 
@@ -2295,12 +2290,11 @@
       // Renderizar cuadros extra (Calificación Comparativa & Síntesis)
       renderComparisonBlocks(rawText, candidates);
 
-      // Mostrar barra, contenedor y habilitar botón de exportar reporte PDF
+      // Mostrar barra y contenedor de resultados
       document.getElementById('emptyState').style.display = 'none';
       document.getElementById('resultsContent').style.display = 'flex';
       const resultsToolbar = document.getElementById('resultsToolbar');
       resultsToolbar.style.display = 'flex';
-      document.getElementById('btnExportPdfPrompt')?.classList.remove('hidden');
       document.getElementById('resultsCount').textContent = `${candidates.length} candidato${candidates.length === 1 ? '' : 's'} evaluado${candidates.length === 1 ? '' : 's'} por idoneidad semántica`;
     }
 
