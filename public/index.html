@@ -1230,7 +1230,7 @@
   <script>
     // ─── CONFIGURACIÓN DINÁMICA DE WEBHOOKS ───────────────────────────────────
     let CONFIG = {
-      webhookCargaCv: 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa',
+      webhookCargaCv: 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT',
       webhookAgenteCv: 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT',
       webhookObtenerCv: 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV'
     };
@@ -1977,8 +1977,24 @@
       if (uploadSubStatus) uploadSubStatus.textContent = 'Iniciando carga…';
       uploadStatus.textContent = file.name;
 
+      // Generar SHA-256 del archivo para verificación de integridad y unicidad
+      let fileHash = '';
+      try {
+        const buffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        fileHash = Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        console.warn("No se pudo calcular hash SHA-256:", e);
+        fileHash = '';
+      }
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', file, file.name);
+      formData.append('filename', file.name);
+      formData.append('mimetype', file.type || 'application/pdf');
+      formData.append('size', String(file.size));
+      formData.append('file_hash', fileHash);
       formData.append('session_id', SESSION_ID);
       formData.append('email', currentUser?.email || 'anonimo@sistema.com');
       if (currentTenant?.id) {
