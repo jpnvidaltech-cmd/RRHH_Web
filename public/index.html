@@ -1641,20 +1641,30 @@
     }
 
     async function refreshAllTenantData() {
+      // 1. Limpiar completamente la vista de Búsqueda Semántica & Comparativa IA
+      clearSearch();
+
+      // 2. Resetear filtros y datos de la Base de Talento & CVs
       allCVs = [];
       filteredCVs = [];
+      currentPage = 1;
       const filterSearchInput = document.getElementById('filterSearchInput');
       if (filterSearchInput) filterSearchInput.value = '';
       const filterProfessionSelect = document.getElementById('filterProfessionSelect');
       if (filterProfessionSelect) filterProfessionSelect.innerHTML = '<option value="">Todas las profesiones</option>';
 
+      // 3. Actualizar conteo de CVs para la nueva organización activa
       await updateCVCount();
+
+      // 4. Actualizar tarjeta de perfil del usuario con la nueva empresa
+      updateProfileCard();
+
+      // 5. Refrescar la visualización de la vista activa
       if (activeView === 'talent') {
         await loadCVList();
       } else if (activeView === 'team') {
         await loadSystemUsers();
       }
-      updateProfileCard();
     }
 
     // ─── RESET PASSWORD MODAL LÓGICA (ADMIN & MANAGER) ───────────────────────
@@ -2233,10 +2243,22 @@
     function clearSearch() {
       const searchInput = document.getElementById('searchInput');
       if (searchInput) searchInput.value = '';
-      document.getElementById('resultsArea').scrollTop = 0;
-      document.getElementById('resultsContent').style.display = 'none';
-      document.getElementById('resultsToolbar').style.display = 'none';
-      document.getElementById('emptyState').style.display = 'flex';
+      const candidatesGrid = document.getElementById('candidatesGrid');
+      if (candidatesGrid) candidatesGrid.innerHTML = '';
+      const extraBlocks = document.getElementById('extraBlocks');
+      if (extraBlocks) extraBlocks.innerHTML = '';
+      const resultsCount = document.getElementById('resultsCount');
+      if (resultsCount) resultsCount.textContent = '';
+      const loadingState = document.getElementById('loadingState');
+      if (loadingState) loadingState.style.display = 'none';
+      const resultsArea = document.getElementById('resultsArea');
+      if (resultsArea) resultsArea.scrollTop = 0;
+      const resultsContent = document.getElementById('resultsContent');
+      if (resultsContent) resultsContent.style.display = 'none';
+      const resultsToolbar = document.getElementById('resultsToolbar');
+      if (resultsToolbar) resultsToolbar.style.display = 'none';
+      const emptyState = document.getElementById('emptyState');
+      if (emptyState) emptyState.style.display = 'flex';
     }
 
     function printReport() {
