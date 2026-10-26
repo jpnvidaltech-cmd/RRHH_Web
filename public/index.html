@@ -1419,6 +1419,13 @@
         updateCVCount();
         updateProfileCard();
 
+        // Refrescar automáticamente los datos de la vista activa según el rol autenticado
+        if (activeView === 'team') {
+          loadSystemUsers();
+        } else if (activeView === 'talent') {
+          loadCVList();
+        }
+
         // Inicializar reloj
         updateClock();
       } else {
@@ -1779,6 +1786,7 @@
         loginError.classList.add('hidden');
         loginError.textContent = '';
       }
+      switchView('search');
       handleAuthState(null, 'usuario');
       showAlert('info', 'Sesión cerrada correctamente.');
     });
