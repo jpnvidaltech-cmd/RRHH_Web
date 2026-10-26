@@ -1631,6 +1631,8 @@
       await updateCVCount();
       if (activeView === 'talent') {
         await loadCVList();
+      } else if (activeView === 'team') {
+        await loadSystemUsers();
       }
       updateProfileCard();
     }
@@ -3002,7 +3004,10 @@
 
       try {
         const res = await fetch('/api/users', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-tenant-id': currentTenant?.id || ''
+          }
         });
 
         if (!res.ok) {
@@ -3187,9 +3192,10 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'x-tenant-id': currentTenant?.id || ''
           },
-          body: JSON.stringify({ email, password, role })
+          body: JSON.stringify({ email, password, role, tenant_id: currentTenant?.id })
         });
 
         if (res.ok) {
