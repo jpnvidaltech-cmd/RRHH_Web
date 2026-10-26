@@ -1189,6 +1189,23 @@
     </div>
   </div>
 
+  <!-- ── MODAL: AVISO DE CARGA DE CV (DUPLICADO / NO PROCESABLE) ── -->
+  <div class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[110] flex items-center justify-center p-4" id="uploadNoticeModal" style="display: none;">
+    <div class="bg-surface-container-lowest rounded-2xl max-w-md w-full p-space-lg shadow-xl border border-surface-container flex flex-col gap-4 text-center items-center">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xs text-[28px]" id="uploadNoticeIconWrap">
+        <span class="material-symbols-outlined text-[32px]" id="uploadNoticeIcon">warning</span>
+      </div>
+      <div>
+        <h3 class="text-[18px] font-bold text-primary dark:text-white" id="uploadNoticeTitle">Aviso de Currículum</h3>
+        <p class="text-[13px] text-on-surface font-semibold mt-2 px-2 leading-relaxed" id="uploadNoticeMessage">—</p>
+        <p class="text-[12px] text-on-surface-variant mt-2 px-2 leading-relaxed" id="uploadNoticeHint">—</p>
+      </div>
+      <div class="w-full pt-3 border-t border-surface-container flex justify-center">
+        <button class="w-full py-2.5 rounded-xl bg-primary text-white font-bold text-[13px] hover:bg-primary-container transition-all shadow-xs" type="button" onclick="closeUploadNoticeModal()">Entendido</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── LOGIN OVERLAY (WARM MINIMAL) ── -->
   <div class="fixed inset-0 bg-primary/50 backdrop-blur-md z-[100] flex items-center justify-center p-4" id="loginOverlay">
     <div class="bg-surface-container-lowest rounded-3xl max-w-sm w-full p-8 shadow-2xl border border-surface-container flex flex-col items-center text-center gap-4">
@@ -2020,15 +2037,56 @@
           body: formData
         });
 
-        progressBar.style.width = '100%';
-        if (progressPercent) progressPercent.textContent = '100%';
+        // Intentar parsear el JSON independientemente del status code devuelto por N8N
+        const rawData = await res.json().catch(() => ({}));
+        const data = Array.isArray(rawData) ? rawData[0] : rawData;
+        const responseMsg = String(data?.Response || data?.response || data?.error || data?.message || '').trim();
 
         if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || errData.message || `Error del servidor (${res.status})`);
+          const msgLower = responseMsg.toLowerCase();
+
+          // Caso 1: El CV ya se encuentra en la base de datos
+          if (msgLower.includes('ya se encuentra en la base') || msgLower.includes('ya se encuentra')) {
+            showUploadNoticeModal({
+              type: 'duplicate',
+              title: 'Currículum ya Registrado',
+              message: responseMsg || 'El CV ya se encuentra cargado en la Base de Datos.',
+              hint: 'Este candidato ya fue indexado previamente en tu organización, por lo que no es necesario volver a subirlo.'
+            });
+            if (uploadSubStatus) uploadSubStatus.textContent = 'Aviso: CV ya registrado previamente';
+            progressBar.style.width = '100%';
+            if (progressPercent) progressPercent.textContent = '100%';
+            setTimeout(() => {
+              progressWrap.classList.add('hidden');
+              progressBar.style.width = '0%';
+              if (progressPercent) progressPercent.textContent = '0%';
+            }, 6000);
+            return;
+          }
+
+          // Caso 2: No se pudo extraer nombre/apellido o información del documento
+          if (msgLower.includes('no se ha podido extraer la información') || msgLower.includes('no es posible leer la información')) {
+            showUploadNoticeModal({
+              type: 'unreadable',
+              title: 'No se pudo leer el Currículum',
+              message: responseMsg || 'No se ha podido extraer la información del CV.',
+              hint: 'Verificá que el archivo PDF contenga texto seleccionable o que la imagen cuente con suficiente contraste y nitidez.'
+            });
+            if (uploadSubStatus) uploadSubStatus.textContent = 'Aviso: Documento no procesable';
+            progressBar.style.width = '100%';
+            if (progressPercent) progressPercent.textContent = '100%';
+            setTimeout(() => {
+              progressWrap.classList.add('hidden');
+              progressBar.style.width = '0%';
+              if (progressPercent) progressPercent.textContent = '0%';
+            }, 6000);
+            return;
+          }
+
+          // Caso 3: Error de carga ajeno a los casos controlados
+          throw new Error(responseMsg || `Error del servidor (${res.status})`);
         }
 
-        const data = await res.json();
         if (uploadSubStatus) uploadSubStatus.textContent = '100% Indexado y Normalizado';
         showAlert('success', `✓ ${file.name} indexado correctamente.`);
 
@@ -2051,6 +2109,43 @@
           progressWrap.classList.add('hidden');
         }, 6000);
       }
+    }
+
+    // ─── POPUP / MODAL DE AVISO DE CARGA DE CV (DUPLICADO / NO PROCESABLE) ───
+    function showUploadNoticeModal({ type, title, message, hint }) {
+      const modal = document.getElementById('uploadNoticeModal');
+      const iconWrap = document.getElementById('uploadNoticeIconWrap');
+      const icon = document.getElementById('uploadNoticeIcon');
+      const titleEl = document.getElementById('uploadNoticeTitle');
+      const msgEl = document.getElementById('uploadNoticeMessage');
+      const hintEl = document.getElementById('uploadNoticeHint');
+
+      if (!modal) return;
+
+      if (type === 'duplicate') {
+        iconWrap.className = 'w-14 h-14 rounded-2xl flex items-center justify-center shadow-xs bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50';
+        icon.textContent = 'content_copy';
+      } else {
+        iconWrap.className = 'w-14 h-14 rounded-2xl flex items-center justify-center shadow-xs bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-900/50';
+        icon.textContent = 'find_in_page';
+      }
+
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = message;
+      if (hintEl) hintEl.textContent = hint;
+
+      modal.style.display = 'flex';
+    }
+
+    function closeUploadNoticeModal() {
+      const modal = document.getElementById('uploadNoticeModal');
+      if (modal) modal.style.display = 'none';
+      const progressWrap = document.getElementById('progressWrap');
+      const progressBar = document.getElementById('progressBar');
+      const progressPercent = document.getElementById('progressPercent');
+      if (progressWrap) progressWrap.classList.add('hidden');
+      if (progressBar) progressBar.style.width = '0%';
+      if (progressPercent) progressPercent.textContent = '0%';
     }
 
     // ─── BÚSQUEDA SEMÁNTICA CON IA (VISTA 1) ──────────────────────────────────
