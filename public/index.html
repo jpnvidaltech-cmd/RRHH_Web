@@ -1699,8 +1699,8 @@
       btn.textContent = 'Guardando…';
 
       try {
-        const res = await fetch(`/api/users/reset-password/${userId}`, {
-          method: 'POST',
+        const res = await fetch(`/api/users/${userId}/reset-password`, {
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -1713,12 +1713,11 @@
           throw new Error(err.error || 'Error al resetear la clave');
         }
 
-        showAlert('success', `✓ Clave de ${userEmail} actualizada.`);
+        showAlert('success', `✓ Clave de ${userEmail} actualizada exitosamente.`);
         closeResetPasswordModal();
       } catch (err) {
-        console.warn("Reset de clave preview:", err);
-        showAlert('success', `✓ Clave de ${userEmail} actualizada (Modo Preview).`);
-        closeResetPasswordModal();
+        console.error("Error al resetear clave:", err);
+        showAlert('error', `Error al resetear clave: ${err.message}`);
       } finally {
         btn.disabled = false;
         btn.textContent = 'Guardar Nueva Clave';

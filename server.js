@@ -696,7 +696,7 @@ app.delete('/api/users/:id', requireAuth, requireManagerOrAdmin, async (req, res
 });
 
 // Resetear contraseña de un usuario (con jerarquía de permisos)
-app.put('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, async (req, res) => {
+const resetUserPasswordHandler = async (req, res) => {
   const targetId = req.params.id;
   const { newPassword } = req.body;
 
@@ -737,17 +737,23 @@ app.put('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, asy
     );
 
     if (updErr) {
-      console.error("[PUT /api/users/:id/reset-password] Error de Supabase Auth:", updErr.message);
+      console.error("[reset-password] Error de Supabase Auth:", updErr.message);
       return res.status(400).json({ error: updErr.message });
     }
 
-    console.log(`[PUT /api/users/:id/reset-password] Contraseña de ${targetProfile.email} reseteada por ${req.user.email} (${req.user.role})`);
+    console.log(`[reset-password] Contraseña de ${targetProfile.email} reseteada por ${req.user.email} (${req.user.role})`);
     res.json({ message: `Contraseña de ${targetProfile.email} actualizada exitosamente.` });
   } catch (err) {
     console.error("Excepción en reseteo de contraseña:", err);
     res.status(500).json({ error: 'Error interno del servidor al resetear la contraseña.' });
   }
-});
+};
+
+// Rutas compatibles (PUT / POST con :id en posición estándar o sufijo)
+app.put('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, resetUserPasswordHandler);
+app.post('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, resetUserPasswordHandler);
+app.put('/api/users/reset-password/:id', requireAuth, requireManagerOrAdmin, resetUserPasswordHandler);
+app.post('/api/users/reset-password/:id', requireAuth, requireManagerOrAdmin, resetUserPasswordHandler);
 
 // ─── ENDPOINT: CAMBIO DE CONTRASEÑA DE USUARIO (AUTENTICADO) ─────────────────
 app.put('/api/auth/change-password', requireAuth, async (req, res) => {
