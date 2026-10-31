@@ -2891,7 +2891,11 @@
         const nombreCompleto = `${cv.nombre || ''} ${cv.apellido || ''}`.trim() || 'Sin Nombre';
         const initials = nombreCompleto.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CV';
         const colorClass = avatarColors[idx % avatarColors.length];
-        const isNew = idx === 0 && currentPage === 1;
+        // Evaluar dinámicamente si fue incorporado en las últimas 48 horas
+        const ahora = Date.now();
+        const fechaCreacion = cv.created_at ? new Date(cv.created_at).getTime() : 0;
+        const diffMs = ahora - fechaCreacion;
+        const isNew = fechaCreacion > 0 && diffMs >= -60000 && diffMs <= (48 * 60 * 60 * 1000);
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-surface-container-low/50 transition-colors group';
@@ -2908,7 +2912,7 @@
               <div class="flex flex-col min-w-0">
                 <div class="flex items-center gap-1.5">
                   <span class="text-[14px] text-on-surface dark:text-white font-bold group-hover:text-primary dark:group-hover:text-blue-400 transition-colors truncate candidate-name">${escHtml(nombreCompleto)}</span>
-                  ${isNew ? '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] uppercase font-bold tracking-wider">NUEVA</span>' : ''}
+                  ${isNew ? '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] uppercase font-bold tracking-wider" title="Candidato incorporado en las últimas 48 horas">NUEVO</span>' : ''}
                 </div>
               </div>
             </div>
