@@ -970,7 +970,7 @@
                   <div class="grid grid-cols-2 gap-2 text-[11px]">
                     <div class="flex items-center gap-1.5 text-outline" id="rule-length">
                       <span class="material-symbols-outlined text-[15px]">radio_button_unchecked</span>
-                      <span>6+ caracteres</span>
+                      <span>8+ caracteres</span>
                     </div>
                     <div class="flex items-center gap-1.5 text-outline" id="rule-upper">
                       <span class="material-symbols-outlined text-[15px]">radio_button_unchecked</span>
@@ -1075,7 +1075,7 @@
         <div>
           <label class="block text-[12px] font-bold text-on-surface-variant mb-1" for="newPassword">Contraseña Inicial</label>
           <div class="relative flex items-center">
-            <input class="w-full bg-surface-container-low rounded-xl px-3 py-2 text-[14px] text-on-surface border border-surface-container focus:outline-none focus:bg-surface-container-lowest pr-10" type="password" id="newPassword" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+            <input class="w-full bg-surface-container-low rounded-xl px-3 py-2 text-[14px] text-on-surface border border-surface-container focus:outline-none focus:bg-surface-container-lowest pr-10" type="password" id="newPassword" placeholder="Mínimo 8 caracteres (A-Z, 0-9, !@#...)" required autocomplete="new-password">
             <button class="absolute right-3 text-outline hover:text-on-surface" type="button" onclick="togglePasswordVisibility('newPassword', this)">
               <span class="material-symbols-outlined text-[18px]">visibility</span>
             </button>
@@ -1171,7 +1171,7 @@
         <div>
           <label class="block text-[12px] font-bold text-on-surface-variant mb-1" for="resetNewPassword">Nueva Contraseña</label>
           <div class="relative flex items-center">
-            <input class="w-full bg-surface-container-low rounded-xl px-3 py-2 text-[14px] text-on-surface border border-surface-container focus:outline-none focus:bg-surface-container-lowest pr-10" type="password" id="resetNewPassword" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+            <input class="w-full bg-surface-container-low rounded-xl px-3 py-2 text-[14px] text-on-surface border border-surface-container focus:outline-none focus:bg-surface-container-lowest pr-10" type="password" id="resetNewPassword" placeholder="Mínimo 8 caracteres (A-Z, 0-9, !@#...)" required autocomplete="new-password">
             <button class="absolute right-3 text-outline hover:text-on-surface" type="button" onclick="togglePasswordVisibility('resetNewPassword', this)">
               <span class="material-symbols-outlined text-[18px]">visibility</span>
             </button>
@@ -1687,8 +1687,9 @@
       const newPassword = document.getElementById('resetNewPassword').value;
       const btn = document.getElementById('btnSubmitResetPassword');
 
-      if (!newPassword || newPassword.length < 6) {
-        showAlert('warning', 'La contraseña debe tener al menos 6 caracteres.');
+      const pwdError = validateClientPassword(newPassword);
+      if (pwdError) {
+        showAlert('warning', pwdError);
         return;
       }
 
@@ -3386,6 +3387,12 @@
         return;
       }
 
+      const pwdError = validateClientPassword(password);
+      if (pwdError) {
+        showAlert('warning', pwdError);
+        return;
+      }
+
       const submitBtn = document.getElementById('btnSubmitAddUser');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Guardando…';
@@ -3418,12 +3425,22 @@
       }
     }
 
+    // ─── VALIDACIÓN UNIFICADA DE CONTRASEÑA EN CLIENTE ──────────────────────
+    function validateClientPassword(password) {
+      if (!password || typeof password !== 'string') return 'La contraseña es requerida.';
+      if (password.length < 8) return 'La contraseña debe contener al menos 8 caracteres.';
+      if (!/[A-Z]/.test(password)) return 'La contraseña debe incluir al menos una letra mayúscula.';
+      if (!/[0-9]/.test(password)) return 'La contraseña debe incluir al menos un número.';
+      if (!/[!@#$%^&*(),.?":{}|<>_\-\+=]/.test(password)) return 'La contraseña debe incluir al menos un símbolo especial (!@#...).';
+      return null;
+    }
+
     // ─── CAMBIO DE CONTRASEÑA PROPIA (CHECKLIST DE ROBUSTEZ) ─────────────────
     function checkStrength(val) {
-      updateRule(document.getElementById('rule-length'), val.length >= 6);
+      updateRule(document.getElementById('rule-length'), val.length >= 8);
       updateRule(document.getElementById('rule-upper'), /[A-Z]/.test(val));
       updateRule(document.getElementById('rule-number'), /[0-9]/.test(val));
-      updateRule(document.getElementById('rule-symbol'), /[!@#$%^&*(),.?":{}|<>]/.test(val));
+      updateRule(document.getElementById('rule-symbol'), /[!@#$%^&*(),.?":{}|<>_\-\+=]/.test(val));
     }
 
     function updateRule(element, passed) {
@@ -3459,8 +3476,9 @@
         return;
       }
 
-      if (newPassword.length < 6) {
-        showAlert('error', 'La contraseña debe tener al menos 6 caracteres.');
+      const pwdError = validateClientPassword(newPassword);
+      if (pwdError) {
+        showAlert('warning', pwdError);
         return;
       }
 

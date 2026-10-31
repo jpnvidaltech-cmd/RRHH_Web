@@ -43,6 +43,16 @@ const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
 console.log("[Supabase Config] URL:", SUPABASE_URL);
 console.log("[Supabase Config] Service Role Key configurada:", SUPABASE_SERVICE_ROLE_KEY ? `SÍ (largo: ${SUPABASE_SERVICE_ROLE_KEY.length})` : "NO");
 
+// Función auxiliar: validar robustez de contraseñas (mínimo 8 caracteres, mayúscula, número, símbolo)
+function validatePasswordStrength(password) {
+  if (!password || typeof password !== 'string') return { valid: false, reason: 'Contraseña requerida.' };
+  if (password.length < 8) return { valid: false, reason: 'La contraseña debe contener al menos 8 caracteres.' };
+  if (!/[A-Z]/.test(password)) return { valid: false, reason: 'La contraseña debe incluir al menos una letra mayúscula.' };
+  if (!/[0-9]/.test(password)) return { valid: false, reason: 'La contraseña debe incluir al menos un número.' };
+  if (!/[!@#$%^&*(),.?":{}|<>_\-\+=]/.test(password)) return { valid: false, reason: 'La contraseña debe incluir al menos un símbolo especial (!@#...).' };
+  return { valid: true };
+}
+
 // Función auxiliar: asegurar que un usuario tenga perfil en mt_profiles
 async function ensureMtProfile(user) {
   try {
@@ -578,6 +588,12 @@ app.post('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Rol inválido. Debe ser admin, manager, usuario o superadmin.' });
   }
 
+  // Validación de robustez de contraseña unificada
+  const pwdCheck = validatePasswordStrength(password);
+  if (!pwdCheck.valid) {
+    return res.status(400).json({ error: pwdCheck.reason });
+  }
+
   // Restricción para Manager: no puede crear Administradores ni Superadmins
   if (req.user.role === 'manager' && (role === 'admin' || role === 'superadmin')) {
     return res.status(403).json({ error: 'Los managers solo tienen autorización para crear roles de Manager o Usuario.' });
@@ -700,8 +716,9 @@ const resetUserPasswordHandler = async (req, res) => {
   const targetId = req.params.id;
   const { newPassword } = req.body;
 
-  if (!newPassword || newPassword.length < 6) {
-    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+  const pwdCheck = validatePasswordStrength(newPassword);
+  if (!pwdCheck.valid) {
+    return res.status(400).json({ error: pwdCheck.reason });
   }
 
   try {
@@ -758,12 +775,9 @@ app.post('/api/users/reset-password/:id', requireAuth, requireManagerOrAdmin, re
 // ─── ENDPOINT: CAMBIO DE CONTRASEÑA DE USUARIO (AUTENTICADO) ─────────────────
 app.put('/api/auth/change-password', requireAuth, async (req, res) => {
   const { newPassword } = req.body;
-  if (!newPassword) {
-    return res.status(400).json({ error: 'Falta la nueva contraseña.' });
-  }
-
-  if (newPassword.length < 6) {
-    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
+  const pwdCheck = validatePasswordStrength(newPassword);
+  if (!pwdCheck.valid) {
+    return res.status(400).json({ error: pwdCheck.reason });
   }
 
   try {
