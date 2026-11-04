@@ -261,6 +261,11 @@
     }
 
     /* MODO CLARO */
+    .role-badge-superadmin {
+      background-color: #ede9fe;
+      color: #5b21b6;
+      border: 1px solid #ddd6fe;
+    }
     .role-badge-admin {
       background-color: #fef3c7;
       color: #92400e;
@@ -277,7 +282,12 @@
       border: 1px solid #bfdbfe;
     }
 
-    /* MODO OSCURO (ADJUNTO 2: AMARILLO/DORADO ADMIN, VERDE MANAGER, AZUL/CELESTE USUARIO) */
+    /* MODO OSCURO (VIOLETA SUPERADMIN, AMARILLO/DORADO ADMIN, VERDE MANAGER, AZUL/CELESTE USUARIO) */
+    html.dark .role-badge-superadmin {
+      background-color: rgba(139, 92, 246, 0.18) !important;
+      color: #c084fc !important;
+      border: 1px solid rgba(139, 92, 246, 0.35) !important;
+    }
     html.dark .role-badge-admin {
       background-color: rgba(245, 158, 11, 0.16) !important;
       color: #fbbf24 !important;
@@ -1318,7 +1328,9 @@
       const roleName = (currentUserProfile?.role || 'usuario').toUpperCase();
       if (roleEl) {
         roleEl.textContent = roleName;
-        if (roleName === 'ADMIN' || roleName === 'SUPERADMIN') {
+        if (roleName === 'SUPERADMIN') {
+          roleEl.className = 'role-badge role-badge-superadmin';
+        } else if (roleName === 'ADMIN') {
           roleEl.className = 'role-badge role-badge-admin';
         } else if (roleName === 'MANAGER') {
           roleEl.className = 'role-badge role-badge-manager';
@@ -1383,7 +1395,9 @@
         const roleBadge = document.getElementById('userRoleBadge');
         const roleUpper = (role || 'usuario').toUpperCase();
         roleBadge.textContent = roleUpper;
-        if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN') {
+        if (roleUpper === 'SUPERADMIN') {
+          roleBadge.className = 'role-badge role-badge-superadmin';
+        } else if (roleUpper === 'ADMIN') {
           roleBadge.className = 'role-badge role-badge-admin';
         } else if (roleUpper === 'MANAGER') {
           roleBadge.className = 'role-badge role-badge-manager';
@@ -1394,7 +1408,9 @@
         const teamRoleBadge = document.getElementById('teamProfileRole');
         if (teamRoleBadge) {
           teamRoleBadge.textContent = roleUpper;
-          if (roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN') {
+          if (roleUpper === 'SUPERADMIN') {
+            teamRoleBadge.className = 'role-badge role-badge-superadmin';
+          } else if (roleUpper === 'ADMIN') {
             teamRoleBadge.className = 'role-badge role-badge-admin';
           } else if (roleUpper === 'MANAGER') {
             teamRoleBadge.className = 'role-badge role-badge-manager';
@@ -1407,10 +1423,10 @@
           topbarTenantName.textContent = currentTenant?.name || 'Organización Activa';
         }
 
-        // Permisos de cambio de empresa en el topbar
-        const isAdmin = (role === 'admin' || role === 'superadmin');
+        // Permisos de cambio y creación de empresa exclusivos para Superadmin
+        const isSuperAdmin = (role === 'superadmin');
         if (tenantCapsule) {
-          if (isAdmin) {
+          if (isSuperAdmin) {
             tenantCapsule.onclick = openSwitchTenantModal;
             tenantCapsule.title = 'Hacé clic para cambiar o crear Organizaciones';
             tenantCapsule.classList.remove('cursor-default');
@@ -1426,7 +1442,7 @@
         }
 
         if (adminCreateTenantSection) {
-          adminCreateTenantSection.style.display = isAdmin ? 'flex' : 'none';
+          adminCreateTenantSection.style.display = isSuperAdmin ? 'flex' : 'none';
         }
 
         applyUserRole(role);
@@ -3166,7 +3182,9 @@
 
     function getRoleBadgeHtml(role) {
       const r = (role || 'usuario').toUpperCase();
-      if (r === 'ADMIN' || r === 'SUPERADMIN') {
+      if (r === 'SUPERADMIN') {
+        return `<span class="role-badge role-badge-superadmin">SUPERADMIN</span>`;
+      } else if (r === 'ADMIN') {
         return `<span class="role-badge role-badge-admin">ADMIN</span>`;
       } else if (r === 'MANAGER') {
         return `<span class="role-badge role-badge-manager">MANAGER</span>`;
@@ -3250,7 +3268,10 @@
           let canDelete = false;
 
           if (!isMe) {
-            if (myRole === 'admin' || myRole === 'superadmin') {
+            if (myRole === 'superadmin') {
+              canReset = true;
+              canDelete = true;
+            } else if (myRole === 'admin') {
               if (targetRole === 'manager' || targetRole === 'usuario') {
                 canReset = true;
                 canDelete = true;
@@ -3351,17 +3372,19 @@
         optUsuario.textContent = 'Usuario (Solo Consulta)';
         roleSelect.appendChild(optUsuario);
 
-        // Opción Manager (managers y administradores pueden crear managers)
-        const optManager = document.createElement('option');
-        optManager.value = 'manager';
-        optManager.textContent = 'Manager (Carga y Gestión de CVs)';
-        roleSelect.appendChild(optManager);
+        // Opción Manager (Superadmin y Admin de Empresa pueden crear Managers)
+        if (myRole === 'superadmin' || myRole === 'admin') {
+          const optManager = document.createElement('option');
+          optManager.value = 'manager';
+          optManager.textContent = 'Manager (Carga y Gestión de CVs)';
+          roleSelect.appendChild(optManager);
+        }
 
-        // Opción Administrador (SOLO Admin o Superadmin pueden crear Administradores)
-        if (myRole === 'admin' || myRole === 'superadmin') {
+        // Opción Administrador (SOLO Superadmin puede crear Administradores de Empresa)
+        if (myRole === 'superadmin') {
           const optAdmin = document.createElement('option');
           optAdmin.value = 'admin';
-          optAdmin.textContent = 'Administrador (Control Total)';
+          optAdmin.textContent = 'Administrador de Empresa';
           roleSelect.appendChild(optAdmin);
         }
 

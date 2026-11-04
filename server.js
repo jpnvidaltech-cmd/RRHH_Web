@@ -63,6 +63,17 @@ async function ensureMtProfile(user) {
       .single();
 
     if (profile) {
+      // Auto-promoción para el email del superadministrador principal
+      if (user.email === 'jpnvidal@gmail.com' && profile.role !== 'superadmin') {
+        const { error: updSuperErr } = await supabaseAdmin
+          .from('mt_profiles')
+          .update({ role: 'superadmin' })
+          .eq('id', user.id);
+        if (!updSuperErr) {
+          profile.role = 'superadmin';
+          console.log(`[Superadmin] Usuario ${user.email} configurado automáticamente como superadmin.`);
+        }
+      }
       return profile;
     }
 
@@ -168,12 +179,12 @@ async function requireSuperAdmin(req, res, next) {
 
 // Helper para resolver el tenant activo respetando la jerarquía de roles
 function resolveActiveTenantId(req) {
-  const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
-  // Solo los administradores pueden alternar de tenant mediante cabecera o query param
-  if (isAdmin) {
+  const isSuperAdmin = req.user && req.user.role === 'superadmin';
+  // Solo los Superadministradores pueden alternar de tenant mediante cabecera o query param
+  if (isSuperAdmin) {
     return req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
   }
-  // Para Manager y Usuario, el tenant_id está estrictamente fijado a su asignación
+  // Para Admin, Manager y Usuario, el tenant_id está estrictamente fijado a su asignación
   return req.user.tenant_id;
 }
 
@@ -236,8 +247,8 @@ app.get('/api/auth/profile', requireAuth, async (req, res) => {
   }
 });
 
-// Endpoint para conmutar de organización (exclusivo para admin o superadmin)
-app.post('/api/auth/switch-tenant', requireAuth, requireAdmin, async (req, res) => {
+// Endpoint para conmutar de organización (exclusivo para superadmin)
+app.post('/api/auth/switch-tenant', requireAuth, requireSuperAdmin, async (req, res) => {
   const { tenant_id } = req.body;
   if (!tenant_id) {
     return res.status(400).json({ error: 'tenant_id es requerido.' });
@@ -273,15 +284,15 @@ app.post('/api/auth/switch-tenant', requireAuth, requireAdmin, async (req, res) 
 // ─── ENDPOINTS: GESTIÓN DE ORGANIZACIONES (TENANTS) ───────────────────────────
 app.get('/api/tenants', requireAuth, async (req, res) => {
   try {
-    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
+    const isSuperAdmin = req.user && req.user.role === 'superadmin';
 
     let query = supabaseAdmin
       .from('mt_tenants')
       .select('id, name, slug, status, created_at')
       .order('name', { ascending: true });
 
-    // Si no es admin/superadmin, solo puede ver la organización a la que pertenece
-    if (!isAdmin) {
+    // Si no es superadmin, solo puede ver la organización a la que pertenece
+    if (!isSuperAdmin) {
       if (!req.user.tenant_id) return res.json([]);
       query = query.eq('id', req.user.tenant_id);
     }
@@ -298,8 +309,8 @@ app.get('/api/tenants', requireAuth, async (req, res) => {
   }
 });
 
-// Creación de organización (habilitado para Administradores y Superadmins)
-app.post('/api/tenants', requireAuth, requireAdmin, async (req, res) => {
+// Creación de organización (habilitado exclusivamente para Superadmins)
+app.post('/api/tenants', requireAuth, requireSuperAdmin, async (req, res) => {
   const { name, slug } = req.body;
   if (!name || !slug) {
     return res.status(400).json({ error: 'Nombre y slug identificador son obligatorios.' });
@@ -544,10 +555,11 @@ app.post('/api/cvs', requireAuth, requireManagerOrAdmin, async (req, res) => {
 // ─── ENDPOINTS: GESTIÓN DE USUARIOS MULTITENANT ───────────────────────────────
 app.get('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
   try {
-    const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const isAdmin = req.user.role === 'admin';
     const activeTenantId = resolveActiveTenantId(req);
 
-    if (!activeTenantId && !isAdmin) {
+    if (!activeTenantId && !isSuperAdmin) {
       return res.json([]);
     }
 
@@ -556,13 +568,22 @@ app.get('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
       .select('id, email, role, updated_at, tenant_id, mt_tenants(name)')
       .order('email', { ascending: true });
 
-    // Si es manager, solo ve usuarios de su propia empresa con rol manager o usuario (no administradores)
+    // Jerarquía de visualización:
     if (req.user.role === 'manager') {
+      // Manager ve usuarios y managers de su empresa
       query = query
         .eq('tenant_id', req.user.tenant_id)
         .in('role', ['manager', 'usuario']);
-    } else if (req.user.role !== 'superadmin') {
-      query = query.eq('tenant_id', activeTenantId);
+    } else if (isAdmin) {
+      // Admin ve todos los usuarios de su empresa (admin, manager, usuario), pero no superadmins
+      query = query
+        .eq('tenant_id', req.user.tenant_id)
+        .in('role', ['admin', 'manager', 'usuario']);
+    } else if (isSuperAdmin) {
+      // Superadmin ve según tenant activo o todos si no hay filtro
+      if (activeTenantId) {
+        query = query.eq('tenant_id', activeTenantId);
+      }
     }
 
     const { data: profilesList, error } = await query;
@@ -594,16 +615,22 @@ app.post('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
     return res.status(400).json({ error: pwdCheck.reason });
   }
 
-  // Restricción para Manager: no puede crear Administradores ni Superadmins
-  if (req.user.role === 'manager' && (role === 'admin' || role === 'superadmin')) {
-    return res.status(403).json({ error: 'Los managers solo tienen autorización para crear roles de Manager o Usuario.' });
+  // Restricciones jerárquicas de creación según rol del creador
+  if (req.user.role === 'manager') {
+    if (role !== 'usuario') {
+      return res.status(403).json({ error: 'Los managers solo tienen autorización para crear roles de Usuario.' });
+    }
+  } else if (req.user.role === 'admin') {
+    if (role === 'admin' || role === 'superadmin') {
+      return res.status(403).json({ error: 'Los administradores de empresa solo tienen autorización para crear roles de Manager o Usuario.' });
+    }
   }
 
   // Determinar la organización destino:
-  // Si es Manager, siempre se fija de forma estricta a su propio tenant_id
+  // Si es Superadmin, puede indicar tenant_id; de lo contrario, se fija estrictamente a su propio tenant_id
   const targetTenantId = (req.user.role === 'superadmin' && tenant_id)
     ? tenant_id
-    : (req.user.role === 'admin' ? resolveActiveTenantId(req) : req.user.tenant_id);
+    : req.user.tenant_id;
 
   if (!targetTenantId) {
     return res.status(400).json({ error: 'Debe especificarse una organización para el usuario.' });
@@ -678,9 +705,13 @@ app.delete('/api/users/:id', requireAuth, requireManagerOrAdmin, async (req, res
 
     // 3. Validar jerarquía de permisos
     if (req.user.role === 'admin') {
+      // El admin debe estar en la misma empresa
+      if (targetProfile.tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'No tenés permisos sobre usuarios de otra organización.' });
+      }
       // El admin no puede eliminar otros admins ni superadmins
       if (targetProfile.role === 'admin' || targetProfile.role === 'superadmin') {
-        return res.status(403).json({ error: 'Un administrador no puede eliminar a otro administrador o superadmin.' });
+        return res.status(403).json({ error: 'Un administrador solo puede eliminar perfiles de Manager o Usuario de su empresa.' });
       }
     } else if (req.user.role === 'manager') {
       // El manager debe estar en la misma empresa
@@ -735,8 +766,11 @@ const resetUserPasswordHandler = async (req, res) => {
 
     // 2. Validar jerarquía de permisos
     if (req.user.role === 'admin') {
+      if (targetProfile.tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'No tenés permisos sobre usuarios de otra organización.' });
+      }
       if (targetProfile.role === 'admin' || targetProfile.role === 'superadmin') {
-        return res.status(403).json({ error: 'No podés resetear la contraseña de otro administrador.' });
+        return res.status(403).json({ error: 'Un administrador solo puede resetear contraseñas de Manager o Usuario de su empresa.' });
       }
     } else if (req.user.role === 'manager') {
       if (targetProfile.tenant_id !== req.user.tenant_id) {
