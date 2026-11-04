@@ -202,15 +202,26 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-// Rate Limiter para mitigar ataques de fuerza bruta en el inicio de sesión (5 intentos / 15 min)
+// Rate Limiter para mitigar ataques de fuerza bruta en el inicio de sesión
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // Ventana de 15 minutos
-  max: 5,                   // Máximo 5 intentos por IP
-  skipSuccessfulRequests: true, // Si el inicio de sesión es exitoso, no penaliza al usuario
+  max: 5,                   // Máximo 5 intentos fallidos
+  skipSuccessfulRequests: true, // Si el inicio de sesión es exitoso, no penaliza
   standardHeaders: true,    // Devuelve cabeceras RateLimit-* estándar
   legacyHeaders: false,     // Desactiva cabeceras X-RateLimit-*
+  // 1. Inmunidad para la cuenta de Superadmin (nunca se auto-bloquea)
+  skip: (req) => {
+    const email = (req.body?.email || '').toLowerCase().trim();
+    return email === 'jpnvidal@gmail.com';
+  },
+  // 2. Segmentación por IP + Email: el bloqueo solo afecta a esa cuenta puntual desde esa IP
+  // evitando bloquear a otros usuarios o a otras cuentas desde la misma máquina/red
+  keyGenerator: (req) => {
+    const email = (req.body?.email || '').toLowerCase().trim();
+    return `${req.ip}_${email}`;
+  },
   message: {
-    error: 'Demasiados intentos fallidos. Por seguridad, tu acceso fue temporalmente pausado por 15 minutos.'
+    error: 'Demasiados intentos fallidos para esta cuenta. Por seguridad, el acceso fue temporalmente pausado por 15 minutos.'
   }
 });
 
