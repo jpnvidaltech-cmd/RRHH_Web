@@ -2,11 +2,16 @@ const express = require('express');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
+const rateLimit = require('express-rate-limit');
+
 // Cargar variables de entorno locales si existe un archivo .env
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3010;
+
+// Habilitar trust proxy para reconocer la IP real del cliente detrás de proxies inversos (Easypanel, Traefik, Nginx)
+app.set('trust proxy', 1);
 
 // Configurar Express para parsear JSON y urlencoded
 app.use(express.json());
@@ -197,8 +202,20 @@ app.get('/api/config', (req, res) => {
   });
 });
 
+// Rate Limiter para mitigar ataques de fuerza bruta en el inicio de sesión (5 intentos / 15 min)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // Ventana de 15 minutos
+  max: 5,                   // Máximo 5 intentos por IP
+  skipSuccessfulRequests: true, // Si el inicio de sesión es exitoso, no penaliza al usuario
+  standardHeaders: true,    // Devuelve cabeceras RateLimit-* estándar
+  legacyHeaders: false,     // Desactiva cabeceras X-RateLimit-*
+  message: {
+    error: 'Demasiados intentos fallidos. Por seguridad, tu acceso fue temporalmente pausado por 15 minutos.'
+  }
+});
+
 // ─── ENDPOINTS: AUTENTICACIÓN MULTITENANT ──────────────────────────────────────
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email y contraseña requeridos.' });
