@@ -25,7 +25,10 @@
         document.documentElement.classList.remove('dark');
       }
     })();
-  </script>
+  <!-- Supabase JS Client (para Supabase Realtime) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- QRCode.js para generación interactiva de Código QR sin dependencias externas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -483,6 +486,14 @@
             <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors">domain</span>
             <span class="text-[12px] font-semibold text-primary dark:text-white truncate max-w-[150px]" id="topbarTenantName">Organización Activa</span>
             <span class="material-symbols-outlined text-[16px] text-outline group-hover:text-primary transition-colors" id="topbarTenantArrow">expand_more</span>
+          </button>
+        </div>
+
+        <!-- 3b. Botón Enlace & Código QR de Postulación (Superadmin, Admin y Manager) -->
+        <div class="flex items-center shrink-0" id="qrButtonWrapper">
+          <button class="flex items-center gap-1.5 bg-surface-container-low hover:bg-surface-container px-3 py-1.5 rounded-full border border-surface-container text-on-surface shadow-2xs transition-colors cursor-pointer group" id="btnOpenQrModal" onclick="openQrModal()" title="Compartir enlace o Código QR de postulación" style="display: none;">
+            <span class="material-symbols-outlined text-[16px] text-primary dark:text-blue-400 group-hover:scale-110 transition-transform">qr_code_2</span>
+            <span class="text-[12px] font-semibold text-primary dark:text-white">QR Postulantes</span>
           </button>
         </div>
 
@@ -1213,6 +1224,52 @@
     </div>
   </div>
 
+  <!-- ── MODAL DE CÓDIGO QR Y ENLACE DE POSTULACIÓN ── -->
+  <div class="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] flex items-center justify-center p-4" id="qrModal" style="display: none;">
+    <div class="bg-surface-container-lowest rounded-3xl max-w-md w-full p-6 shadow-2xl border border-surface-container flex flex-col items-center text-center gap-4 relative">
+      <!-- Botón cerrar X -->
+      <button class="absolute top-4 right-4 p-1.5 rounded-full text-outline hover:text-on-surface hover:bg-surface-container transition-colors" onclick="closeQrModal()" title="Cerrar ventana">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+
+      <!-- Icono y Título -->
+      <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-xs">
+        <span class="material-symbols-outlined text-[26px]">qr_code_2</span>
+      </div>
+      <div>
+        <h3 class="text-[18px] font-bold text-primary dark:text-white">Portal de Postulaciones</h3>
+        <p class="text-[12px] text-on-surface-variant mt-1" id="qrModalSubtitle">Compartí este enlace o código QR con candidatos para que suban su CV.</p>
+      </div>
+
+      <!-- Tarjeta blanca del QR Canvas -->
+      <div class="p-4 bg-white rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center">
+        <div id="qrcodeCanvas" class="flex items-center justify-center"></div>
+      </div>
+
+      <!-- Input de Enlace y botón copiar -->
+      <div class="w-full flex items-center gap-2 bg-surface-container-low p-1.5 rounded-xl border border-surface-container">
+        <span class="material-symbols-outlined text-[18px] text-outline ml-2">link</span>
+        <input type="text" id="qrPortalUrlInput" readonly class="w-full bg-transparent text-[12px] text-on-surface font-mono outline-none truncate cursor-text" value="">
+        <button type="button" onclick="copyPortalUrl()" class="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-container text-white text-[12px] font-bold transition-all shrink-0 active:scale-95 flex items-center gap-1" id="btnCopyPortalUrl">
+          <span class="material-symbols-outlined text-[15px]">content_copy</span>
+          <span id="btnCopyPortalUrlText">Copiar</span>
+        </button>
+      </div>
+
+      <!-- Acciones de Descarga y Navegación -->
+      <div class="w-full flex flex-col sm:flex-row gap-2 pt-2 border-t border-surface-container">
+        <button type="button" onclick="downloadQrCode()" class="flex-1 py-2.5 px-3 rounded-xl bg-surface-container-high hover:bg-surface-dim text-on-surface text-[12px] font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">download</span>
+          <span>Descargar QR (PNG)</span>
+        </button>
+        <button type="button" onclick="openPortalInNewTab()" class="flex-1 py-2.5 px-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[12px] font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+          <span>Abrir Portal</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── LOGIN OVERLAY (WARM MINIMAL) ── -->
   <div class="fixed inset-0 bg-primary/50 backdrop-blur-md z-[100] flex items-center justify-center p-4" id="loginOverlay">
     <div class="bg-surface-container-lowest rounded-3xl max-w-sm w-full p-8 shadow-2xl border border-surface-container flex flex-col items-center text-center gap-4">
@@ -1449,6 +1506,18 @@
         updateCVCount();
         updateProfileCard();
 
+        // Control del botón QR según rol
+        const btnOpenQrModal = document.getElementById('btnOpenQrModal');
+        if (btnOpenQrModal) {
+          const canShareQr = (role === 'superadmin' || role === 'admin' || role === 'manager');
+          btnOpenQrModal.style.display = canShareQr ? 'flex' : 'none';
+        }
+
+        // Inicializar suscripción a Supabase Realtime para la empresa activa
+        if (currentTenant?.id) {
+          setupSupabaseRealtime(currentTenant.id);
+        }
+
         // Refrescar automáticamente los datos de la vista activa según el rol autenticado
         if (activeView === 'team') {
           loadSystemUsers();
@@ -1682,6 +1751,11 @@
       } else if (activeView === 'team') {
         await loadSystemUsers();
       }
+
+      // 6. Actualizar suscripción a Supabase Realtime con el nuevo tenant
+      if (currentTenant?.id) {
+        setupSupabaseRealtime(currentTenant.id);
+      }
     }
 
     // ─── RESET PASSWORD MODAL LÓGICA (ADMIN & MANAGER) ───────────────────────
@@ -1811,6 +1885,15 @@
           });
         } catch (_) {}
       }
+      if (realtimeCvChannel && supabaseRealtimeClient) {
+        try {
+          supabaseRealtimeClient.removeChannel(realtimeCvChannel);
+        } catch (_) {}
+        realtimeCvChannel = null;
+      }
+      const btnOpenQrModal = document.getElementById('btnOpenQrModal');
+      if (btnOpenQrModal) btnOpenQrModal.style.display = 'none';
+
       sessionStorage.clear();
       currentUser = null;
       currentUserProfile = null;
@@ -3579,6 +3662,161 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    // ─── CÓDIGO QR Y ENLACE DE POSTULACIÓN PÚBLICA ──────────────────────────
+    let qrcodeInstance = null;
+
+    function openQrModal() {
+      const modal = document.getElementById('qrModal');
+      if (!modal) return;
+
+      const slug = currentTenant?.slug || 'alpha-corp';
+      const tenantName = currentTenant?.name || 'tu organización';
+      const origin = window.location.origin;
+      const portalUrl = `${origin}/postular/${slug}`;
+
+      document.getElementById('qrModalSubtitle').textContent = `Compartí este enlace o código QR para que candidatos postulen sus currículums a ${tenantName}.`;
+      document.getElementById('qrPortalUrlInput').value = portalUrl;
+
+      const canvasContainer = document.getElementById('qrcodeCanvas');
+      canvasContainer.innerHTML = '';
+
+      if (window.QRCode) {
+        qrcodeInstance = new QRCode(canvasContainer, {
+          text: portalUrl,
+          width: 190,
+          height: 190,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      } else {
+        canvasContainer.innerHTML = '<p class="text-xs text-rose-500">No se pudo cargar el generador QR.</p>';
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    function closeQrModal() {
+      const modal = document.getElementById('qrModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function copyPortalUrl() {
+      const input = document.getElementById('qrPortalUrlInput');
+      if (!input || !input.value) return;
+      navigator.clipboard.writeText(input.value).then(() => {
+        const text = document.getElementById('btnCopyPortalUrlText');
+        if (text) text.textContent = '¡Copiado!';
+        showAlert('success', '✓ Enlace de postulación copiado al portapapeles.');
+        setTimeout(() => {
+          if (text) text.textContent = 'Copiar';
+        }, 2500);
+      }).catch(() => {
+        input.select();
+        document.execCommand('copy');
+        showAlert('success', '✓ Enlace copiado.');
+      });
+    }
+
+    function downloadQrCode() {
+      const canvas = document.querySelector('#qrcodeCanvas canvas');
+      const img = document.querySelector('#qrcodeCanvas img');
+      let dataUrl = null;
+
+      if (canvas) {
+        dataUrl = canvas.toDataURL('image/png');
+      } else if (img && img.src) {
+        dataUrl = img.src;
+      }
+
+      if (!dataUrl) {
+        showAlert('warning', 'Aguardá un instante a que se genere el código QR.');
+        return;
+      }
+
+      const slug = currentTenant?.slug || 'organizacion';
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `QR_Postulaciones_${slug}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showAlert('success', '✓ Código QR descargado exitosamente.');
+    }
+
+    function openPortalInNewTab() {
+      const input = document.getElementById('qrPortalUrlInput');
+      if (input && input.value) {
+        window.open(input.value, '_blank');
+      }
+    }
+
+    // ─── SUPABASE REALTIME (NOTIFICACIÓN EN VIVO DE NUEVOS CVS) ───────────────
+    let supabaseRealtimeClient = null;
+    let realtimeCvChannel = null;
+
+    function setupSupabaseRealtime(tenantId) {
+      if (!window.supabase || !CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey) {
+        console.warn("[Realtime] Configuración de Supabase aún no disponible para WebSockets.");
+        return;
+      }
+
+      if (!tenantId) return;
+
+      try {
+        if (!supabaseRealtimeClient) {
+          supabaseRealtimeClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+            auth: { persistSession: false, autoRefreshToken: false }
+          });
+        }
+
+        if (realtimeCvChannel) {
+          console.log("[Realtime] Desuscribiendo canal anterior...");
+          supabaseRealtimeClient.removeChannel(realtimeCvChannel);
+          realtimeCvChannel = null;
+        }
+
+        console.log(`[Realtime] Suscribiendo a eventos INSERT de mt_cvs para tenant_id: ${tenantId}`);
+
+        realtimeCvChannel = supabaseRealtimeClient
+          .channel(`public:mt_cvs:${tenantId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'mt_cvs',
+              filter: `tenant_id=eq.${tenantId}`
+            },
+            (payload) => {
+              console.log("[Realtime] ¡Nuevo currículum recibido en vivo!", payload);
+              handleIncomingRealtimeCv(payload.new);
+            }
+          )
+          .subscribe((status) => {
+            console.log(`[Realtime] Estado de suscripción canal (${tenantId}):`, status);
+          });
+      } catch (err) {
+        console.error("[Realtime] Error inicializando Supabase Realtime:", err);
+      }
+    }
+
+    function handleIncomingRealtimeCv(newCv) {
+      if (!newCv) return;
+      const fullName = `${newCv.nombre || ''} ${newCv.apellido || ''}`.trim() || 'Nuevo Candidato';
+
+      // 1. Mostrar alerta animada flotante
+      showAlert('success', `✨ ¡Nuevo CV recibido! ${fullName} se ha postulado.`);
+
+      // 2. Incrementar contadores en vivo
+      updateCVCount();
+
+      // 3. Si la vista actual es la lista de candidatos, recargarla
+      if (activeView === 'talent') {
+        loadCVList();
+      }
     }
 
     // ─── INICIALIZACIÓN AL CARGAR LA PÁGINA ───────────────────────────────────

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bolsa de Talentos | Postulá tu CV</title>
+  <meta name="description" content="Portal público de recepción de currículums para procesos de selección y talento humano.">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Material Symbols Outlined -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .drop-active {
+      border-color: #4f46e5 !important;
+      background-color: rgba(99, 102, 241, 0.06) !important;
+      transform: scale(1.01);
+    }
+  </style>
+</head>
+
+<body class="min-h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col justify-between transition-colors duration-200">
+
+  <!-- Header Superior -->
+  <header class="w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div id="companyLogoWrap" class="w-10 h-10 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-[15px] shadow-sm shrink-0 overflow-hidden">
+          <span id="companyLogoInitial">HR</span>
+          <img id="companyLogoImg" src="" alt="Logo" class="w-full h-full object-cover hidden">
+        </div>
+        <div>
+          <h1 id="companyName" class="text-[16px] font-bold text-slate-900 dark:text-white leading-tight">Cargando empresa…</h1>
+          <p class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Recepción de CVs activa
+          </p>
+        </div>
+      </div>
+
+      <!-- Selector de tema -->
+      <button onclick="toggleTheme()" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Cambiar tema">
+        <span class="material-symbols-outlined text-[20px]" id="themeIcon">dark_mode</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <main class="flex-1 max-w-xl w-full mx-auto px-4 py-8 md:py-12 flex flex-col justify-center">
+
+    <!-- Tarjeta de Error: Empresa no encontrada -->
+    <div id="cardNotFound" class="hidden bg-white dark:bg-slate-900 rounded-3xl p-8 border border-rose-200 dark:border-rose-900/40 shadow-xl text-center">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-4">
+        <span class="material-symbols-outlined text-[32px]">domain_disabled</span>
+      </div>
+      <h2 class="text-[20px] font-bold text-slate-900 dark:text-white mb-2">Organización no disponible</h2>
+      <p class="text-[14px] text-slate-600 dark:text-slate-400 mb-6">El enlace al que intentás acceder no existe o la recepción de currículums se encuentra temporalmente inactiva.</p>
+      <a href="/" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-semibold transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[18px]">home</span>
+        Ir al portal principal
+      </a>
+    </div>
+
+    <!-- Tarjeta Principal de Formulario -->
+    <div id="cardMain" class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xl relative overflow-hidden transition-all">
+
+      <!-- Estado 1: Formulario de Subida -->
+      <div id="viewUpload">
+        <div class="text-center mb-6">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold mb-3 border border-indigo-200/60 dark:border-indigo-800/40">
+            <span class="material-symbols-outlined text-[14px]">psychology</span>
+            Indexación con Inteligencia Artificial
+          </div>
+          <h2 class="text-[22px] md:text-[24px] font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
+            Envianos tu Currículum Vitae
+          </h2>
+          <p class="text-[13px] md:text-[14px] text-slate-600 dark:text-slate-400 mt-1 max-w-md mx-auto">
+            Sumate a la base de talentos de <span id="companyHighlight" class="font-semibold text-indigo-600 dark:text-indigo-400">esta empresa</span>. Nuestro equipo evaluará tu perfil para las búsquedas activas.
+          </p>
+        </div>
+
+        <!-- Zona Drag & Drop -->
+        <div id="dropZone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 md:p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 transition-all duration-200 relative group">
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx" class="hidden">
+          
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-200 shadow-xs">
+            <span class="material-symbols-outlined text-[32px]">upload_file</span>
+          </div>
+
+          <h3 class="text-[15px] font-bold text-slate-800 dark:text-slate-200 mb-1">
+            Seleccioná tu archivo o arrastralo aquí
+          </h3>
+          <p class="text-[12px] text-slate-500 dark:text-slate-400">
+            Admitidos: <strong class="text-slate-700 dark:text-slate-300">PDF, Word (.docx, .doc)</strong> · Máximo 10 MB
+          </p>
+        </div>
+
+        <!-- Previsualización de Archivo Seleccionado -->
+        <div id="filePreview" class="hidden mt-4 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-[24px]">description</span>
+            <div class="min-w-0">
+              <p id="fileName" class="text-[13px] font-bold text-slate-800 dark:text-white truncate">archivo.pdf</p>
+              <p id="fileSize" class="text-[11px] text-slate-500 dark:text-slate-400">0 KB</p>
+            </div>
+          </div>
+          <button type="button" onclick="removeSelectedFile()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors" title="Quitar archivo">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+
+        <!-- Alerta de Error -->
+        <div id="alertBox" class="hidden mt-4 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-[13px] flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-[18px] shrink-0">error</span>
+          <span id="alertMessage" class="flex-1 font-medium">Error al procesar.</span>
+        </div>
+
+        <!-- Botón de Envío -->
+        <button id="btnSubmit" type="button" onclick="submitCv()" disabled class="w-full mt-6 py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-[14px] shadow-lg shadow-indigo-600/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer">
+          <span class="material-symbols-outlined text-[18px]">send</span>
+          <span>Enviar mi Currículum</span>
+        </button>
+
+        <p class="text-[11px] text-center text-slate-400 dark:text-slate-500 mt-4 flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-[14px]">lock</span>
+          Tus datos se procesan de forma privada y segura con el equipo de RRHH.
+        </p>
+      </div>
+
+      <!-- Estado 2: Cargando / Procesando con IA -->
+      <div id="viewLoading" class="hidden py-10 text-center">
+        <div class="w-20 h-20 mx-auto rounded-3xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6 relative">
+          <span class="material-symbols-outlined text-[40px] animate-spin">sync</span>
+        </div>
+
+        <h3 class="text-[20px] font-bold text-slate-900 dark:text-white mb-2">Procesando tu Currículum…</h3>
+        <p class="text-[13px] text-slate-600 dark:text-slate-400 max-w-sm mx-auto mb-6">
+          Estamos subiendo tu documento y analizando tus habilidades con IA para asignarte a las búsquedas correspondientes.
+        </p>
+
+        <!-- Barra de progreso -->
+        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden max-w-md mx-auto">
+          <div id="loadingProgress" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 w-1/3 animate-pulse"></div>
+        </div>
+        <p id="loadingStatusText" class="text-[11px] font-semibold text-slate-400 mt-2">Cargando archivo (35%)…</p>
+      </div>
+
+      <!-- Estado 3: Éxito Confirmado -->
+      <div id="viewSuccess" class="hidden py-8 text-center">
+        <div class="w-20 h-20 mx-auto rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5 shadow-lg shadow-emerald-500/10">
+          <span class="material-symbols-outlined text-[44px]">check_circle</span>
+        </div>
+
+        <h3 class="text-[22px] font-bold text-slate-900 dark:text-white mb-2">¡Postulación Enviada con Éxito!</h3>
+        <p class="text-[14px] text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
+          Tu currículum ha sido recibido y registrado en la base de talentos de <strong id="successCompanyName" class="text-slate-800 dark:text-white">la empresa</strong>. En caso de coincidir con alguna vacante, el equipo se pondrá en contacto contigo.
+        </p>
+
+        <button type="button" onclick="resetForm()" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-[13px] font-bold transition-all">
+          <span class="material-symbols-outlined text-[18px]">replay</span>
+          <span>Enviar otra postulación</span>
+        </button>
+      </div>
+
+      <!-- Estado 4: Aviso de CV Duplicado -->
+      <div id="viewDuplicate" class="hidden py-8 text-center">
+        <div class="w-20 h-20 mx-auto rounded-3xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-5 shadow-lg shadow-amber-500/10">
+          <span class="material-symbols-outlined text-[44px]">info</span>
+        </div>
+
+        <h3 class="text-[22px] font-bold text-slate-900 dark:text-white mb-2">Currículum ya Registrado</h3>
+        <p class="text-[14px] text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
+          Tu documento ya se encuentra indexado previamente en nuestra base de datos. ¡Tu perfil ya está en consideración para las búsquedas activas!
+        </p>
+
+        <button type="button" onclick="resetForm()" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-[13px] font-bold transition-all">
+          <span class="material-symbols-outlined text-[18px]">replay</span>
+          <span>Volver al formulario</span>
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full py-6 border-t border-slate-200/60 dark:border-slate-800/60 text-center text-[12px] text-slate-400 dark:text-slate-600">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-1.5 font-medium">
+        <span>Powered by</span>
+        <strong class="text-slate-600 dark:text-slate-400">Perfiles RRHH AI</strong>
+      </div>
+      <div>
+        <span>Portal seguro de recepción de talento humano</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Extraer slug desde la URL (ej. /postular/alpha-corp)
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const tenantSlug = pathParts[pathParts.length - 1] || '';
+    let currentTenantData = null;
+    let selectedFile = null;
+
+    // Inicialización al cargar la página
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      setupDragAndDrop();
+
+      if (!tenantSlug || tenantSlug === 'postular') {
+        showNotFound();
+        return;
+      }
+
+      await loadTenantInfo();
+    });
+
+    // Cargar datos de la empresa cliente
+    async function loadTenantInfo() {
+      try {
+        const res = await fetch(`/api/public/tenant/${encodeURIComponent(tenantSlug)}`);
+        if (!res.ok) {
+          showNotFound();
+          return;
+        }
+
+        currentTenantData = await res.json();
+        renderTenantInfo(currentTenantData);
+      } catch (err) {
+        console.error("Error al cargar datos de empresa:", err);
+        showNotFound();
+      }
+    }
+
+    function renderTenantInfo(t) {
+      document.title = `Postular CV | ${t.name}`;
+      document.getElementById('companyName').textContent = t.name;
+      document.getElementById('companyHighlight').textContent = t.name;
+      const successName = document.getElementById('successCompanyName');
+      if (successName) successName.textContent = t.name;
+
+      const initialEl = document.getElementById('companyLogoInitial');
+      const imgEl = document.getElementById('companyLogoImg');
+
+      if (t.logo_url) {
+        imgEl.src = t.logo_url;
+        imgEl.classList.remove('hidden');
+        initialEl.classList.add('hidden');
+      } else {
+        const initials = t.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() || 'HR';
+        initialEl.textContent = initials;
+        initialEl.classList.remove('hidden');
+        imgEl.classList.add('hidden');
+      }
+    }
+
+    function showNotFound() {
+      document.getElementById('cardMain').classList.add('hidden');
+      document.getElementById('cardNotFound').classList.remove('hidden');
+      document.getElementById('companyName').textContent = 'Organización no disponible';
+    }
+
+    // Configuración de Drag & Drop y Selección de Archivo
+    function setupDragAndDrop() {
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('fileInput');
+
+      dropZone.addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleFileSelected(e.target.files[0]);
+        }
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add('drop-active');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove('drop-active');
+        }, false);
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        if (dt.files && dt.files[0]) {
+          handleFileSelected(dt.files[0]);
+        }
+      });
+    }
+
+    function handleFileSelected(file) {
+      hideAlert();
+
+      // Validar peso (máximo 10 MB)
+      const maxBytes = 10 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        showAlert('El archivo supera el tamaño máximo permitido de 10 MB.');
+        return;
+      }
+
+      // Validar extensión
+      const validExts = ['.pdf', '.doc', '.docx'];
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (!validExts.includes(ext)) {
+        showAlert('Formato no compatible. Por favor subí un archivo en formato PDF o Word (.docx, .doc).');
+        return;
+      }
+
+      selectedFile = file;
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = formatBytes(file.size);
+      document.getElementById('filePreview').classList.remove('hidden');
+      document.getElementById('btnSubmit').disabled = false;
+    }
+
+    function removeSelectedFile() {
+      selectedFile = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('filePreview').classList.add('hidden');
+      document.getElementById('btnSubmit').disabled = true;
+      hideAlert();
+    }
+
+    function showAlert(msg) {
+      const box = document.getElementById('alertBox');
+      const text = document.getElementById('alertMessage');
+      text.textContent = msg;
+      box.classList.remove('hidden');
+    }
+
+    function hideAlert() {
+      document.getElementById('alertBox').classList.add('hidden');
+    }
+
+    // Envío del Currículum al Backend
+    async function submitCv() {
+      if (!selectedFile || !tenantSlug) return;
+
+      hideAlert();
+      showState('loading');
+
+      const formData = new FormData();
+      formData.append('data', selectedFile);
+
+      const progressEl = document.getElementById('loadingProgress');
+      const statusText = document.getElementById('loadingStatusText');
+
+      progressEl.style.width = '45%';
+      statusText.textContent = 'Subiendo documento (45%)…';
+
+      try {
+        setTimeout(() => {
+          progressEl.style.width = '75%';
+          statusText.textContent = 'Analizando y extrayendo datos con IA (75%)…';
+        }, 1200);
+
+        const res = await fetch(`/api/public/cv/${encodeURIComponent(tenantSlug)}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          const errMsg = data.error || data.message || 'Error al procesar la postulación.';
+          const lower = errMsg.toLowerCase();
+
+          // Caso especial: currículum duplicado
+          if (lower.includes('ya se encuentra en la base') || lower.includes('duplicado') || lower.includes('ya registrado')) {
+            showState('duplicate');
+            return;
+          }
+
+          throw new Error(errMsg);
+        }
+
+        progressEl.style.width = '100%';
+        statusText.textContent = '¡Completado con éxito!';
+
+        setTimeout(() => {
+          showState('success');
+        }, 600);
+
+      } catch (err) {
+        console.error("Error al enviar CV:", err);
+        showState('upload');
+        showAlert(err.message || 'No se pudo completar el envío. Por favor intentá nuevamente.');
+      }
+    }
+
+    function showState(state) {
+      document.getElementById('viewUpload').classList.add('hidden');
+      document.getElementById('viewLoading').classList.add('hidden');
+      document.getElementById('viewSuccess').classList.add('hidden');
+      document.getElementById('viewDuplicate').classList.add('hidden');
+
+      if (state === 'upload') document.getElementById('viewUpload').classList.remove('hidden');
+      if (state === 'loading') document.getElementById('viewLoading').classList.remove('hidden');
+      if (state === 'success') document.getElementById('viewSuccess').classList.remove('hidden');
+      if (state === 'duplicate') document.getElementById('viewDuplicate').classList.remove('hidden');
+    }
+
+    function resetForm() {
+      removeSelectedFile();
+      showState('upload');
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // Manejo de tema claro/oscuro
+    function initTheme() {
+      const saved = localStorage.getItem('rrhh_theme');
+      const isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      applyTheme(isDark);
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(!isDark);
+      localStorage.setItem('rrhh_theme', !isDark ? 'dark' : 'light');
+    }
+
+    function applyTheme(isDark) {
+      const icon = document.getElementById('themeIcon');
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        if (icon) icon.textContent = 'light_mode';
+      } else {
+        document.documentElement.classList.remove('dark');
+        if (icon) icon.textContent = 'dark_mode';
+      }
+    }
+  </script>
+</body>
+
+</html>

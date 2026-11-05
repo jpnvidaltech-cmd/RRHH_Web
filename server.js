@@ -3,6 +3,8 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 const rateLimit = require('express-rate-limit');
+const multer = require('multer');
+const uploadPublic = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // Máx. 10 MB en memoria
 
 // Cargar variables de entorno locales si existe un archivo .env
 require('dotenv').config();
@@ -193,13 +195,121 @@ function resolveActiveTenantId(req) {
   return req.user.tenant_id;
 }
 
-// ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE WEBHOOKS ─────────────────────────────
+// ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE WEBHOOKS Y CLIENTE ──────────────────
 app.get('/api/config', (req, res) => {
   res.json({
+    supabaseUrl: SUPABASE_URL,
+    supabaseAnonKey: SUPABASE_ANON_KEY,
     webhookCargaCv: process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT',
     webhookAgenteCv: process.env.WEBHOOK_AGENTE_CV || 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT',
     webhookObtenerCv: process.env.WEBHOOK_OBTENER_CV || 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV'
   });
+});
+
+// Rate Limiter para postulaciones públicas (máximo 10 postulaciones por IP en 10 min)
+const publicCvLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Demasiados intentos de postulación desde esta conexión. Por favor intentá nuevamente en unos minutos.'
+  }
+});
+
+// ─── ENDPOINTS PÚBLICOS: POSTULACIÓN DE CANDIDATOS (PORTAL Y CÓDIGO QR) ──────
+
+// 1. Obtener datos básicos de la empresa por su slug identificador
+app.get('/api/public/tenant/:slug', async (req, res) => {
+  const slug = String(req.params.slug || '').toLowerCase().trim();
+  if (!slug) {
+    return res.status(400).json({ error: 'Slug de organización requerido.' });
+  }
+
+  try {
+    const { data: tenant, error } = await supabaseAdmin
+      .from('mt_tenants')
+      .select('id, name, slug, logo_url, status')
+      .eq('slug', slug)
+      .single();
+
+    if (error || !tenant || tenant.status !== 'active') {
+      return res.status(404).json({ error: 'Organización no disponible o inactiva.' });
+    }
+
+    res.json({
+      name: tenant.name,
+      slug: tenant.slug,
+      logo_url: tenant.logo_url
+    });
+  } catch (err) {
+    console.error("[GET /api/public/tenant/:slug] Excepción:", err);
+    res.status(500).json({ error: 'Error al consultar la organización.' });
+  }
+});
+
+// 2. Recepción de CV público para una organización específica
+app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('data'), async (req, res) => {
+  const slug = String(req.params.slug || '').toLowerCase().trim();
+  if (!slug) {
+    return res.status(400).json({ error: 'Identificador de organización requerido.' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se recibió ningún archivo de currículum.' });
+  }
+
+  try {
+    // 1. Validar existencia y estado activo de la empresa
+    const { data: tenant, error: tErr } = await supabaseAdmin
+      .from('mt_tenants')
+      .select('id, name, slug, status')
+      .eq('slug', slug)
+      .single();
+
+    if (tErr || !tenant || tenant.status !== 'active') {
+      return res.status(404).json({ error: 'Organización no disponible para recibir postulaciones.' });
+    }
+
+    // 2. Reenviar el archivo hacia el Webhook de N8N
+    const webhookUrl = process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT';
+
+    const blob = new Blob([req.file.buffer], { type: req.file.mimetype || 'application/pdf' });
+    const forwardForm = new FormData();
+    forwardForm.append('data', blob, req.file.originalname);
+    forwardForm.append('session_id', 'portal_qr_' + Date.now());
+    forwardForm.append('email', 'postulante@portal-publico.com');
+    forwardForm.append('tenant_id', tenant.id);
+    forwardForm.append('tenant_slug', tenant.slug);
+
+    console.log(`[POST /api/public/cv/:slug] Reenviando CV "${req.file.originalname}" a N8N para tenant: ${tenant.slug}`);
+
+    const n8nRes = await fetch(webhookUrl, {
+      method: 'POST',
+      body: forwardForm
+    });
+
+    const rawData = await n8nRes.json().catch(() => ({}));
+    const data = Array.isArray(rawData) ? rawData[0] : rawData;
+    const responseMsg = String(data?.Response || data?.response || data?.error || data?.message || '').trim();
+
+    if (!n8nRes.ok) {
+      console.warn(`[POST /api/public/cv/:slug] N8N devolvió status ${n8nRes.status}:`, responseMsg);
+      return res.status(n8nRes.status >= 400 && n8nRes.status < 500 ? n8nRes.status : 400).json({
+        error: responseMsg || 'Error al procesar el currículum en N8N.'
+      });
+    }
+
+    console.log(`[POST /api/public/cv/:slug] Éxito al procesar CV público para ${tenant.name}`);
+    res.json({
+      success: true,
+      message: responseMsg || 'Currículum recibido y procesado con éxito.',
+      tenant: tenant.name
+    });
+  } catch (err) {
+    console.error("[POST /api/public/cv/:slug] Excepción:", err);
+    res.status(500).json({ error: 'Error interno al procesar la postulación.' });
+  }
 });
 
 // Rate Limiter para mitigar ataques de fuerza bruta en el inicio de sesión
@@ -862,6 +972,11 @@ app.put('/api/auth/change-password', requireAuth, async (req, res) => {
 
 // Servir la carpeta estática del frontend
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Ruta pública amigable para el portal de postulantes
+app.get('/postular/:slug', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'postular.html'));
+});
 
 // Fallback para cualquier ruta no mapeada: enviar index.html
 app.get('*', (req, res) => {
