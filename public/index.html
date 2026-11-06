@@ -1268,6 +1268,7 @@
         </button>
       </div>
     </div>
+  </div>
 
   <!-- ── MODAL: ADVERTENCIA DE INACTIVIDAD (IDLE TIMEOUT) ── -->
   <div class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[110] flex items-center justify-center p-4" id="idleWarningModal" style="display: none;">
@@ -1500,11 +1501,19 @@
       switchView('search');
       handleAuthState(null, 'usuario', null);
 
-      // 7. Mostrar alerta amigable en la pantalla de login
+      const loginPassword = document.getElementById('loginPassword');
+      if (loginPassword) loginPassword.value = '';
+
+      // 7. Mostrar alerta en la pantalla de login si es una expiración o motivo de alerta
       const loginError = document.getElementById('loginError');
       if (loginError) {
-        loginError.textContent = reason;
-        loginError.classList.remove('hidden');
+        if (reason && !reason.includes('correctamente') && !reason.includes('usuario')) {
+          loginError.textContent = reason;
+          loginError.classList.remove('hidden');
+        } else {
+          loginError.textContent = '';
+          loginError.classList.add('hidden');
+        }
       }
     }
 
