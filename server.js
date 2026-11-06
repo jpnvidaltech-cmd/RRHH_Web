@@ -197,15 +197,22 @@ function resolveActiveTenantId(req) {
 }
 
 // ─── CONFIGURACIÓN DE INTEGRACIÓN Y SEGURIDAD CON N8N ────────────────────────
-const N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET || '';
+const N8N_WEBHOOK_SECRET = (process.env.N8N_WEBHOOK_SECRET || '').trim();
 const N8N_URL_CARGA_CV = process.env.N8N_URL_CARGA_CV || process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT';
 const N8N_URL_AGENTE_CV = process.env.N8N_URL_AGENTE_CV || process.env.WEBHOOK_AGENTE_CV || 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT';
 const N8N_URL_OBTENER_CV = process.env.N8N_URL_OBTENER_CV || process.env.WEBHOOK_OBTENER_CV || 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV';
+
+if (!N8N_WEBHOOK_SECRET) {
+  console.warn("ADVERTENCIA DE SEGURIDAD: N8N_WEBHOOK_SECRET no está configurado en las variables de entorno. Las peticiones a N8N se enviarán sin cabecera de autenticación.");
+} else {
+  console.log(`[SEGURIDAD N8N] N8N_WEBHOOK_SECRET cargado correctamente (${N8N_WEBHOOK_SECRET.length} caracteres).`);
+}
 
 function getN8nHeaders(extraHeaders = {}) {
   const headers = { ...extraHeaders };
   if (N8N_WEBHOOK_SECRET) {
     headers['X-Webhook-Secret'] = N8N_WEBHOOK_SECRET;
+    headers['x-webhook-secret'] = N8N_WEBHOOK_SECRET;
   }
   return headers;
 }
@@ -778,6 +785,9 @@ app.post('/api/agent/upload-cv', requireAuth, requireManagerOrAdmin, uploadPubli
     });
 
     const rawData = await n8nRes.json().catch(() => ({}));
+    if (!n8nRes.ok) {
+      console.warn(`[POST /api/agent/upload-cv] N8N respondió status ${n8nRes.status}:`, JSON.stringify(rawData));
+    }
     return res.status(n8nRes.status).json(rawData);
   } catch (err) {
     console.error("[POST /api/agent/upload-cv] Excepción al reenviar a N8N:", err);
@@ -819,7 +829,7 @@ app.post('/api/agent/query', requireAuth, async (req, res) => {
       "tenant_slug": tenantSlug
     }];
 
-    console.log(`[POST /api/agent/query] Consulta IA reenviada a N8N por ${req.user.email} (tenant: ${tenantSlug || activeTenantId})`);
+    console.log(`[POST /api/agent/query] Consulta IA reenviada a N8N por ${req.user.email} (tenant: ${tenantSlug || activeTenantId}). Secret activo: ${Boolean(N8N_WEBHOOK_SECRET)}`);
 
     const n8nRes = await fetch(N8N_URL_AGENTE_CV, {
       method: 'POST',
@@ -828,6 +838,9 @@ app.post('/api/agent/query', requireAuth, async (req, res) => {
     });
 
     const rawText = await n8nRes.text();
+    if (!n8nRes.ok) {
+      console.warn(`[POST /api/agent/query] N8N respondió status ${n8nRes.status}:`, rawText);
+    }
     res.status(n8nRes.status).send(rawText);
   } catch (err) {
     console.error("[POST /api/agent/query] Excepción al consultar agente IA en N8N:", err);
