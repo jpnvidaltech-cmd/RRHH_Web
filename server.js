@@ -260,6 +260,12 @@ app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('file'), a
     return res.status(400).json({ error: 'No se recibió ningún archivo de currículum.' });
   }
 
+  const fileExt = path.extname(req.file.originalname).toLowerCase();
+  const allowedExts = ['.pdf', '.jpeg', '.jpg'];
+  if (!allowedExts.includes(fileExt)) {
+    return res.status(400).json({ error: 'Formato no admitido. Solo se admiten archivos PDF, JPEG o JPG.' });
+  }
+
   try {
     // 1. Validar existencia y estado activo de la empresa
     const { data: tenant, error: tErr } = await supabaseAdmin
