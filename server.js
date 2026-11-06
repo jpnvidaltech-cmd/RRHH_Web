@@ -217,11 +217,16 @@ function getN8nHeaders(extraHeaders = {}) {
   return headers;
 }
 
-// ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE CLIENTE ─────────────────────────────
+// ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE CLIENTE Y ESTADO DE SEGURIDAD ──────
 app.get('/api/config', (req, res) => {
   res.json({
     supabaseUrl: SUPABASE_URL,
-    supabaseAnonKey: SUPABASE_ANON_KEY
+    supabaseAnonKey: SUPABASE_ANON_KEY,
+    security: {
+      n8nSecretConfigured: Boolean(N8N_WEBHOOK_SECRET),
+      n8nSecretLength: N8N_WEBHOOK_SECRET ? N8N_WEBHOOK_SECRET.length : 0,
+      n8nSecretPreview: N8N_WEBHOOK_SECRET ? `${N8N_WEBHOOK_SECRET.substring(0, 4)}...${N8N_WEBHOOK_SECRET.substring(N8N_WEBHOOK_SECRET.length - 4)}` : null
+    }
   });
 });
 

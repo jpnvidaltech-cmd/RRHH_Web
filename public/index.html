@@ -1350,6 +1350,9 @@
         const res = await fetch('/api/config');
         if (res.ok) {
           CONFIG = await res.json();
+          if (CONFIG.security) {
+            console.log(`[SEGURIDAD] Estado N8N Secret en servidor: ${CONFIG.security.n8nSecretConfigured ? 'ACTIVO (' + CONFIG.security.n8nSecretLength + ' chars: ' + CONFIG.security.n8nSecretPreview + ')' : 'NO CONFIGURADO EN SERVER'}`);
+          }
         }
       } catch (err) {
         console.warn("Usando configuración de red por defecto:", err);
@@ -2478,7 +2481,8 @@
         });
 
         if (!res.ok) {
-          throw new Error(`Error en el agente IA (${res.status})`);
+          const rawErr = await res.text().catch(() => '');
+          throw new Error(`Error en el agente IA (${res.status})${rawErr ? ': ' + rawErr : ''}`);
         }
 
         const rawText = await res.text();
