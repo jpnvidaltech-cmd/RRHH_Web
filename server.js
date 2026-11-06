@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 const rateLimit = require('express-rate-limit');
@@ -249,7 +250,7 @@ app.get('/api/public/tenant/:slug', async (req, res) => {
 });
 
 // 2. Recepción de CV público para una organización específica
-app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('data'), async (req, res) => {
+app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('file'), async (req, res) => {
   const slug = String(req.params.slug || '').toLowerCase().trim();
   if (!slug) {
     return res.status(400).json({ error: 'Identificador de organización requerido.' });
@@ -271,18 +272,27 @@ app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('data'), a
       return res.status(404).json({ error: 'Organización no disponible para recibir postulaciones.' });
     }
 
-    // 2. Reenviar el archivo hacia el Webhook de N8N
+    // 2. Calcular hash SHA-256 del archivo para coherencia con el flujo de N8N
+    const fileHash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+
+    // 3. Reenviar el archivo hacia el Webhook de N8N con todos los campos esperados
     const webhookUrl = process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT';
 
     const blob = new Blob([req.file.buffer], { type: req.file.mimetype || 'application/pdf' });
     const forwardForm = new FormData();
-    forwardForm.append('data', blob, req.file.originalname);
+    // N8N Carga_CV espera el binario en la propiedad 'file' (igual que el panel principal)
+    forwardForm.append('file', blob, req.file.originalname);
+    forwardForm.append('filename', req.file.originalname);
+    forwardForm.append('mimetype', req.file.mimetype || 'application/pdf');
+    forwardForm.append('size', String(req.file.size));
+    forwardForm.append('file_hash', fileHash);
+    forwardForm.append('submittedAt', new Date().toISOString());
     forwardForm.append('session_id', 'portal_qr_' + Date.now());
     forwardForm.append('email', 'postulante@portal-publico.com');
     forwardForm.append('tenant_id', tenant.id);
     forwardForm.append('tenant_slug', tenant.slug);
 
-    console.log(`[POST /api/public/cv/:slug] Reenviando CV "${req.file.originalname}" a N8N para tenant: ${tenant.slug}`);
+    console.log(`[POST /api/public/cv/:slug] Reenviando CV "${req.file.originalname}" (hash: ${fileHash.substring(0, 10)}...) a N8N para tenant: ${tenant.slug} (${tenant.id})`);
 
     const n8nRes = await fetch(webhookUrl, {
       method: 'POST',
@@ -293,10 +303,18 @@ app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('data'), a
     const data = Array.isArray(rawData) ? rawData[0] : rawData;
     const responseMsg = String(data?.Response || data?.response || data?.error || data?.message || '').trim();
 
-    if (!n8nRes.ok) {
-      console.warn(`[POST /api/public/cv/:slug] N8N devolvió status ${n8nRes.status}:`, responseMsg);
-      return res.status(n8nRes.status >= 400 && n8nRes.status < 500 ? n8nRes.status : 400).json({
-        error: responseMsg || 'Error al procesar el currículum en N8N.'
+    console.log(`[POST /api/public/cv/:slug] N8N HTTP Status: ${n8nRes.status}. Respuesta raw:`, JSON.stringify(rawData));
+
+    const msgLower = responseMsg.toLowerCase();
+    const isDuplicate = msgLower.includes('ya se encuentra en la base') || msgLower.includes('ya se encuentra') || msgLower.includes('duplicado') || msgLower.includes('ya registrado');
+    const isExtractionError = msgLower.includes('no se ha podido extraer') || msgLower.includes('no es posible leer') || (msgLower.includes('error') && !msgLower.includes('éxito') && !msgLower.includes('exito'));
+
+    if (!n8nRes.ok || isDuplicate || isExtractionError) {
+      console.warn(`[POST /api/public/cv/:slug] N8N reportó incidencia (${n8nRes.status}):`, responseMsg);
+      const statusCode = (!n8nRes.ok && n8nRes.status >= 400 && n8nRes.status < 500) ? n8nRes.status : 400;
+      return res.status(statusCode).json({
+        error: responseMsg || 'Error al procesar el currículum en N8N.',
+        isDuplicate: isDuplicate
       });
     }
 
