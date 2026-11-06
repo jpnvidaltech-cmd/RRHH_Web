@@ -212,7 +212,6 @@ function getN8nHeaders(extraHeaders = {}) {
   const headers = { ...extraHeaders };
   if (N8N_WEBHOOK_SECRET) {
     headers['X-Webhook-Secret'] = N8N_WEBHOOK_SECRET;
-    headers['x-webhook-secret'] = N8N_WEBHOOK_SECRET;
   }
   return headers;
 }
