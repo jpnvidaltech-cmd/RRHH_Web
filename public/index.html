@@ -1268,6 +1268,35 @@
         </button>
       </div>
     </div>
+
+  <!-- ── MODAL: ADVERTENCIA DE INACTIVIDAD (IDLE TIMEOUT) ── -->
+  <div class="fixed inset-0 bg-primary/60 backdrop-blur-md z-[110] flex items-center justify-center p-4" id="idleWarningModal" style="display: none;">
+    <div class="bg-surface-container-lowest rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-surface-container flex flex-col items-center text-center gap-3">
+      <div class="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+        <span class="material-symbols-outlined text-[32px]">timer</span>
+      </div>
+      <div>
+        <h3 class="text-[18px] font-bold text-primary dark:text-white">¿Sigues trabajando?</h3>
+        <p class="text-[13px] text-on-surface-variant mt-1 leading-snug">
+          Por motivos de seguridad y protección de datos, tu sesión se cerrará automáticamente en:
+        </p>
+      </div>
+
+      <div class="py-2.5 px-6 rounded-2xl bg-surface-container-low border border-surface-container flex items-baseline justify-center gap-2 my-1">
+        <span class="text-[36px] font-extrabold text-primary dark:text-white font-mono leading-none" id="idleCountdownSeconds">120</span>
+        <span class="text-[13px] font-bold text-on-surface-variant">segundos</span>
+      </div>
+
+      <div class="w-full flex flex-col gap-2 pt-2 border-t border-surface-container">
+        <button type="button" onclick="continueWorkingSession()" class="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-[13px] transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+          <span class="material-symbols-outlined text-[18px]">verified_user</span>
+          <span>Continuar Trabajando</span>
+        </button>
+        <button type="button" onclick="handleSessionExpired('Sesión cerrada por el usuario.')" class="w-full py-2 px-4 rounded-xl text-on-surface-variant hover:text-error hover:bg-error-container/30 text-[12px] font-semibold transition-colors cursor-pointer">
+          Cerrar sesión ahora
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ── LOGIN OVERLAY (WARM MINIMAL) ── -->
@@ -1396,6 +1425,189 @@
         }
       }
       if (tenantEl) tenantEl.textContent = currentTenant?.name ? `Empresa: ${currentTenant.name}` : 'Organización Activa';
+    }
+
+    // ─── INTERCEPTOR GLOBAL DE PETICIONES CON AUTENTICACIÓN ──────────────────
+    async function fetchWithAuth(url, options = {}) {
+      const token = sessionStorage.getItem('rrhh_auth_token');
+      if (!token) {
+        handleSessionExpired('No se encontró una sesión activa. Por favor, iniciá sesión.');
+        throw new Error('Sesión no disponible.');
+      }
+
+      const headers = new Headers(options.headers || {});
+      if (!headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      if (currentTenant?.id && !headers.has('x-tenant-id')) {
+        headers.set('x-tenant-id', currentTenant.id);
+      }
+
+      let res;
+      try {
+        res = await fetch(url, { ...options, headers });
+      } catch (networkErr) {
+        console.error(`[fetchWithAuth] Error de red en ${url}:`, networkErr);
+        throw networkErr;
+      }
+
+      if (res.status === 401) {
+        console.warn(`[fetchWithAuth] 401 Unauthorized recibido en ${url}.`);
+        handleSessionExpired('Tu sesión ha expirado por inactividad. Por favor, ingresá nuevamente tus credenciales.');
+        throw new Error('Sesión expirada.');
+      }
+
+      return res;
+    }
+
+    // ─── CIERRE SEGURO Y DESMANTELAMIENTO POR SESIÓN EXPIRADA ────────────────
+    function handleSessionExpired(reason = 'Tu sesión ha expirado por inactividad. Por favor, iniciá sesión nuevamente.') {
+      // 1. Detener tracker de inactividad
+      stopIdleTracker();
+
+      // 2. Desuscribir canal Realtime de Supabase
+      if (realtimeCvChannel && supabaseRealtimeClient) {
+        try {
+          supabaseRealtimeClient.removeChannel(realtimeCvChannel);
+        } catch (_) {}
+        realtimeCvChannel = null;
+      }
+
+      // 3. Reset total de variables de estado
+      sessionStorage.clear();
+      currentUser = null;
+      currentUserProfile = null;
+      currentTenant = null;
+      allCVs = [];
+      filteredCVs = [];
+
+      // 4. Limpieza del DOM para evitar exposición de datos huérfanos
+      const tbody = document.getElementById('cvTableBody');
+      if (tbody) tbody.innerHTML = '';
+      const teamContainer = document.getElementById('teamUsersContainer');
+      if (teamContainer) teamContainer.innerHTML = '';
+      clearSearch();
+
+      // 5. Ocultar modales y botones protegidos
+      closeSwitchTenantModal();
+      closeQrModal();
+      hideIdleWarningModal();
+
+      const btnOpenQrModal = document.getElementById('btnOpenQrModal');
+      if (btnOpenQrModal) btnOpenQrModal.style.display = 'none';
+
+      // 6. Volver a vista principal y levantar el overlay de login
+      switchView('search');
+      handleAuthState(null, 'usuario', null);
+
+      // 7. Mostrar alerta amigable en la pantalla de login
+      const loginError = document.getElementById('loginError');
+      if (loginError) {
+        loginError.textContent = reason;
+        loginError.classList.remove('hidden');
+      }
+    }
+
+    // ─── CONTROL PROACTIVO DE INACTIVIDAD (IDLE TIMEOUT) ──────────────────────
+    let idleWarningTimer = null;
+    let idleTimeoutTimer = null;
+    let countdownInterval = null;
+    let isIdleWarningOpen = false;
+    let lastActivityTimestamp = Date.now();
+    let idleTrackerActive = false;
+
+    const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos límite total
+    const IDLE_WARNING_MS = 28 * 60 * 1000; // 28 minutos para preaviso (2 min restantes)
+    const IDLE_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+
+    function onUserActivityThrottled() {
+      if (!currentUser || isIdleWarningOpen) return;
+      const now = Date.now();
+      if (now - lastActivityTimestamp > 4000) { // Throttle de 4 segundos para cuidar CPU
+        lastActivityTimestamp = now;
+        resetIdleTimers();
+      }
+    }
+
+    function startIdleTracker() {
+      if (idleTrackerActive) return;
+      idleTrackerActive = true;
+      lastActivityTimestamp = Date.now();
+
+      IDLE_EVENTS.forEach(evt => window.addEventListener(evt, onUserActivityThrottled, { passive: true }));
+      resetIdleTimers();
+    }
+
+    function stopIdleTracker() {
+      idleTrackerActive = false;
+      if (idleWarningTimer) clearTimeout(idleWarningTimer);
+      if (idleTimeoutTimer) clearTimeout(idleTimeoutTimer);
+      if (countdownInterval) clearInterval(countdownInterval);
+      idleWarningTimer = null;
+      idleTimeoutTimer = null;
+      countdownInterval = null;
+      isIdleWarningOpen = false;
+
+      IDLE_EVENTS.forEach(evt => window.removeEventListener(evt, onUserActivityThrottled));
+      hideIdleWarningModal();
+    }
+
+    function resetIdleTimers() {
+      if (!idleTrackerActive) return;
+      if (idleWarningTimer) clearTimeout(idleWarningTimer);
+      if (idleTimeoutTimer) clearTimeout(idleTimeoutTimer);
+
+      idleWarningTimer = setTimeout(showIdleWarningModal, IDLE_WARNING_MS);
+      idleTimeoutTimer = setTimeout(() => {
+        handleSessionExpired('Tu sesión ha expirado por inactividad prolongada (30 minutos).');
+      }, IDLE_TIMEOUT_MS);
+    }
+
+    function showIdleWarningModal() {
+      if (!currentUser) return;
+      isIdleWarningOpen = true;
+      const modal = document.getElementById('idleWarningModal');
+      const countEl = document.getElementById('idleCountdownSeconds');
+      if (modal) modal.style.display = 'flex';
+
+      let remaining = 120;
+      if (countEl) countEl.textContent = remaining;
+
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        remaining -= 1;
+        if (countEl) countEl.textContent = Math.max(0, remaining);
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+          handleSessionExpired('Tu sesión ha expirado por inactividad prolongada (30 minutos).');
+        }
+      }, 1000);
+    }
+
+    function hideIdleWarningModal() {
+      isIdleWarningOpen = false;
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      const modal = document.getElementById('idleWarningModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function continueWorkingSession() {
+      hideIdleWarningModal();
+      lastActivityTimestamp = Date.now();
+      resetIdleTimers();
+
+      try {
+        const res = await fetchWithAuth('/api/auth/profile');
+        if (res.ok) {
+          showAlert('info', 'Sesión continuada con éxito.');
+        }
+      } catch (_) {
+        // Si expiró, fetchWithAuth ya maneja la redirección limpia
+      }
     }
 
     // ─── CHECK USER SESSION ─────────────────────────────────────────────────
@@ -1527,14 +1739,20 @@
 
         // Inicializar reloj
         updateClock();
+
+        // Iniciar detector proactivo de inactividad
+        startIdleTracker();
       } else {
         if (loginOverlay) loginOverlay.style.display = 'flex';
         if (userProfileInfo) userProfileInfo.style.display = 'none';
         if (btnSignOut) btnSignOut.style.display = 'none';
         if (tenantBadgeWrapper) tenantBadgeWrapper.style.display = 'none';
+        const btnOpenQrModal = document.getElementById('btnOpenQrModal');
+        if (btnOpenQrModal) btnOpenQrModal.style.display = 'none';
         currentUserProfile = null;
         currentTenant = null;
         sessionStorage.removeItem('rrhh_auth_token');
+        stopIdleTracker();
       }
     }
 
@@ -1559,17 +1777,15 @@
 
     // ─── SWITCH TENANT MODAL (MULTITENANT) ───────────────────────────────────
     function openSwitchTenantModal() {
-      const token = sessionStorage.getItem('rrhh_auth_token');
-      if (!token) return;
-
       const select = document.getElementById('selectTenant');
       select.innerHTML = '<option value="">Cargando organizaciones…</option>';
       document.getElementById('switchTenantModal').style.display = 'flex';
 
-      fetch('/api/tenants', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-        .then(res => res.json())
+      fetchWithAuth('/api/tenants')
+        .then(res => {
+          if (!res.ok) throw new Error('Error al consultar organizaciones');
+          return res.json();
+        })
         .then(tenants => {
           select.innerHTML = '';
           if (!Array.isArray(tenants) || tenants.length === 0) {
@@ -1587,12 +1803,8 @@
           });
         })
         .catch(err => {
-          console.warn("API de tenants no respondió (Preview):", err);
-          select.innerHTML = `
-            <option value="tenant-demo" selected>Empresa Demo Beta (Activa)</option>
-            <option value="tenant-2">Tech Solutions Inc</option>
-            <option value="tenant-3">Global Logistics SA</option>
-          `;
+          console.error("No se pudo cargar la lista de organizaciones:", err);
+          select.innerHTML = `<option value="">No fue posible cargar las empresas</option>`;
         });
     }
 
@@ -1605,30 +1817,26 @@
       const tenantId = select.value;
       if (!tenantId) return;
 
-      const token = sessionStorage.getItem('rrhh_auth_token');
-      if (!token) return;
-
       const btn = document.getElementById('btnApplySwitchTenant');
       btn.disabled = true;
       btn.textContent = 'Cambiando…';
 
       try {
-        const res = await fetch('/api/auth/switch-tenant', {
+        const res = await fetchWithAuth('/api/auth/switch-tenant', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ tenant_id: tenantId })
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          currentTenant = data.tenant;
-        } else {
-          // Preview fallback
-          currentTenant = { id: tenantId, name: select.options[select.selectedIndex]?.text || 'Organización' };
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'No se pudo cambiar de organización.');
         }
+
+        const data = await res.json();
+        currentTenant = data.tenant;
 
         const topbarTenantName = document.getElementById('topbarTenantName');
         if (topbarTenantName) topbarTenantName.textContent = currentTenant.name || 'Organización';
@@ -1636,13 +1844,8 @@
         showAlert('success', `Cambiado a: ${currentTenant.name}`);
         await refreshAllTenantData();
       } catch (err) {
-        console.warn("Cambio de empresa en preview:", err);
-        currentTenant = { id: tenantId, name: select.options[select.selectedIndex]?.text || 'Organización' };
-        const topbarTenantName = document.getElementById('topbarTenantName');
-        if (topbarTenantName) topbarTenantName.textContent = currentTenant.name;
-        closeSwitchTenantModal();
-        showAlert('success', `Cambiado a: ${currentTenant.name}`);
-        await refreshAllTenantData();
+        console.error("Error al cambiar empresa:", err);
+        showAlert('error', err.message || 'Error al cambiar de organización.');
       } finally {
         btn.disabled = false;
         btn.textContent = 'Cambiar Empresa';
@@ -1682,28 +1885,25 @@
         return;
       }
 
-      const token = sessionStorage.getItem('rrhh_auth_token');
-      if (!token) return;
-
       btn.disabled = true;
       btn.textContent = 'Creando…';
 
       try {
-        const res = await fetch('/api/tenants', {
+        const res = await fetchWithAuth('/api/tenants', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ name, slug })
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          currentTenant = data;
-        } else {
-          currentTenant = { id: `tenant-${Date.now()}`, name, slug };
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'No se pudo crear la organización.');
         }
+
+        const data = await res.json();
+        currentTenant = data;
 
         showAlert('success', `✓ Empresa "${name}" creada.`);
         document.getElementById('newTenantName').value = '';
@@ -1715,11 +1915,8 @@
         closeSwitchTenantModal();
         await refreshAllTenantData();
       } catch (err) {
-        console.warn("Creación de empresa preview:", err);
-        currentTenant = { id: `tenant-${Date.now()}`, name, slug };
-        showAlert('success', `✓ Empresa "${name}" creada (Modo Preview).`);
-        closeSwitchTenantModal();
-        await refreshAllTenantData();
+        console.error("Error al crear empresa:", err);
+        showAlert('error', err.message || 'Error al crear la nueva organización.');
       } finally {
         btn.disabled = false;
         btn.textContent = 'Crear y Conectar';
@@ -1783,18 +1980,14 @@
         return;
       }
 
-      const token = sessionStorage.getItem('rrhh_auth_token');
-      if (!token) return;
-
       btn.disabled = true;
       btn.textContent = 'Guardando…';
 
       try {
-        const res = await fetch(`/api/users/${userId}/reset-password`, {
+        const res = await fetchWithAuth(`/api/users/${userId}/reset-password`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ newPassword })
         });
@@ -1885,32 +2078,7 @@
           });
         } catch (_) {}
       }
-      if (realtimeCvChannel && supabaseRealtimeClient) {
-        try {
-          supabaseRealtimeClient.removeChannel(realtimeCvChannel);
-        } catch (_) {}
-        realtimeCvChannel = null;
-      }
-      const btnOpenQrModal = document.getElementById('btnOpenQrModal');
-      if (btnOpenQrModal) btnOpenQrModal.style.display = 'none';
-
-      sessionStorage.clear();
-      currentUser = null;
-      currentUserProfile = null;
-      currentTenant = null;
-      const teamContainer = document.getElementById('teamUsersContainer');
-      if (teamContainer) teamContainer.innerHTML = '';
-      const loginEmail = document.getElementById('loginEmail');
-      const loginPassword = document.getElementById('loginPassword');
-      if (loginEmail) loginEmail.value = '';
-      if (loginPassword) loginPassword.value = '';
-      const loginError = document.getElementById('loginError');
-      if (loginError) {
-        loginError.classList.add('hidden');
-        loginError.textContent = '';
-      }
-      switchView('search');
-      handleAuthState(null, 'usuario');
+      handleSessionExpired('Has cerrado sesión correctamente.');
       showAlert('info', 'Sesión cerrada correctamente.');
     });
 
@@ -2003,18 +2171,11 @@
     }
     setInterval(updateClock, 1000);
 
-    // ─── TOTAL CVs COUNT API ─────────────────────────────────────────────────
     async function updateCVCount() {
-      const token = sessionStorage.getItem('rrhh_auth_token');
-      if (!token) return;
+      if (!currentUser) return;
 
       try {
-        const res = await fetch('/api/cvs/count', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-tenant-id': currentTenant?.id || ''
-          }
-        });
+        const res = await fetchWithAuth('/api/cvs/count');
         if (res.ok) {
           const data = await res.json();
           const total = data.count || 0;
@@ -2083,6 +2244,11 @@
     }
 
     async function handleFileUpload(file) {
+      if (!sessionStorage.getItem('rrhh_auth_token') || !currentUser) {
+        handleSessionExpired('Tu sesión ha expirado por inactividad. Por favor, ingresá nuevamente.');
+        return;
+      }
+
       const myRole = currentUserProfile?.role || 'usuario';
       if (myRole !== 'admin' && myRole !== 'superadmin' && myRole !== 'manager') {
         showAlert('error', 'Tu rol no tiene permisos para cargar currículums.');
@@ -2264,6 +2430,11 @@
     });
 
     async function doSearch() {
+      if (!sessionStorage.getItem('rrhh_auth_token') || !currentUser) {
+        handleSessionExpired('Tu sesión ha expirado por inactividad. Por favor, ingresá nuevamente.');
+        return;
+      }
+
       const searchInput = document.getElementById('searchInput');
       const query = (searchInput?.value || '').trim();
 
@@ -2751,115 +2922,43 @@
     let currentSortDirection = 'desc';
 
     async function loadCVList() {
-      const token = sessionStorage.getItem('rrhh_auth_token');
-      if (!token) return;
+      if (!currentUser) return;
 
       const tbody = document.getElementById('cvTableBody');
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7" class="py-12 text-center text-on-surface-variant">
-            <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            Cargando candidatos registrados…
-          </td>
-        </tr>
-      `;
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-12 text-center text-on-surface-variant">
+              <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              Cargando candidatos registrados…
+            </td>
+          </tr>
+        `;
+      }
 
       try {
-        const res = await fetch('/api/cvs/all', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-tenant-id': currentTenant?.id || ''
-          }
-        });
-
+        const res = await fetchWithAuth('/api/cvs/all');
         if (!res.ok) throw new Error('No se pudo obtener la lista de CVs.');
 
         allCVs = await res.json();
         populateProfessionFilter();
         applyCVFilters();
       } catch (err) {
-        console.warn("API de CVs no respondió, activando datos de muestra para preview:", err);
-        loadMockData();
-      }
-    }
-
-    function loadMockData() {
-      allCVs = [
-        {
-          id: 'cv-1',
-          nombre: 'Valeria',
-          apellido: 'Giménez',
-          profesion: 'Tech Lead Frontend',
-          perfil_laboral: 'React, TypeScript, AI Architecture con 8+ años de experiencia técnica.',
-          email: 'valeria.g@techcorp.io',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          web_cv_link: '#'
-        },
-        {
-          id: 'cv-2',
-          nombre: 'Raúl',
-          apellido: 'Meléndez',
-          profesion: 'Desarrollador Senior',
-          perfil_laboral: 'Full Stack Node.js, React, PostgreSQL y microservicios.',
-          email: 'raul.melendez@devs.net',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          web_cv_link: '#'
-        },
-        {
-          id: 'cv-3',
-          nombre: 'Rafael',
-          apellido: 'Sosa Reyes',
-          profesion: 'Programador Backend',
-          perfil_laboral: 'Especialista en Python, Django, APIs REST y refactorización.',
-          email: 'r.sosareyes@gmail.com',
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          web_cv_link: '#'
-        },
-        {
-          id: 'cv-4',
-          nombre: 'Magdalena',
-          apellido: 'Pérez',
-          profesion: 'Directora Técnica',
-          perfil_laboral: 'Liderazgo de proyectos, microservicios Java y metodologías ágiles.',
-          email: 'm.perez01@hotmail.com',
-          created_at: new Date(Date.now() - 345600000).toISOString(),
-          web_cv_link: '#'
-        },
-        {
-          id: 'cv-5',
-          nombre: 'María',
-          apellido: 'Vargas',
-          profesion: 'Administradora de Empresas',
-          perfil_laboral: 'Gestión ERP, finanzas corporativas, tesorería y facturación.',
-          email: 'maria.vargas@mail.es',
-          created_at: new Date(Date.now() - 432000000).toISOString(),
-          web_cv_link: '#'
-        },
-        {
-          id: 'cv-6',
-          nombre: 'Esteban',
-          apellido: 'Benítez',
-          profesion: 'Data Analyst',
-          perfil_laboral: 'SQL, BigQuery, visualización de datos y dashboards BI.',
-          email: 'e.benitez@analytics.com',
-          created_at: new Date(Date.now() - 518400000).toISOString(),
-          web_cv_link: '#'
+        console.warn("No se pudo cargar la lista de CVs:", err);
+        allCVs = [];
+        filteredCVs = [];
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="py-12 text-center text-on-surface-variant">
+                <span class="material-symbols-outlined text-[32px] text-outline mb-2">folder_off</span>
+                <p class="text-[14px] font-medium text-on-surface">No se pudo cargar la lista de currículums</p>
+                <p class="text-[12px] text-on-surface-variant mt-1">Verifica tu conexión o vuelve a iniciar sesión.</p>
+              </td>
+            </tr>
+          `;
         }
-      ];
-
-      const topbarText = document.getElementById('topbarCvCountText');
-      if (topbarText) topbarText.textContent = `${allCVs.length} CVs indexados · IA Activa`;
-      const talentKpi = document.getElementById('talentKpiTotal');
-      if (talentKpi) talentKpi.textContent = allCVs.length;
-      const tableBadge = document.getElementById('tableTotalBadge');
-      if (tableBadge) tableBadge.textContent = `${allCVs.length} CVs`;
-      const kpiPdf = document.getElementById('kpiPdfCount');
-      const kpiOcr = document.getElementById('kpiOcrCount');
-      if (kpiPdf) kpiPdf.textContent = Math.max(1, Math.round(allCVs.length * 0.8));
-      if (kpiOcr) kpiOcr.textContent = Math.max(1, Math.round(allCVs.length * 0.2));
-
-      populateProfessionFilter();
-      applyCVFilters();
+      }
     }
 
     function populateProfessionFilter() {
@@ -3195,6 +3294,11 @@
 
     // ─── DESCARGA Y APERTURA DE CV CON URL FIRMADA ───────────────────────────
     async function openCV(cvLinkOrPath) {
+      if (!sessionStorage.getItem('rrhh_auth_token') || !currentUser) {
+        handleSessionExpired('Tu sesión ha expirado por inactividad. Por favor, ingresá nuevamente.');
+        return;
+      }
+
       if (!cvLinkOrPath) return;
 
       if (cvLinkOrPath.startsWith('http://') || cvLinkOrPath.startsWith('https://')) {
@@ -3236,17 +3340,12 @@
         return;
       }
 
-      const token = sessionStorage.getItem('rrhh_auth_token');
-      if (!token || !cvId) return;
+      if (!cvId) return;
 
       try {
         showAlert('info', `Eliminando currículum de ${candidateName}…`);
-        const res = await fetch(`/api/cvs/${cvId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-tenant-id': currentTenant?.id || ''
-          }
+        const res = await fetchWithAuth(`/api/cvs/${cvId}`, {
+          method: 'DELETE'
         });
 
         const data = await res.json();
@@ -3308,12 +3407,7 @@
       `;
 
       try {
-        const res = await fetch('/api/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-tenant-id': currentTenant?.id || ''
-          }
-        });
+        const res = await fetchWithAuth('/api/users');
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
@@ -3419,13 +3513,9 @@
         return;
       }
 
-      const token = sessionStorage.getItem('rrhh_auth_token');
-      if (!token) return;
-
       try {
-        const res = await fetch(`/api/users/${userId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+        const res = await fetchWithAuth(`/api/users/${userId}`, {
+          method: 'DELETE'
         });
 
         if (!res.ok) {
@@ -3486,12 +3576,6 @@
       const email = document.getElementById('newEmail').value.trim();
       const password = document.getElementById('newPassword').value;
       const role = document.getElementById('newRole').value;
-      const token = sessionStorage.getItem('rrhh_auth_token');
-
-      if (!token) {
-        showAlert('error', 'Token de sesión ausente. Por favor reinicia sesión.');
-        return;
-      }
 
       const pwdError = validateClientPassword(password);
       if (pwdError) {
@@ -3504,12 +3588,10 @@
       submitBtn.textContent = 'Guardando…';
 
       try {
-        const res = await fetch('/api/users', {
+        const res = await fetchWithAuth('/api/users', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'x-tenant-id': currentTenant?.id || ''
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ email, password, role, tenant_id: currentTenant?.id })
         });
@@ -3575,13 +3657,6 @@
       e.preventDefault();
       const newPassword = document.getElementById('changeNewPassword').value;
       const confirmPassword = document.getElementById('changeConfirmPassword').value;
-      const token = sessionStorage.getItem('rrhh_auth_token');
-
-      if (!token) {
-        showAlert('error', 'Token de sesión no encontrado.');
-        return;
-      }
-
       const pwdError = validateClientPassword(newPassword);
       if (pwdError) {
         showAlert('warning', pwdError);
@@ -3598,11 +3673,10 @@
       submitBtn.textContent = 'Actualizando…';
 
       try {
-        const res = await fetch('/api/auth/change-password', {
+        const res = await fetchWithAuth('/api/auth/change-password', {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ newPassword })
         });
