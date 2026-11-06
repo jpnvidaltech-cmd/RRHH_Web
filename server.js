@@ -196,14 +196,25 @@ function resolveActiveTenantId(req) {
   return req.user.tenant_id;
 }
 
-// ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE WEBHOOKS Y CLIENTE ──────────────────
+// ─── CONFIGURACIÓN DE INTEGRACIÓN Y SEGURIDAD CON N8N ────────────────────────
+const N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET || '';
+const N8N_URL_CARGA_CV = process.env.N8N_URL_CARGA_CV || process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT';
+const N8N_URL_AGENTE_CV = process.env.N8N_URL_AGENTE_CV || process.env.WEBHOOK_AGENTE_CV || 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT';
+const N8N_URL_OBTENER_CV = process.env.N8N_URL_OBTENER_CV || process.env.WEBHOOK_OBTENER_CV || 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV';
+
+function getN8nHeaders(extraHeaders = {}) {
+  const headers = { ...extraHeaders };
+  if (N8N_WEBHOOK_SECRET) {
+    headers['X-Webhook-Secret'] = N8N_WEBHOOK_SECRET;
+  }
+  return headers;
+}
+
+// ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE CLIENTE ─────────────────────────────
 app.get('/api/config', (req, res) => {
   res.json({
     supabaseUrl: SUPABASE_URL,
-    supabaseAnonKey: SUPABASE_ANON_KEY,
-    webhookCargaCv: process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT',
-    webhookAgenteCv: process.env.WEBHOOK_AGENTE_CV || 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT',
-    webhookObtenerCv: process.env.WEBHOOK_OBTENER_CV || 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV'
+    supabaseAnonKey: SUPABASE_ANON_KEY
   });
 });
 
@@ -282,8 +293,6 @@ app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('file'), a
     const fileHash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
 
     // 3. Reenviar el archivo hacia el Webhook de N8N con todos los campos esperados
-    const webhookUrl = process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT';
-
     const blob = new Blob([req.file.buffer], { type: req.file.mimetype || 'application/pdf' });
     const forwardForm = new FormData();
     // N8N Carga_CV espera el binario en la propiedad 'file' (igual que el panel principal)
@@ -300,8 +309,9 @@ app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('file'), a
 
     console.log(`[POST /api/public/cv/:slug] Reenviando CV "${req.file.originalname}" (hash: ${fileHash.substring(0, 10)}...) a N8N para tenant: ${tenant.slug} (${tenant.id})`);
 
-    const n8nRes = await fetch(webhookUrl, {
+    const n8nRes = await fetch(N8N_URL_CARGA_CV, {
       method: 'POST',
+      headers: getN8nHeaders(),
       body: forwardForm
     });
 
@@ -711,6 +721,150 @@ app.post('/api/cvs', requireAuth, requireManagerOrAdmin, async (req, res) => {
     res.status(201).json(data[0]);
   } catch (err) {
     res.status(500).json({ error: 'Error al guardar el currículum.' });
+  }
+});
+
+// ─── ENDPOINTS PROXY SEGUROS HACIA AGENTES Y WEBHOOKS N8N ────────────────────
+
+// 1. Carga de Currículums con IA desde el panel de RRHH
+app.post('/api/agent/upload-cv', requireAuth, requireManagerOrAdmin, uploadPublic.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se recibió ningún archivo de currículum.' });
+  }
+
+  const fileExt = path.extname(req.file.originalname).toLowerCase();
+  const allowedExts = ['.pdf', '.jpeg', '.jpg'];
+  if (!allowedExts.includes(fileExt)) {
+    return res.status(400).json({ error: 'Formato no admitido. Solo se admiten archivos PDF, JPEG o JPG.' });
+  }
+
+  const activeTenantId = resolveActiveTenantId(req);
+  if (!activeTenantId) {
+    return res.status(400).json({ error: 'El usuario no tiene una organización activa asignada.' });
+  }
+
+  try {
+    let tenantSlug = req.user.tenant?.slug || '';
+    if (!tenantSlug && activeTenantId) {
+      const { data: t } = await supabaseAdmin
+        .from('mt_tenants')
+        .select('slug')
+        .eq('id', activeTenantId)
+        .single();
+      if (t) tenantSlug = t.slug;
+    }
+
+    const fileHash = req.body.file_hash || crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+
+    const blob = new Blob([req.file.buffer], { type: req.file.mimetype || 'application/pdf' });
+    const forwardForm = new FormData();
+    forwardForm.append('file', blob, req.file.originalname);
+    forwardForm.append('filename', req.file.originalname);
+    forwardForm.append('mimetype', req.file.mimetype || 'application/pdf');
+    forwardForm.append('size', String(req.file.size));
+    forwardForm.append('file_hash', fileHash);
+    forwardForm.append('submittedAt', new Date().toISOString());
+    forwardForm.append('session_id', req.body.session_id || ('sess_' + Date.now()));
+    forwardForm.append('email', req.user.email);
+    forwardForm.append('tenant_id', activeTenantId);
+    if (tenantSlug) forwardForm.append('tenant_slug', tenantSlug);
+
+    console.log(`[POST /api/agent/upload-cv] Reenviando CV "${req.file.originalname}" a N8N para tenant: ${tenantSlug || activeTenantId} por usuario: ${req.user.email}`);
+
+    const n8nRes = await fetch(N8N_URL_CARGA_CV, {
+      method: 'POST',
+      headers: getN8nHeaders(),
+      body: forwardForm
+    });
+
+    const rawData = await n8nRes.json().catch(() => ({}));
+    return res.status(n8nRes.status).json(rawData);
+  } catch (err) {
+    console.error("[POST /api/agent/upload-cv] Excepción al reenviar a N8N:", err);
+    res.status(500).json({ error: 'Error interno al procesar el currículum con el agente de IA.' });
+  }
+});
+
+// 2. Consulta en lenguaje natural al Agente IA
+app.post('/api/agent/query', requireAuth, async (req, res) => {
+  const query = (req.body.query || req.body['Texto describiendo perfil'] || '').trim();
+  if (!query) {
+    return res.status(400).json({ error: 'El texto descriptivo de búsqueda es requerido.' });
+  }
+
+  const activeTenantId = resolveActiveTenantId(req);
+  if (!activeTenantId) {
+    return res.status(400).json({ error: 'No se detectó una organización activa asignada.' });
+  }
+
+  try {
+    let tenantSlug = req.user.tenant?.slug || '';
+    if (!tenantSlug && activeTenantId) {
+      const { data: t } = await supabaseAdmin
+        .from('mt_tenants')
+        .select('slug')
+        .eq('id', activeTenantId)
+        .single();
+      if (t) tenantSlug = t.slug;
+    }
+
+    const payload = [{
+      "Texto describiendo perfil": query,
+      "query": query,
+      "submittedAt": req.body.submittedAt || new Date().toISOString(),
+      "formMode": req.body.formMode || "test",
+      "session_id": req.body.session_id || ('sess_' + Date.now()),
+      "email": req.user.email,
+      "tenant_id": activeTenantId,
+      "tenant_slug": tenantSlug
+    }];
+
+    console.log(`[POST /api/agent/query] Consulta IA reenviada a N8N por ${req.user.email} (tenant: ${tenantSlug || activeTenantId})`);
+
+    const n8nRes = await fetch(N8N_URL_AGENTE_CV, {
+      method: 'POST',
+      headers: getN8nHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload)
+    });
+
+    const rawText = await n8nRes.text();
+    res.status(n8nRes.status).send(rawText);
+  } catch (err) {
+    console.error("[POST /api/agent/query] Excepción al consultar agente IA en N8N:", err);
+    res.status(500).json({ error: 'Error interno al consultar el agente de IA.' });
+  }
+});
+
+// 3. Firma de Enlace de CV para previsualización segura
+app.post('/api/agent/get-cv', requireAuth, async (req, res) => {
+  const cvPath = (req.body.path || req.body.web_cv_link || '').trim();
+  if (!cvPath) {
+    return res.status(400).json({ error: 'La ruta del currículum es requerida.' });
+  }
+
+  const activeTenantId = resolveActiveTenantId(req);
+
+  try {
+    const payload = {
+      path: cvPath,
+      session_id: req.body.session_id || ('sess_' + Date.now()),
+      email: req.user.email,
+      tenant_id: activeTenantId
+    };
+
+    console.log(`[POST /api/agent/get-cv] Solicitando firma a N8N para path: ${cvPath} por ${req.user.email}`);
+
+    const n8nRes = await fetch(N8N_URL_OBTENER_CV, {
+      method: 'POST',
+      headers: getN8nHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload)
+    });
+
+    const data = await n8nRes.json().catch(() => ({}));
+    res.status(n8nRes.status).json(data);
+  } catch (err) {
+    console.error("[POST /api/agent/get-cv] Excepción al solicitar enlace firmado a N8N:", err);
+    res.status(500).json({ error: 'Error interno al generar enlace seguro del currículum.' });
   }
 });
 

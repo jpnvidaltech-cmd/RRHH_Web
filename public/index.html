@@ -1339,11 +1339,10 @@
 
   <!-- ── LÓGICA JAVASCRIPT DEL CLIENTE ── -->
   <script>
-    // ─── CONFIGURACIÓN DINÁMICA DE WEBHOOKS ───────────────────────────────────
+    // ─── CONFIGURACIÓN DINÁMICA DE CLIENTE ──────────────────────────────────
     let CONFIG = {
-      webhookCargaCv: 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT',
-      webhookAgenteCv: 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT',
-      webhookObtenerCv: 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV'
+      supabaseUrl: '',
+      supabaseAnonKey: ''
     };
 
     async function loadConfig() {
@@ -1351,7 +1350,6 @@
         const res = await fetch('/api/config');
         if (res.ok) {
           CONFIG = await res.json();
-          console.log("Configuración dinámica de webhooks cargada:", CONFIG);
         }
       } catch (err) {
         console.warn("Usando configuración de red por defecto:", err);
@@ -2313,7 +2311,7 @@
         if (progressPercent) progressPercent.textContent = '65%';
         if (uploadSubStatus) uploadSubStatus.textContent = 'Extrayendo entidades con IA…';
 
-        const res = await fetch(CONFIG.webhookCargaCv, {
+        const res = await fetchWithAuth('/api/agent/upload-cv', {
           method: 'POST',
           body: formData
         });
@@ -2469,21 +2467,14 @@
       searchIcon.classList.add('hidden');
 
       try {
-        const payload = [{
-          "Texto describiendo perfil": query,
-          "query": query,
-          "submittedAt": isoWithOffset(),
-          "formMode": "test",
-          "session_id": SESSION_ID,
-          "email": currentUser?.email || 'anonimo@sistema.com',
-          "tenant_id": currentTenant?.id || null,
-          "tenant_slug": currentTenant?.slug || null
-        }];
-
-        const res = await fetch(CONFIG.webhookAgenteCv, {
+        const res = await fetchWithAuth('/api/agent/query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            query: query,
+            submittedAt: isoWithOffset(),
+            session_id: SESSION_ID
+          })
         });
 
         if (!res.ok) {
@@ -3318,16 +3309,13 @@
       showAlert('info', 'Obteniendo enlace seguro del currículum…');
 
       try {
-        const payload = {
-          path: cvLinkOrPath,
-          session_id: SESSION_ID,
-          email: currentUser?.email || 'anonimo@sistema.com'
-        };
-
-        const res = await fetch(CONFIG.webhookObtenerCv, {
+        const res = await fetchWithAuth('/api/agent/get-cv', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            path: cvLinkOrPath,
+            session_id: SESSION_ID
+          })
         });
 
         if (!res.ok) throw new Error(`Error en el servidor de firmas (${res.status})`);
