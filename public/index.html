@@ -875,10 +875,7 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-surface-container-low/70 text-[11px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-wider border-b border-surface-container">
-                  <th class="py-3 px-space-md font-semibold w-12 text-center">
-                    <input class="rounded text-primary focus:ring-0 cursor-pointer" type="checkbox" id="checkSelectAllCVs" onchange="toggleSelectAllCVs(this)">
-                  </th>
-                  <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('nombre')">
+                  <th class="py-3 px-space-md font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('nombre')">
                     Candidato <span id="sort-nombre"></span>
                   </th>
                   <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('profesion')">
@@ -3322,7 +3319,7 @@
         const isFiltering = (document.getElementById('filterSearchText')?.value || document.getElementById('filterProfessionSelect')?.value || document.getElementById('filterRecursoSelect')?.value);
         tbody.innerHTML = `
           <tr>
-            <td colspan="8" class="py-12 text-center text-on-surface-variant">
+            <td colspan="7" class="py-12 text-center text-on-surface-variant">
               ${isFiltering ? 'No se encontraron candidatos con los filtros aplicados.' : 'Aún no hay candidatos en la base de datos.'}
             </td>
           </tr>
@@ -3358,10 +3355,7 @@
         tr.className = 'hover:bg-surface-container-low/50 transition-colors group';
 
         tr.innerHTML = `
-          <td class="py-4 px-space-md text-center">
-            <input class="rounded text-primary focus:ring-0 cursor-pointer cv-row-checkbox" type="checkbox" value="${cv.id || ''}" onchange="updateSelectAllState()">
-          </td>
-          <td class="py-4 px-space-sm">
+          <td class="py-4 px-space-md">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full ${colorClass} flex items-center justify-center text-[13px] font-bold shrink-0 shadow-xs">
                 ${initials}
