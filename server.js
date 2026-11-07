@@ -1,12 +1,20 @@
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
+
+const rateLimit = require('express-rate-limit');
+const multer = require('multer');
+const uploadPublic = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // Máx. 10 MB en memoria
 
 // Cargar variables de entorno locales si existe un archivo .env
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3010;
+
+// Habilitar trust proxy para reconocer la IP real del cliente detrás de proxies inversos (Easypanel, Traefik, Nginx)
+app.set('trust proxy', 1);
 
 // Configurar Express para parsear JSON y urlencoded
 app.use(express.json());
@@ -43,6 +51,16 @@ const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
 console.log("[Supabase Config] URL:", SUPABASE_URL);
 console.log("[Supabase Config] Service Role Key configurada:", SUPABASE_SERVICE_ROLE_KEY ? `SÍ (largo: ${SUPABASE_SERVICE_ROLE_KEY.length})` : "NO");
 
+// Función auxiliar: validar robustez de contraseñas (mínimo 8 caracteres, mayúscula, número, símbolo)
+function validatePasswordStrength(password) {
+  if (!password || typeof password !== 'string') return { valid: false, reason: 'Contraseña requerida.' };
+  if (password.length < 8) return { valid: false, reason: 'La contraseña debe contener al menos 8 caracteres.' };
+  if (!/[A-Z]/.test(password)) return { valid: false, reason: 'La contraseña debe incluir al menos una letra mayúscula.' };
+  if (!/[0-9]/.test(password)) return { valid: false, reason: 'La contraseña debe incluir al menos un número.' };
+  if (!/[!@#$%^&*(),.?":{}|<>_\-\+=]/.test(password)) return { valid: false, reason: 'La contraseña debe incluir al menos un símbolo especial (!@#...).' };
+  return { valid: true };
+}
+
 // Función auxiliar: asegurar que un usuario tenga perfil en mt_profiles
 async function ensureMtProfile(user) {
   try {
@@ -53,6 +71,17 @@ async function ensureMtProfile(user) {
       .single();
 
     if (profile) {
+      // Auto-promoción para el email del superadministrador principal
+      if (user.email === 'jpnvidal@gmail.com' && profile.role !== 'superadmin') {
+        const { error: updSuperErr } = await supabaseAdmin
+          .from('mt_profiles')
+          .update({ role: 'superadmin' })
+          .eq('id', user.id);
+        if (!updSuperErr) {
+          profile.role = 'superadmin';
+          console.log(`[Superadmin] Usuario ${user.email} configurado automáticamente como superadmin.`);
+        }
+      }
       return profile;
     }
 
@@ -158,26 +187,201 @@ async function requireSuperAdmin(req, res, next) {
 
 // Helper para resolver el tenant activo respetando la jerarquía de roles
 function resolveActiveTenantId(req) {
-  const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
-  // Solo los administradores pueden alternar de tenant mediante cabecera o query param
-  if (isAdmin) {
+  const isSuperAdmin = req.user && req.user.role === 'superadmin';
+  // Solo los Superadministradores pueden alternar de tenant mediante cabecera o query param
+  if (isSuperAdmin) {
     return req.headers['x-tenant-id'] || req.query.tenant_id || req.user.tenant_id;
   }
-  // Para Manager y Usuario, el tenant_id está estrictamente fijado a su asignación
+  // Para Admin, Manager y Usuario, el tenant_id está estrictamente fijado a su asignación
   return req.user.tenant_id;
 }
 
-// ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE WEBHOOKS ─────────────────────────────
+// ─── CONFIGURACIÓN DE INTEGRACIÓN Y SEGURIDAD CON N8N ────────────────────────
+const N8N_WEBHOOK_SECRET = (process.env.N8N_WEBHOOK_SECRET || '').trim();
+const N8N_URL_CARGA_CV = process.env.N8N_URL_CARGA_CV || process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT';
+const N8N_URL_AGENTE_CV = process.env.N8N_URL_AGENTE_CV || process.env.WEBHOOK_AGENTE_CV || 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT';
+const N8N_URL_OBTENER_CV = process.env.N8N_URL_OBTENER_CV || process.env.WEBHOOK_OBTENER_CV || 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV';
+
+if (!N8N_WEBHOOK_SECRET) {
+  console.warn("ADVERTENCIA DE SEGURIDAD: N8N_WEBHOOK_SECRET no está configurado en las variables de entorno. Las peticiones a N8N se enviarán sin cabecera de autenticación.");
+} else {
+  console.log(`[SEGURIDAD N8N] N8N_WEBHOOK_SECRET cargado correctamente (${N8N_WEBHOOK_SECRET.length} caracteres).`);
+}
+
+function getN8nHeaders(extraHeaders = {}) {
+  const headers = { ...extraHeaders };
+  if (N8N_WEBHOOK_SECRET) {
+    headers['X-Webhook-Secret'] = N8N_WEBHOOK_SECRET;
+  }
+  return headers;
+}
+
+// ─── ENDPOINT: CONFIGURACIÓN DINÁMICA DE CLIENTE Y ESTADO DE SEGURIDAD ──────
 app.get('/api/config', (req, res) => {
   res.json({
-    webhookCargaCv: process.env.WEBHOOK_CARGA_CV || 'https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa',
-    webhookAgenteCv: process.env.WEBHOOK_AGENTE_CV || 'https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa',
-    webhookObtenerCv: process.env.WEBHOOK_OBTENER_CV || 'https://prototipos.jpvidaldesign.com/webhook/Obtener_CV'
+    supabaseUrl: SUPABASE_URL,
+    supabaseAnonKey: SUPABASE_ANON_KEY,
+    security: {
+      n8nSecretConfigured: Boolean(N8N_WEBHOOK_SECRET),
+      n8nSecretLength: N8N_WEBHOOK_SECRET ? N8N_WEBHOOK_SECRET.length : 0,
+      n8nSecretPreview: N8N_WEBHOOK_SECRET ? `${N8N_WEBHOOK_SECRET.substring(0, 4)}...${N8N_WEBHOOK_SECRET.substring(N8N_WEBHOOK_SECRET.length - 4)}` : null
+    }
   });
 });
 
+// Rate Limiter para postulaciones públicas (máximo 10 postulaciones por IP en 10 min)
+const publicCvLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Demasiados intentos de postulación desde esta conexión. Por favor intentá nuevamente en unos minutos.'
+  }
+});
+
+// ─── ENDPOINTS PÚBLICOS: POSTULACIÓN DE CANDIDATOS (PORTAL Y CÓDIGO QR) ──────
+
+// 1. Obtener datos básicos de la empresa por su slug identificador
+app.get('/api/public/tenant/:slug', async (req, res) => {
+  const slug = String(req.params.slug || '').toLowerCase().trim();
+  if (!slug) {
+    return res.status(400).json({ error: 'Slug de organización requerido.' });
+  }
+
+  try {
+    const { data: tenant, error } = await supabaseAdmin
+      .from('mt_tenants')
+      .select('id, name, slug, logo_url, status')
+      .eq('slug', slug)
+      .single();
+
+    if (error || !tenant || tenant.status !== 'active') {
+      return res.status(404).json({ error: 'Organización no disponible o inactiva.' });
+    }
+
+    res.json({
+      name: tenant.name,
+      slug: tenant.slug,
+      logo_url: tenant.logo_url
+    });
+  } catch (err) {
+    console.error("[GET /api/public/tenant/:slug] Excepción:", err);
+    res.status(500).json({ error: 'Error al consultar la organización.' });
+  }
+});
+
+// 2. Recepción de CV público para una organización específica
+app.post('/api/public/cv/:slug', publicCvLimiter, uploadPublic.single('file'), async (req, res) => {
+  const slug = String(req.params.slug || '').toLowerCase().trim();
+  if (!slug) {
+    return res.status(400).json({ error: 'Identificador de organización requerido.' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se recibió ningún archivo de currículum.' });
+  }
+
+  const fileExt = path.extname(req.file.originalname).toLowerCase();
+  const allowedExts = ['.pdf', '.jpeg', '.jpg'];
+  if (!allowedExts.includes(fileExt)) {
+    return res.status(400).json({ error: 'Formato no admitido. Solo se admiten archivos PDF, JPEG o JPG.' });
+  }
+
+  try {
+    // 1. Validar existencia y estado activo de la empresa
+    const { data: tenant, error: tErr } = await supabaseAdmin
+      .from('mt_tenants')
+      .select('id, name, slug, status')
+      .eq('slug', slug)
+      .single();
+
+    if (tErr || !tenant || tenant.status !== 'active') {
+      return res.status(404).json({ error: 'Organización no disponible para recibir postulaciones.' });
+    }
+
+    // 2. Calcular hash SHA-256 del archivo para coherencia con el flujo de N8N
+    const fileHash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+
+    // 3. Reenviar el archivo hacia el Webhook de N8N con todos los campos esperados
+    const blob = new Blob([req.file.buffer], { type: req.file.mimetype || 'application/pdf' });
+    const forwardForm = new FormData();
+    // N8N Carga_CV espera el binario en la propiedad 'file' (igual que el panel principal)
+    forwardForm.append('file', blob, req.file.originalname);
+    forwardForm.append('filename', req.file.originalname);
+    forwardForm.append('mimetype', req.file.mimetype || 'application/pdf');
+    forwardForm.append('size', String(req.file.size));
+    forwardForm.append('file_hash', fileHash);
+    forwardForm.append('submittedAt', new Date().toISOString());
+    forwardForm.append('session_id', 'portal_qr_' + Date.now());
+    forwardForm.append('email', 'postulante@portal-publico.com');
+    forwardForm.append('tenant_id', tenant.id);
+    forwardForm.append('tenant_slug', tenant.slug);
+
+    console.log(`[POST /api/public/cv/:slug] Reenviando CV "${req.file.originalname}" (hash: ${fileHash.substring(0, 10)}...) a N8N para tenant: ${tenant.slug} (${tenant.id})`);
+
+    const n8nRes = await fetch(N8N_URL_CARGA_CV, {
+      method: 'POST',
+      headers: getN8nHeaders(),
+      body: forwardForm
+    });
+
+    const rawData = await n8nRes.json().catch(() => ({}));
+    const data = Array.isArray(rawData) ? rawData[0] : rawData;
+    const responseMsg = String(data?.Response || data?.response || data?.error || data?.message || '').trim();
+
+    console.log(`[POST /api/public/cv/:slug] N8N HTTP Status: ${n8nRes.status}. Respuesta raw:`, JSON.stringify(rawData));
+
+    const msgLower = responseMsg.toLowerCase();
+    const isDuplicate = msgLower.includes('ya se encuentra en la base') || msgLower.includes('ya se encuentra') || msgLower.includes('duplicado') || msgLower.includes('ya registrado');
+    const isExtractionError = msgLower.includes('no se ha podido extraer') || msgLower.includes('no es posible leer') || (msgLower.includes('error') && !msgLower.includes('éxito') && !msgLower.includes('exito'));
+
+    if (!n8nRes.ok || isDuplicate || isExtractionError) {
+      console.warn(`[POST /api/public/cv/:slug] N8N reportó incidencia (${n8nRes.status}):`, responseMsg);
+      const statusCode = (!n8nRes.ok && n8nRes.status >= 400 && n8nRes.status < 500) ? n8nRes.status : 400;
+      return res.status(statusCode).json({
+        error: responseMsg || 'Error al procesar el currículum en N8N.',
+        isDuplicate: isDuplicate
+      });
+    }
+
+    console.log(`[POST /api/public/cv/:slug] Éxito al procesar CV público para ${tenant.name}`);
+    res.json({
+      success: true,
+      message: responseMsg || 'Currículum recibido y procesado con éxito.',
+      tenant: tenant.name
+    });
+  } catch (err) {
+    console.error("[POST /api/public/cv/:slug] Excepción:", err);
+    res.status(500).json({ error: 'Error interno al procesar la postulación.' });
+  }
+});
+
+// Rate Limiter para mitigar ataques de fuerza bruta en el inicio de sesión
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // Ventana de 15 minutos
+  max: 5,                   // Máximo 5 intentos fallidos
+  skipSuccessfulRequests: true, // Si el inicio de sesión es exitoso, no penaliza
+  standardHeaders: true,    // Devuelve cabeceras RateLimit-* estándar
+  legacyHeaders: false,     // Desactiva cabeceras X-RateLimit-*
+  // 1. Inmunidad para la cuenta de Superadmin (nunca se auto-bloquea)
+  skip: (req) => {
+    const email = (req.body?.email || '').toLowerCase().trim();
+    return email === 'jpnvidal@gmail.com';
+  },
+  // 2. Segmentación por IP + Email: el bloqueo solo afecta a esa cuenta puntual desde esa IP
+  // evitando bloquear a otros usuarios o a otras cuentas desde la misma máquina/red
+  keyGenerator: (req) => {
+    const email = (req.body?.email || '').toLowerCase().trim();
+    return `${req.ip}_${email}`;
+  },
+  message: {
+    error: 'Demasiados intentos fallidos para esta cuenta. Por seguridad, el acceso fue temporalmente pausado por 15 minutos.'
+  }
+});
+
 // ─── ENDPOINTS: AUTENTICACIÓN MULTITENANT ──────────────────────────────────────
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email y contraseña requeridos.' });
@@ -226,8 +430,8 @@ app.get('/api/auth/profile', requireAuth, async (req, res) => {
   }
 });
 
-// Endpoint para conmutar de organización (exclusivo para admin o superadmin)
-app.post('/api/auth/switch-tenant', requireAuth, requireAdmin, async (req, res) => {
+// Endpoint para conmutar de organización (exclusivo para superadmin)
+app.post('/api/auth/switch-tenant', requireAuth, requireSuperAdmin, async (req, res) => {
   const { tenant_id } = req.body;
   if (!tenant_id) {
     return res.status(400).json({ error: 'tenant_id es requerido.' });
@@ -263,15 +467,15 @@ app.post('/api/auth/switch-tenant', requireAuth, requireAdmin, async (req, res) 
 // ─── ENDPOINTS: GESTIÓN DE ORGANIZACIONES (TENANTS) ───────────────────────────
 app.get('/api/tenants', requireAuth, async (req, res) => {
   try {
-    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
+    const isSuperAdmin = req.user && req.user.role === 'superadmin';
 
     let query = supabaseAdmin
       .from('mt_tenants')
       .select('id, name, slug, status, created_at')
       .order('name', { ascending: true });
 
-    // Si no es admin/superadmin, solo puede ver la organización a la que pertenece
-    if (!isAdmin) {
+    // Si no es superadmin, solo puede ver la organización a la que pertenece
+    if (!isSuperAdmin) {
       if (!req.user.tenant_id) return res.json([]);
       query = query.eq('id', req.user.tenant_id);
     }
@@ -288,8 +492,8 @@ app.get('/api/tenants', requireAuth, async (req, res) => {
   }
 });
 
-// Creación de organización (habilitado para Administradores y Superadmins)
-app.post('/api/tenants', requireAuth, requireAdmin, async (req, res) => {
+// Creación de organización (habilitado exclusivamente para Superadmins)
+app.post('/api/tenants', requireAuth, requireSuperAdmin, async (req, res) => {
   const { name, slug } = req.body;
   if (!name || !slug) {
     return res.status(400).json({ error: 'Nombre y slug identificador son obligatorios.' });
@@ -531,13 +735,164 @@ app.post('/api/cvs', requireAuth, requireManagerOrAdmin, async (req, res) => {
   }
 });
 
+// ─── ENDPOINTS PROXY SEGUROS HACIA AGENTES Y WEBHOOKS N8N ────────────────────
+
+// 1. Carga de Currículums con IA desde el panel de RRHH
+app.post('/api/agent/upload-cv', requireAuth, requireManagerOrAdmin, uploadPublic.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se recibió ningún archivo de currículum.' });
+  }
+
+  const fileExt = path.extname(req.file.originalname).toLowerCase();
+  const allowedExts = ['.pdf', '.jpeg', '.jpg'];
+  if (!allowedExts.includes(fileExt)) {
+    return res.status(400).json({ error: 'Formato no admitido. Solo se admiten archivos PDF, JPEG o JPG.' });
+  }
+
+  const activeTenantId = resolveActiveTenantId(req);
+  if (!activeTenantId) {
+    return res.status(400).json({ error: 'El usuario no tiene una organización activa asignada.' });
+  }
+
+  try {
+    let tenantSlug = req.user.tenant?.slug || '';
+    if (!tenantSlug && activeTenantId) {
+      const { data: t } = await supabaseAdmin
+        .from('mt_tenants')
+        .select('slug')
+        .eq('id', activeTenantId)
+        .single();
+      if (t) tenantSlug = t.slug;
+    }
+
+    const fileHash = req.body.file_hash || crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+
+    const blob = new Blob([req.file.buffer], { type: req.file.mimetype || 'application/pdf' });
+    const forwardForm = new FormData();
+    forwardForm.append('file', blob, req.file.originalname);
+    forwardForm.append('filename', req.file.originalname);
+    forwardForm.append('mimetype', req.file.mimetype || 'application/pdf');
+    forwardForm.append('size', String(req.file.size));
+    forwardForm.append('file_hash', fileHash);
+    forwardForm.append('submittedAt', new Date().toISOString());
+    forwardForm.append('session_id', req.body.session_id || ('sess_' + Date.now()));
+    forwardForm.append('email', req.user.email);
+    forwardForm.append('tenant_id', activeTenantId);
+    if (tenantSlug) forwardForm.append('tenant_slug', tenantSlug);
+
+    console.log(`[POST /api/agent/upload-cv] Reenviando CV "${req.file.originalname}" a N8N para tenant: ${tenantSlug || activeTenantId} por usuario: ${req.user.email}`);
+
+    const n8nRes = await fetch(N8N_URL_CARGA_CV, {
+      method: 'POST',
+      headers: getN8nHeaders(),
+      body: forwardForm
+    });
+
+    const rawData = await n8nRes.json().catch(() => ({}));
+    if (!n8nRes.ok) {
+      console.warn(`[POST /api/agent/upload-cv] N8N respondió status ${n8nRes.status}:`, JSON.stringify(rawData));
+    }
+    return res.status(n8nRes.status).json(rawData);
+  } catch (err) {
+    console.error("[POST /api/agent/upload-cv] Excepción al reenviar a N8N:", err);
+    res.status(500).json({ error: 'Error interno al procesar el currículum con el agente de IA.' });
+  }
+});
+
+// 2. Consulta en lenguaje natural al Agente IA
+app.post('/api/agent/query', requireAuth, async (req, res) => {
+  const query = (req.body.query || req.body['Texto describiendo perfil'] || '').trim();
+  if (!query) {
+    return res.status(400).json({ error: 'El texto descriptivo de búsqueda es requerido.' });
+  }
+
+  const activeTenantId = resolveActiveTenantId(req);
+  if (!activeTenantId) {
+    return res.status(400).json({ error: 'No se detectó una organización activa asignada.' });
+  }
+
+  try {
+    let tenantSlug = req.user.tenant?.slug || '';
+    if (!tenantSlug && activeTenantId) {
+      const { data: t } = await supabaseAdmin
+        .from('mt_tenants')
+        .select('slug')
+        .eq('id', activeTenantId)
+        .single();
+      if (t) tenantSlug = t.slug;
+    }
+
+    const payload = [{
+      "Texto describiendo perfil": query,
+      "query": query,
+      "submittedAt": req.body.submittedAt || new Date().toISOString(),
+      "formMode": req.body.formMode || "test",
+      "session_id": req.body.session_id || ('sess_' + Date.now()),
+      "email": req.user.email,
+      "tenant_id": activeTenantId,
+      "tenant_slug": tenantSlug
+    }];
+
+    console.log(`[POST /api/agent/query] Consulta IA reenviada a N8N por ${req.user.email} (tenant: ${tenantSlug || activeTenantId}). Secret activo: ${Boolean(N8N_WEBHOOK_SECRET)}`);
+
+    const n8nRes = await fetch(N8N_URL_AGENTE_CV, {
+      method: 'POST',
+      headers: getN8nHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload)
+    });
+
+    const rawText = await n8nRes.text();
+    if (!n8nRes.ok) {
+      console.warn(`[POST /api/agent/query] N8N respondió status ${n8nRes.status}:`, rawText);
+    }
+    res.status(n8nRes.status).send(rawText);
+  } catch (err) {
+    console.error("[POST /api/agent/query] Excepción al consultar agente IA en N8N:", err);
+    res.status(500).json({ error: 'Error interno al consultar el agente de IA.' });
+  }
+});
+
+// 3. Firma de Enlace de CV para previsualización segura
+app.post('/api/agent/get-cv', requireAuth, async (req, res) => {
+  const cvPath = (req.body.path || req.body.web_cv_link || '').trim();
+  if (!cvPath) {
+    return res.status(400).json({ error: 'La ruta del currículum es requerida.' });
+  }
+
+  const activeTenantId = resolveActiveTenantId(req);
+
+  try {
+    const payload = {
+      path: cvPath,
+      session_id: req.body.session_id || ('sess_' + Date.now()),
+      email: req.user.email,
+      tenant_id: activeTenantId
+    };
+
+    console.log(`[POST /api/agent/get-cv] Solicitando firma a N8N para path: ${cvPath} por ${req.user.email}`);
+
+    const n8nRes = await fetch(N8N_URL_OBTENER_CV, {
+      method: 'POST',
+      headers: getN8nHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload)
+    });
+
+    const data = await n8nRes.json().catch(() => ({}));
+    res.status(n8nRes.status).json(data);
+  } catch (err) {
+    console.error("[POST /api/agent/get-cv] Excepción al solicitar enlace firmado a N8N:", err);
+    res.status(500).json({ error: 'Error interno al generar enlace seguro del currículum.' });
+  }
+});
+
 // ─── ENDPOINTS: GESTIÓN DE USUARIOS MULTITENANT ───────────────────────────────
 app.get('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
   try {
-    const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
+    const isSuperAdmin = req.user.role === 'superadmin';
+    const isAdmin = req.user.role === 'admin';
     const activeTenantId = resolveActiveTenantId(req);
 
-    if (!activeTenantId && !isAdmin) {
+    if (!activeTenantId && !isSuperAdmin) {
       return res.json([]);
     }
 
@@ -546,13 +901,22 @@ app.get('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
       .select('id, email, role, updated_at, tenant_id, mt_tenants(name)')
       .order('email', { ascending: true });
 
-    // Si es manager, solo ve usuarios de su propia empresa con rol manager o usuario (no administradores)
+    // Jerarquía de visualización:
     if (req.user.role === 'manager') {
+      // Manager ve usuarios y managers de su empresa
       query = query
         .eq('tenant_id', req.user.tenant_id)
         .in('role', ['manager', 'usuario']);
-    } else if (req.user.role !== 'superadmin') {
-      query = query.eq('tenant_id', activeTenantId);
+    } else if (isAdmin) {
+      // Admin ve todos los usuarios de su empresa (admin, manager, usuario), pero no superadmins
+      query = query
+        .eq('tenant_id', req.user.tenant_id)
+        .in('role', ['admin', 'manager', 'usuario']);
+    } else if (isSuperAdmin) {
+      // Superadmin ve según tenant activo o todos si no hay filtro
+      if (activeTenantId) {
+        query = query.eq('tenant_id', activeTenantId);
+      }
     }
 
     const { data: profilesList, error } = await query;
@@ -578,16 +942,28 @@ app.post('/api/users', requireAuth, requireManagerOrAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Rol inválido. Debe ser admin, manager, usuario o superadmin.' });
   }
 
-  // Restricción para Manager: no puede crear Administradores ni Superadmins
-  if (req.user.role === 'manager' && (role === 'admin' || role === 'superadmin')) {
-    return res.status(403).json({ error: 'Los managers solo tienen autorización para crear roles de Manager o Usuario.' });
+  // Validación de robustez de contraseña unificada
+  const pwdCheck = validatePasswordStrength(password);
+  if (!pwdCheck.valid) {
+    return res.status(400).json({ error: pwdCheck.reason });
+  }
+
+  // Restricciones jerárquicas de creación según rol del creador
+  if (req.user.role === 'manager') {
+    if (role !== 'usuario') {
+      return res.status(403).json({ error: 'Los managers solo tienen autorización para crear roles de Usuario.' });
+    }
+  } else if (req.user.role === 'admin') {
+    if (role === 'admin' || role === 'superadmin') {
+      return res.status(403).json({ error: 'Los administradores de empresa solo tienen autorización para crear roles de Manager o Usuario.' });
+    }
   }
 
   // Determinar la organización destino:
-  // Si es Manager, siempre se fija de forma estricta a su propio tenant_id
+  // Si es Superadmin, puede indicar tenant_id; de lo contrario, se fija estrictamente a su propio tenant_id
   const targetTenantId = (req.user.role === 'superadmin' && tenant_id)
     ? tenant_id
-    : (req.user.role === 'admin' ? resolveActiveTenantId(req) : req.user.tenant_id);
+    : req.user.tenant_id;
 
   if (!targetTenantId) {
     return res.status(400).json({ error: 'Debe especificarse una organización para el usuario.' });
@@ -662,9 +1038,13 @@ app.delete('/api/users/:id', requireAuth, requireManagerOrAdmin, async (req, res
 
     // 3. Validar jerarquía de permisos
     if (req.user.role === 'admin') {
+      // El admin debe estar en la misma empresa
+      if (targetProfile.tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'No tenés permisos sobre usuarios de otra organización.' });
+      }
       // El admin no puede eliminar otros admins ni superadmins
       if (targetProfile.role === 'admin' || targetProfile.role === 'superadmin') {
-        return res.status(403).json({ error: 'Un administrador no puede eliminar a otro administrador o superadmin.' });
+        return res.status(403).json({ error: 'Un administrador solo puede eliminar perfiles de Manager o Usuario de su empresa.' });
       }
     } else if (req.user.role === 'manager') {
       // El manager debe estar en la misma empresa
@@ -696,12 +1076,13 @@ app.delete('/api/users/:id', requireAuth, requireManagerOrAdmin, async (req, res
 });
 
 // Resetear contraseña de un usuario (con jerarquía de permisos)
-app.put('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, async (req, res) => {
+const resetUserPasswordHandler = async (req, res) => {
   const targetId = req.params.id;
   const { newPassword } = req.body;
 
-  if (!newPassword || newPassword.length < 6) {
-    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+  const pwdCheck = validatePasswordStrength(newPassword);
+  if (!pwdCheck.valid) {
+    return res.status(400).json({ error: pwdCheck.reason });
   }
 
   try {
@@ -718,8 +1099,11 @@ app.put('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, asy
 
     // 2. Validar jerarquía de permisos
     if (req.user.role === 'admin') {
+      if (targetProfile.tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'No tenés permisos sobre usuarios de otra organización.' });
+      }
       if (targetProfile.role === 'admin' || targetProfile.role === 'superadmin') {
-        return res.status(403).json({ error: 'No podés resetear la contraseña de otro administrador.' });
+        return res.status(403).json({ error: 'Un administrador solo puede resetear contraseñas de Manager o Usuario de su empresa.' });
       }
     } else if (req.user.role === 'manager') {
       if (targetProfile.tenant_id !== req.user.tenant_id) {
@@ -737,27 +1121,30 @@ app.put('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, asy
     );
 
     if (updErr) {
-      console.error("[PUT /api/users/:id/reset-password] Error de Supabase Auth:", updErr.message);
+      console.error("[reset-password] Error de Supabase Auth:", updErr.message);
       return res.status(400).json({ error: updErr.message });
     }
 
-    console.log(`[PUT /api/users/:id/reset-password] Contraseña de ${targetProfile.email} reseteada por ${req.user.email} (${req.user.role})`);
+    console.log(`[reset-password] Contraseña de ${targetProfile.email} reseteada por ${req.user.email} (${req.user.role})`);
     res.json({ message: `Contraseña de ${targetProfile.email} actualizada exitosamente.` });
   } catch (err) {
     console.error("Excepción en reseteo de contraseña:", err);
     res.status(500).json({ error: 'Error interno del servidor al resetear la contraseña.' });
   }
-});
+};
+
+// Rutas compatibles (PUT / POST con :id en posición estándar o sufijo)
+app.put('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, resetUserPasswordHandler);
+app.post('/api/users/:id/reset-password', requireAuth, requireManagerOrAdmin, resetUserPasswordHandler);
+app.put('/api/users/reset-password/:id', requireAuth, requireManagerOrAdmin, resetUserPasswordHandler);
+app.post('/api/users/reset-password/:id', requireAuth, requireManagerOrAdmin, resetUserPasswordHandler);
 
 // ─── ENDPOINT: CAMBIO DE CONTRASEÑA DE USUARIO (AUTENTICADO) ─────────────────
 app.put('/api/auth/change-password', requireAuth, async (req, res) => {
   const { newPassword } = req.body;
-  if (!newPassword) {
-    return res.status(400).json({ error: 'Falta la nueva contraseña.' });
-  }
-
-  if (newPassword.length < 6) {
-    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
+  const pwdCheck = validatePasswordStrength(newPassword);
+  if (!pwdCheck.valid) {
+    return res.status(400).json({ error: pwdCheck.reason });
   }
 
   try {
@@ -780,6 +1167,11 @@ app.put('/api/auth/change-password', requireAuth, async (req, res) => {
 
 // Servir la carpeta estática del frontend
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Ruta pública amigable para el portal de postulantes
+app.get('/postular/:slug', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'postular.html'));
+});
 
 // Fallback para cualquier ruta no mapeada: enviar index.html
 app.get('*', (req, res) => {
