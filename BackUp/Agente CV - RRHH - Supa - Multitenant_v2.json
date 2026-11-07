@@ -1,0 +1,2952 @@
+{
+  "name": "Agente CV - RRHH - Supa - Multitenant",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "=La imagen es un Curriculum, necesito que me describas la información sobre el perfil de la persona, sus datos personales y descripcion de trabajos anteriores, como asi tambien que perfil laboral tiene. Debes transcribir la informacion que ves.",
+        "inputType": "base64",
+        "binaryPropertyName": "file",
+        "options": {
+          "maxTokens": 800
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        0
+      ],
+      "id": "697b389c-f041-4a39-9ad0-8c0bd3785833",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "xX4oVrNTvHNpF3T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.Texto }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Perfil Laboral",
+              "description": "EL perfil laboral de la persona, a que se dedica "
+            },
+            {
+              "name": "Experiencia",
+              "description": "La experiencia laboral de la persona"
+            },
+            {
+              "name": "Habilidades",
+              "description": "Habilidades que se describan de la persona en el texto"
+            },
+            {
+              "name": "Idiomas",
+              "description": "Idiomas que habla"
+            },
+            {
+              "name": "Educacion",
+              "description": "Cual es su titulo profesional, donde ha estudiado y que cursos ha realizado la persona"
+            },
+            {
+              "name": "Nombre ",
+              "description": "Nombre completo de la persona",
+              "required": true
+            },
+            {
+              "name": "Email",
+              "description": "Correo electrónico o Email de contacto"
+            },
+            {
+              "name": "Telefono",
+              "description": "Teléfono de contacto"
+            },
+            {
+              "name": "LinkedIn",
+              "description": "Perfil de LinkedIn"
+            },
+            {
+              "name": "Apellido",
+              "description": "Apellido de la persona",
+              "required": true
+            },
+            {
+              "name": "Profesion",
+              "description": "Debes clasificar su profesión o titulo educativo un una o dos palabras, es decir: Ingeniero Sistemas, Desarrollador, Administrativo, Abogado, Contador, Doctor, Chef, Marketing..."
+            },
+            {
+              "name": "Ciudad",
+              "description": "De ser posible, obtener la ciudad de residencia actual del texto."
+            },
+            {
+              "name": "Pais",
+              "description": "De ser posible, obtener el pais de residencia actual del texto."
+            },
+            {
+              "name": "fecha de nacimiento",
+              "description": "De ser posible y si esta disponible en el texto, extraer la fecha de nacimiento de la persona."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Eres un experto en extraer la informacion del perfil laboral de las personas a traves de su Curriculum (CV) "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "60fd0cbd-82c4-493e-b560-c250efd2d0b8",
+      "name": "Information Extractor",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1648,
+        208
+      ],
+      "id": "3ebe23f7-8815-4fe7-b126-397718a33ed4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xX4oVrNTvHNpF3T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk",
+          "mode": "list",
+          "cachedResultName": "Perfiles_RRHH",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nombre": "={{ $json.output['Nombre '] }}",
+            "Perfil Laboral": "={{ $json.output['Perfil Laboral'] }}",
+            "Experiencia": "={{ $json.output.Experiencia }}",
+            "Habilidades": "={{ $json.output.Habilidades }}",
+            "Idiomas": "={{ $json.output.Idiomas }}",
+            "Educacion": "={{ $json.output.Educacion }}",
+            "Email": "={{ $json.output.Email }}",
+            "File Hash": "={{ $('Webhook_Carga_CV').item.json.body.file_hash }}",
+            "WebCVLink": "={{ $('Upload file').first().json.webViewLink }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Perfil Laboral",
+              "displayName": "Perfil Laboral",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Experiencia",
+              "displayName": "Experiencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Habilidades",
+              "displayName": "Habilidades",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Idiomas",
+              "displayName": "Idiomas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Educacion",
+              "displayName": "Educacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "File Hash",
+              "displayName": "File Hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "WebCVLink",
+              "displayName": "WebCVLink",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1984,
+        -368
+      ],
+      "id": "3d78af4e-c68e-4e85-ba8f-e493602b556c",
+      "name": "Base de Perfiles",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e2aZDVl1Vba3oI3U",
+          "name": "Google Sheets JPVidal"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.body[0]['Texto describiendo perfil'] }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Perfil Laboral",
+              "description": "EL perfil laboral que se busca",
+              "required": true
+            },
+            {
+              "name": "Habilidades adicionales",
+              "description": "Habilidades que se describan de la persona en el texto"
+            },
+            {
+              "name": "Idiomas",
+              "description": "Idiomas que habla"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Eres un experto en extraer la informacion del perfil laboral de las personas a traves de su Curriculum (CV) "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        720
+      ],
+      "id": "e4be75ce-a47c-4b50-b2a3-2581296429f8",
+      "name": "Information Extractor1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -864,
+        928
+      ],
+      "id": "54389807-afd1-41e6-b814-00cddbac7f0e",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "xX4oVrNTvHNpF3T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "=# Identidad\n\nEres un agente experto en el área de Recursos Humanos (RRHH) que debe buscar y seleccionar los mejores Curriculums de una base de datos\n\n# Objetivo\nTu objetivo es buscar y devolver hasta 4 perfiles que cumplan con la busqueda solicitada.\n\n# Herramientas\n\n1. **Think:** Ordena las ideas, planifica acciones, busca en tu memoria de ser necesario y proporciona respuestas adecuadas durante el proceso de seleccion de perfiles.\n2. **Buscar:** SIEMPRE Utiliza esta herramienta para buscar perfiles de personas que hagan un match con el perfil laboral buscado.\n\n# Comportamiento\n\n - En base a la solicitud del usuario, utiliza la herramienta **Buscar** para seleccionar hasta 4 perfiles que tengan la mayor coincidencia con el perfil que busca el usuario, si la cantidad es menor no hay problema, utiliza los que encuentres.\n - Realiza un breve resumen de los puntos que coinciden entre la solicitud y los perfiles buscados\n - Realiza una comparación entre los mejores perfiles seleccionados, estableciendo una numeración entre 1 y 10 al perfil que mejor coincida con la busqueda y posea entre ambos mas habilidades, idiomas y experiencia en trabajos relacionados con la busqueda.\n - Agrega en tu respuesta el campo WebCVLink de cada uno de los perfiles encontrados.\n\n# Fecha Actual\nLa fecha actual es {{ $now }}\n\n# Reglas\n- En cada nueva solicitud, **SIEMPRE DEBES** utilizar la **herramienta `Buscar`**\n- No inventes información de perfiles que no encuentres a traves de la herramienta \"Buscar\". \n- Espera la información que devuelvan las herramientas.\n\n\n ",
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -448,
+        720
+      ],
+      "id": "b8fa19c9-1f04-4511-954a-d67b67762c24",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -560,
+        928
+      ],
+      "id": "d7a2572e-ce59-4313-8dc0-e23015222907",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "xX4oVrNTvHNpF3T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook_Busqueda').item.json.body[0].session_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -384,
+        928
+      ],
+      "id": "c9fffec9-46cd-46cc-b285-1b031ef821e5",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        928
+      ],
+      "id": "a55fd3e1-a645-4ea7-b893-9c2d413d6fff",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bbb85c93-4736-4df7-829c-97045e292a80",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        720
+      ],
+      "id": "d5be3135-e1d0-46a4-9e3a-e46b2241cc0e",
+      "name": "Perfiles"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Merge').item.json.body.mimetype }}",
+                    "rightValue": "image/jpeg",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ed65e590-c077-4f00-8baf-83a27463b715"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JPEG"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "747a19c8-c077-43f1-afa3-aef6b8309c71",
+                    "leftValue": "={{ $('Merge').item.json.body.mimetype }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        0
+      ],
+      "id": "13d1e714-cb06-4208-830c-7dcfcc62d4c4",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1ea5408-868d-4fce-a803-788d0be81065",
+              "name": "Texto",
+              "value": "={{ $json['0'].content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "ca9b1cc8-7598-4693-b461-473e15a309cf",
+      "name": "Texto de JPEG"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ef3cc0f-1c19-433a-9b84-54700f0f35bb",
+              "name": "Texto",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        224
+      ],
+      "id": "f06dacc4-0fe7-4d01-bd8b-ec18df87a27f",
+      "name": "Texto de PDF"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        224
+      ],
+      "id": "356e142e-a084-4885-a8f6-cbdd551c2c4f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "32fcab3e-a59d-4b6c-a5f5-ec4c3f291a87",
+              "leftValue": "={{ $json.file_hash }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "910500e6-8754-4fef-8f05-f97fb2c51bce",
+              "leftValue": "={{ $json.tenant_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -480,
+        -112
+      ],
+      "id": "99233125-3293-4dc6-bc2e-77df15586b55",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -144,
+        0
+      ],
+      "id": "e8254b82-76b1-496b-8f1d-217c3aaf5cc5",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bd6f19cd-2a40-46e4-8d32-d617593a2bbd",
+              "name": "Response",
+              "value": "={{ 'El CV de '+ $('Check Hash & Tenant Columns').item.json.Nombre + ' ya se encuentra en la Base de Datos' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -384
+      ],
+      "id": "bb85d5cf-260f-43ff-833d-be9e2fc8420a",
+      "name": "CV ya cargado"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        640,
+        224
+      ],
+      "id": "724cb9e2-6e32-40e1-b9e5-973463eaee17",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1ea5408-868d-4fce-a803-788d0be81065",
+              "name": "Texto",
+              "value": "={{ $json['0'].content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1584,
+        -1216
+      ],
+      "id": "e739f216-ecb8-4db4-8ad1-0ce969d225ea",
+      "name": "Texto de CV"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        32
+      ],
+      "id": "17a74f95-4af4-4b5a-921c-74a999986f70",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "AUnzu",
+        "filter": {
+          "driveId": {
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1xIDBrVVrgH8A52hlcM_RAZRkRRUPgHO3",
+            "mode": "list",
+            "cachedResultName": "Curriculums",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1xIDBrVVrgH8A52hlcM_RAZRkRRUPgHO3"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1056,
+        32
+      ],
+      "id": "51902994-5467-4482-914d-4a812083f7f2",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "6yjUk1vsA3bMAe6Y",
+          "name": "Google Drive JPVidal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -304,
+        -1424
+      ],
+      "id": "1a8a56b7-2130-4a64-adaf-16f0229020b8",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "Ingrese_su_CV"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -48,
+        -1344
+      ],
+      "id": "22aaf522-8cc1-49f7-ae8f-3b04295f2439",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "6yjUk1vsA3bMAe6Y",
+          "name": "Google Drive JPVidal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2512,
+        -976
+      ],
+      "id": "458b050d-c5b5-4d07-82b4-90a998c857b3",
+      "name": "Wait",
+      "webhookId": "63a4663d-d079-48a3-be5d-dc4b721e76d0"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "=La imagen es un Curriculum, necesito que me describas la información sobre el perfil de la persona, sus datos personales y descripcion de trabajos anteriores, como asi tambien que perfil laboral tiene. Debes transcribir la informacion que ves.",
+        "inputType": "base64",
+        "binaryPropertyName": "Ingrese_su_CV",
+        "options": {
+          "maxTokens": 800
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        -1216
+      ],
+      "id": "e31c87f6-0205-4b8e-a587-4ae072055dec",
+      "name": "Analyze image1",
+      "credentials": {
+        "openAiApi": {
+          "id": "xX4oVrNTvHNpF3T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.Texto }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Perfil Laboral",
+              "description": "EL perfil laboral de la persona, a que se dedica "
+            },
+            {
+              "name": "Experiencia",
+              "description": "La experiencia laboral de la persona"
+            },
+            {
+              "name": "Habilidades",
+              "description": "Habilidades que se describan de la persona en el texto"
+            },
+            {
+              "name": "Idiomas",
+              "description": "Idiomas que habla"
+            },
+            {
+              "name": "Educacion",
+              "description": "Cual es su titulo profesional, donde ha estudiado y que cursos ha realizado la persona"
+            },
+            {
+              "name": "Nombre ",
+              "description": "Nombre completo de la persona",
+              "required": true
+            },
+            {
+              "name": "Email",
+              "description": "Correo electrónico o Email de contacto",
+              "required": true
+            },
+            {
+              "name": "Telefono",
+              "description": "Teléfono de contacto"
+            },
+            {
+              "name": "LinkedIn",
+              "description": "Perfil de LinkedIn"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Eres un experto en extraer la informacion del perfil laboral de las personas a traves de su Curriculum (CV) "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        -1248
+      ],
+      "id": "6f94b6d5-f22f-4f0e-94a8-b4a9a1c833c5",
+      "name": "Information Extractor2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1872,
+        -1024
+      ],
+      "id": "d4db1dad-acf2-4045-9c87-05075be45546",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "xX4oVrNTvHNpF3T3",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk",
+          "mode": "list",
+          "cachedResultName": "Perfiles_RRHH",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nombre": "={{ $('Information Extractor2').item.json.output['Nombre '] }}",
+            "Perfil Laboral": "={{ $('Information Extractor2').item.json.output['Perfil Laboral'] }}",
+            "Experiencia": "={{ $('Information Extractor2').item.json.output.Experiencia }}",
+            "Habilidades": "={{ $('Information Extractor2').item.json.output.Habilidades }}",
+            "Idiomas": "={{ $('Information Extractor2').item.json.output.Idiomas }}",
+            "Educacion": "={{ $('Information Extractor2').item.json.output.Educacion }}",
+            "Email": "={{ $('Information Extractor2').item.json.output.Email }}",
+            "File Hash": "={{ $('Crypto1').first().json.Hash }}",
+            "WebCVLink": "={{ $json.webViewLink }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Perfil Laboral",
+              "displayName": "Perfil Laboral",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Experiencia",
+              "displayName": "Experiencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Habilidades",
+              "displayName": "Habilidades",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Idiomas",
+              "displayName": "Idiomas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Educacion",
+              "displayName": "Educacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "File Hash",
+              "displayName": "File Hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "WebCVLink",
+              "displayName": "WebCVLink",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2496,
+        -1248
+      ],
+      "id": "46433b5d-fa30-44d8-8522-d3fcfe1eb0a2",
+      "name": "Base de Perfiles1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e2aZDVl1Vba3oI3U",
+          "name": "Google Sheets JPVidal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Flujo de busqueda de CV",
+        "height": 688,
+        "width": 1920,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1296,
+        512
+      ],
+      "typeVersion": 1,
+      "id": "c0127a9c-4e74-4d3b-93e9-c9dcccf028de",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Flujo carga de CV Webhook y Test Manual",
+        "height": 848,
+        "width": 4032
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1312,
+        -432
+      ],
+      "typeVersion": 1,
+      "id": "31a2f812-333a-4e0e-9107-fb4f6204f7d4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk",
+          "mode": "list",
+          "cachedResultName": "Perfiles_RRHH",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "File Hash",
+              "lookupValue": "={{ $json.Hash }}"
+            }
+          ]
+        },
+        "options": {
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        -1344
+      ],
+      "id": "ddc17d6a-0b14-42f6-8025-bd982e08b133",
+      "name": "Check Hash1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e2aZDVl1Vba3oI3U",
+          "name": "Google Sheets JPVidal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "32fcab3e-a59d-4b6c-a5f5-ec4c3f291a87",
+              "leftValue": "={{ $json[\"File Hash\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        -1344
+      ],
+      "id": "5f8df904-973c-48f9-b9f2-7d45e7ececa4",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        816,
+        -1248
+      ],
+      "id": "1c55e9cd-5722-445e-9842-760ef4c02408",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "binaryData": true,
+        "binaryPropertyName": "Ingrese_su_CV",
+        "dataPropertyName": "Hash"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -1344
+      ],
+      "id": "737883f2-8e00-4dbc-b90c-0fb568aee38e",
+      "name": "Crypto1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -1472
+      ],
+      "id": "8888f407-7b5b-46c2-ad10-ed1aff77ba2f",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Merge2').first().json.name.split('.').pop().toLowerCase() }}",
+                    "rightValue": "jpg",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "757f9e0b-aed9-4f86-b6b4-54d1a83041e3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "jpg"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cf8adc59-797b-436e-b224-800b38f9f0a0",
+                    "leftValue": "={{ $('Merge2').first().json.name.split('.').pop().toLowerCase() }}",
+                    "rightValue": "jpeg",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "jpeg"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "30653809-9acf-4d74-86b1-54d159b83f3f",
+                    "leftValue": "={{ $('Merge2').first().json.name.split('.').pop().toLowerCase() }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        -1248
+      ],
+      "id": "2fd26809-8862-4c84-9f8e-0aad8694809f",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "content": "# Pendiente carga Masiva\n",
+        "height": 1104,
+        "width": 4016,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -992,
+        -1712
+      ],
+      "typeVersion": 1,
+      "id": "0d595a65-d1c7-42e2-9b92-84285a0e7a7b",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ef3cc0f-1c19-433a-9b84-54700f0f35bb",
+              "name": "Texto",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1504,
+        -976
+      ],
+      "id": "c32ca29c-8e21-41a2-b92a-b3c4d194badc",
+      "name": "Texto de PDF1"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Ingrese_su_CV",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        -976
+      ],
+      "id": "96de19b7-769a-4ea6-bdfa-14cb6a0d5bc8",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        -976
+      ],
+      "id": "51c19460-9a24-4575-acd4-714d10e5b354",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $('Search files and folders').item.json.name }}",
+        "filter": {
+          "driveId": {
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1xIDBrVVrgH8A52hlcM_RAZRkRRUPgHO3",
+            "mode": "list",
+            "cachedResultName": "Curriculums",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1xIDBrVVrgH8A52hlcM_RAZRkRRUPgHO3"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "webViewLink"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2272,
+        -1248
+      ],
+      "id": "9b370282-af01-4c6e-90fb-ec427a0a92b5",
+      "name": "Search files and folders1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "6yjUk1vsA3bMAe6Y",
+          "name": "Google Drive JPVidal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        832,
+        -112
+      ],
+      "id": "704909e9-4fa3-4161-85d6-375cc89af163",
+      "name": "Merge4"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "useDataOfInput": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1248,
+        -1408
+      ],
+      "id": "3c200ef3-b336-4de1-82b4-a8d7f950d931",
+      "name": "Merge5"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -864,
+        32
+      ],
+      "id": "70ddd5d6-e8fb-4c83-b09c-9c5b2615c707",
+      "name": "Download file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "6yjUk1vsA3bMAe6Y",
+          "name": "Google Drive JPVidal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://supabase-supabase.5tx6ny.easypanel.host/storage/v1/object/Curriculums/{{ $json.body.tenant_id }}/{{$now.format('yyMMdd_HHmmss_') + $json.body.filename.replace(/ /g, '_') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        112,
+        -272
+      ],
+      "id": "e00e795b-6e11-4902-86d7-dcab3427ef09",
+      "name": "Storage CV",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SyV2R4eNQRh6p452",
+          "name": "Header Auth account"
+        },
+        "httpMultipleHeadersAuth": {
+          "id": "DR9grvEgLIhNzvzZ",
+          "name": "SupaBase Storage"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "26497a8e-9d11-4b8d-a0b9-cbe6205d2b31",
+              "name": "output['Perfil Laboral']",
+              "value": "={{ $json.output['Perfil Laboral'] }}",
+              "type": "string"
+            },
+            {
+              "id": "74b058f1-2da6-4281-a51c-fd1ecd9a144c",
+              "name": "output.Experiencia",
+              "value": "={{ $json.output.Experiencia }}",
+              "type": "string"
+            },
+            {
+              "id": "34b14a3d-4f94-4362-b619-7aaeb32923e3",
+              "name": "output.Habilidades",
+              "value": "={{ $json.output.Habilidades }}",
+              "type": "string"
+            },
+            {
+              "id": "39f74f9f-9949-4541-a206-e4a8ac1015ba",
+              "name": "output.Idiomas",
+              "value": "={{ $json.output.Idiomas }}",
+              "type": "string"
+            },
+            {
+              "id": "324650d4-4d94-4685-82c0-5183d01fb4d8",
+              "name": "output.Educacion",
+              "value": "={{ $json.output.Educacion }}",
+              "type": "string"
+            },
+            {
+              "id": "f863b1f7-cae7-44e5-a907-11fe3221b6ca",
+              "name": "output['Nombre ']",
+              "value": "={{ $json.output['Nombre '] }}",
+              "type": "string"
+            },
+            {
+              "id": "20d9c1f8-8e76-460e-b497-44a5da6029a2",
+              "name": "output.Email",
+              "value": "={{ $json.output.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "b55cfd80-c980-42a6-b333-5c9d304ec736",
+              "name": "output.Telefono",
+              "value": "={{ $json.output.Telefono }}",
+              "type": "string"
+            },
+            {
+              "id": "d22a89eb-1516-4c74-87d5-67376669d066",
+              "name": "output.Apellido",
+              "value": "={{ $json.output.Apellido }}",
+              "type": "string"
+            },
+            {
+              "id": "eb57451d-dbba-4b45-9f75-35ba6c280639",
+              "name": "output.Profesion",
+              "value": "={{ $json.output.Profesion }}",
+              "type": "string"
+            },
+            {
+              "id": "1a41239c-4505-403e-bf37-506719691754",
+              "name": "Ciudad",
+              "value": "={{ $json.output.Ciudad }}",
+              "type": "string"
+            },
+            {
+              "id": "faae9917-46db-4831-8109-955f091aa4ad",
+              "name": "Pais",
+              "value": "={{ $json.output.Pais }}",
+              "type": "string"
+            },
+            {
+              "id": "247f649d-0610-47e0-9623-8f125b0679f7",
+              "name": "=Fecha Nacimiento",
+              "value": "={{ $json.output['fecha de nacimiento']}}",
+              "type": "string"
+            },
+            {
+              "id": "46da2fc1-8609-4da7-8bf2-dab12a6b7bdc",
+              "name": "Hash",
+              "value": "={{ $('Merge').item.json.body.file_hash }}",
+              "type": "string"
+            },
+            {
+              "id": "0552e88f-68c1-4d66-9e74-96902b8d755f",
+              "name": "Web_Storage",
+              "value": "={{ $('Storage_Data').first().json.Key }}",
+              "type": "string"
+            },
+            {
+              "id": "66e415ab-9c5f-466d-86f5-1ca011f6e240",
+              "name": "tenant_id",
+              "value": "={{ $('Webhook_Carga_CV').item.json.body.tenant_id }}",
+              "type": "string"
+            },
+            {
+              "id": "7b98ae84-1995-4e61-a80b-857247c0c0a3",
+              "name": "tenant_slug",
+              "value": "={{ $('Webhook_Carga_CV').item.json.body.tenant_slug }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2160,
+        0
+      ],
+      "id": "ad7f89c7-ca99-4c2a-9f5b-a085758cab5b",
+      "name": "Datos CV"
+    },
+    {
+      "parameters": {
+        "tableId": "mt_cvs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "nombre",
+              "fieldValue": "={{ $json.output['Nombre '] }}"
+            },
+            {
+              "fieldId": "apellido",
+              "fieldValue": "={{ $json.output.Apellido }}"
+            },
+            {
+              "fieldId": "profesion",
+              "fieldValue": "={{ $json.output.Profesion }}"
+            },
+            {
+              "fieldId": "ciudad",
+              "fieldValue": "={{ $json.Ciudad }}"
+            },
+            {
+              "fieldId": "pais",
+              "fieldValue": "={{ $json.Pais }}"
+            },
+            {
+              "fieldId": "fecha_nacimiento",
+              "fieldValue": "={{ $json['Fecha Nacimiento'] }}"
+            },
+            {
+              "fieldId": "perfil_laboral",
+              "fieldValue": "={{ $json.output['Perfil Laboral'] }}"
+            },
+            {
+              "fieldId": "experiencia",
+              "fieldValue": "={{ $json.output.Experiencia }}"
+            },
+            {
+              "fieldId": "habilidades",
+              "fieldValue": "={{ $json.output.Habilidades }}"
+            },
+            {
+              "fieldId": "idiomas",
+              "fieldValue": "={{ $json.output.Idiomas }}"
+            },
+            {
+              "fieldId": "educacion",
+              "fieldValue": "={{ $json.output.Educacion }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.output.Email }}"
+            },
+            {
+              "fieldId": "file_hash",
+              "fieldValue": "={{ $json.Hash }}"
+            },
+            {
+              "fieldId": "web_cv_link",
+              "fieldValue": "={{ $json.Web_Storage }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $json.tenant_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2336,
+        0
+      ],
+      "id": "e47040a6-4e83-4917-a917-542e43d6de85",
+      "name": "Upload CV",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mZ7QH5PUbI1YzCsN",
+          "name": "Supabase VPS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c624fee2-92f4-4738-a0fb-b8c5d48ecae9",
+              "name": "Key",
+              "value": "={{ $json.Key }}",
+              "type": "string"
+            },
+            {
+              "id": "a01cf2d6-937d-4c5d-8137-9b8c0c8cfda7",
+              "name": "Id",
+              "value": "={{ $json.Id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        -272
+      ],
+      "id": "f9eab4d2-13ab-44f5-aadf-8a8f71591474",
+      "name": "Storage_Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://supabase-supabase.5tx6ny.easypanel.host/storage/v1/object/sign/{{ $json.body.path }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "expiresIn",
+              "value": "60"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1296,
+        848
+      ],
+      "id": "b3c24f8e-4be5-4e0b-98d6-ccdbfd38d0c1",
+      "name": "Buscar_CV",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SyV2R4eNQRh6p452",
+          "name": "Header Auth account"
+        },
+        "httpMultipleHeadersAuth": {
+          "id": "DR9grvEgLIhNzvzZ",
+          "name": "SupaBase Storage"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://supabase-supabase.5tx6ny.easypanel.host/storage/v1{{ $json.signedURL }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1296,
+        656
+      ],
+      "id": "0a96497b-ceb9-4877-9e55-1fa73d3a2d8a",
+      "name": "Mostrar_CV",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk",
+          "mode": "list",
+          "cachedResultName": "Perfiles_RRHH",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yRtEkBEaaR7KvFqwZtPotyBmsUNhicht6GEpaNVMzRk/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -48,
+        1072
+      ],
+      "id": "86a15a3d-d93a-4987-a66f-4eb07d57ca7c",
+      "name": "Buscar_bak",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e2aZDVl1Vba3oI3U",
+          "name": "Google Sheets JPVidal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "mt_cvs",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook_Busqueda').item.json.body[0].tenant_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        960
+      ],
+      "id": "a2e1b737-843e-4dd8-b61f-78398bd94cba",
+      "name": "Buscar",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mZ7QH5PUbI1YzCsN",
+          "name": "Supabase VPS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Agente_CV_Supa_MT",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1024,
+        720
+      ],
+      "id": "9d294d12-2e6f-4b0d-b5e1-29ffccd6a4ed",
+      "name": "Webhook_Busqueda",
+      "webhookId": "56613942-38a5-4efb-9aab-cc5b99c979db",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        208,
+        720
+      ],
+      "id": "3451888d-138e-4e84-9999-257d990ec934",
+      "name": "Respond to Webhook Busqueda"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Carga_CV_Supa_MT",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -992,
+        -176
+      ],
+      "id": "89a25715-5d97-4fb9-a442-d4d81063e384",
+      "name": "Webhook_Carga_CV",
+      "webhookId": "164530a7-bee4-4b17-9375-76317247e2ed"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"Response\": \"{{ $json.Response }}\"\n} ",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -80,
+        -384
+      ],
+      "id": "bce399a5-74d9-4ec4-b2dc-7f52ab93272a",
+      "name": "Respond 1 to Carga_CV"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2528,
+        0
+      ],
+      "id": "9f5d42f3-621b-4dae-9851-0ca93ca993c3",
+      "name": "Respond 2 to Carga_CV"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Obtener_CV_MT",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        848
+      ],
+      "id": "af54ada1-1f86-4bba-a455-7645c73ec564",
+      "name": "Webhook_Get_File",
+      "webhookId": "cde0d2f1-69c8-4df7-89a4-93ca1fb36bbf"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1712,
+        848
+      ],
+      "id": "f09480eb-3532-407d-892f-d837c6f823ac",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e53900c1-f15a-442d-adff-812d401666d2",
+              "name": "signedURL",
+              "value": "={{'https://supabase-supabase.5tx6ny.easypanel.host/storage/v1'+ $json.signedURL }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1504,
+        848
+      ],
+      "id": "71ce92d4-27d2-414c-809f-8a4921f2f02f",
+      "name": "CV_Link"
+    },
+    {
+      "parameters": {
+        "content": "## Obtener archivo de CV",
+        "height": 688,
+        "width": 1220,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        736,
+        512
+      ],
+      "typeVersion": 1,
+      "id": "555205a9-2460-4a0a-86d3-01e9805ba330",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtener el path original desde el body\nlet originalPath = $json.body?.path || \"\";\n\n// 2. Si el path no está vacío, procesarlo\nif (originalPath) {\n  originalPath = originalPath.trim();\n\n  // Caso A: Formato Markdown [texto](ruta) o envuelto en paréntesis (ruta)\n  const markdownMatch = originalPath.match(/\\((.*?)\\)/);\n  if (markdownMatch) {\n    originalPath = markdownMatch[1].trim();\n  } \n  // Caso B: Envuelto en corchetes simples [ruta]\n  else if (originalPath.startsWith('[') && originalPath.endsWith(']')) {\n    originalPath = originalPath.slice(1, -1).trim();\n  }\n\n  // Limpieza final por seguridad (quita comillas simples o dobles residuales)\n  originalPath = originalPath.replace(/['\"]/g, '').trim();\n}\n\n// 3. Devolver el objeto modificado manteniendo la estructura completa de $json\nreturn {\n  ...$json,\n  body: {\n    ...$json.body,\n    path: originalPath\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        848
+      ],
+      "id": "f95b9c63-d025-4b5c-ac23-1acca56f759a",
+      "name": "Limpia variable Path"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtener el path original desde el body\nlet originalPath = $json.body?.path || \"\";\n\n// 2. Si el path no está vacío, procesarlo\nif (originalPath) {\n  // Remover corchetes iniciales/finales, comillas y limpiar espacios\n  originalPath = originalPath.trim();\n  \n  if (originalPath.startsWith('[') && originalPath.endsWith(']')) {\n    originalPath = originalPath.slice(1, -1);\n  }\n  \n  // Limpieza final por seguridad (quita espacios residuales o comillas sueltas)\n  originalPath = originalPath.replace(/['\"]/g, '').trim();\n}\n\n// 3. Devolver el objeto modificado agregando la variable limpia\nreturn {\n  ...$json,\n  body: {\n    ...$json.body,\n    path: originalPath\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        672
+      ],
+      "id": "580402ea-4ede-4c62-a446-8f00ebb0139f",
+      "name": "Limpia variable Path_BackUp",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "mt_cvs",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "file_hash",
+              "keyValue": "={{ $json.body.file_hash}}"
+            },
+            {
+              "keyName": "tenant_id",
+              "keyValue": "={{ $json.body.tenant_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        -272
+      ],
+      "id": "772a0226-7b4a-436c-99d8-49dc171c233e",
+      "name": "Check Hash & Tenant Columns",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mZ7QH5PUbI1YzCsN",
+          "name": "Supabase VPS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1f598829-5448-439e-a762-36ccd05fe808",
+              "leftValue": "={{ $json.output['Nombre '] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e02ab5b6-fe6f-456b-bf9b-09614df6f97b",
+              "leftValue": "={{ $json.output.Apellido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1968,
+        0
+      ],
+      "id": "a841b2a0-6dae-4cfa-997e-a373cbdd0cd5",
+      "name": "If Nombre & Apellido NO vacias",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"Response\": \"{{ \"No se ha podido extraer la información del CV, intente nuevamente. Si el problema persiste significa que No es posible leer la información del mismo\" }}\"\n} ",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1968,
+        240
+      ],
+      "id": "1e573466-7043-40bd-9b7d-4895180180dc",
+      "name": "Respond 3 to Carga_CV1"
+    }
+  ],
+  "pinData": {
+    "Webhook_Busqueda": [
+      {
+        "json": {
+          "headers": {
+            "host": "prototipos.jpvidaldesign.com",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+            "content-length": "239",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "es-ES,es;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://supabase-rrhh-multitenant.5tx6ny.easypanel.host",
+            "priority": "u=1, i",
+            "referer": "https://supabase-rrhh-multitenant.5tx6ny.easypanel.host/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "186.139.200.59",
+            "x-forwarded-host": "prototipos.jpvidaldesign.com",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "3ecd2cb51839",
+            "x-real-ip": "186.139.200.59"
+          },
+          "params": {},
+          "query": {},
+          "body": [
+            {
+              "Texto describiendo perfil": "programador",
+              "submittedAt": "2026-10-16T22:37:51.219-03:00",
+              "formMode": "test",
+              "session_id": "31919b0d-2f1d-4967-bd29-af2d69cd1b65",
+              "tenant_id": "8bae6f1b-38b7-4213-b443-e436e467ac9e",
+              "tenant_slug": "alpha-corp"
+            }
+          ],
+          "webhookUrl": "https://prototipos.jpvidaldesign.com/webhook/Agente_CV_Supa_MT",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Webhook_Get_File": [
+      {
+        "json": {
+          "headers": {
+            "host": "prototipos.jpvidaldesign.com",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+            "content-length": "313",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "es-ES,es;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://supabase-rrhh-multitenant.5tx6ny.easypanel.host",
+            "priority": "u=1, i",
+            "referer": "https://supabase-rrhh-multitenant.5tx6ny.easypanel.host/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "186.139.200.59",
+            "x-forwarded-host": "prototipos.jpvidaldesign.com",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "3ecd2cb51839",
+            "x-real-ip": "186.139.200.59"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "path": "[Curriculums/8bae6f1b-38b7-4213-b443-e436e467ac9e/261016_213528_CV_Programador_1.jpg](Curriculums/8bae6f1b-38b7-4213-b443-e436e467ac9e/261016_213528_CV_Programador_1.jpg)",
+            "session_id": "31919b0d-2f1d-4967-bd29-af2d69cd1b65",
+            "email": "jpnvidal@gmail.com",
+            "tenant_id": "8bae6f1b-38b7-4213-b443-e436e467ac9e"
+          },
+          "webhookUrl": "https://prototipos.jpvidaldesign.com/webhook/Obtener_CV_MT",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Webhook_Carga_CV": [
+      {
+        "json": {
+          "headers": {
+            "host": "prototipos.jpvidaldesign.com",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+            "content-length": "133255",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "es-ES,es;q=0.9",
+            "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryhfsXuMEZuUT133eY",
+            "origin": "https://supabase-rrhh-multitenant.5tx6ny.easypanel.host",
+            "priority": "u=1, i",
+            "referer": "https://supabase-rrhh-multitenant.5tx6ny.easypanel.host/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "186.139.200.59",
+            "x-forwarded-host": "prototipos.jpvidaldesign.com",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "3ecd2cb51839",
+            "x-real-ip": "186.139.200.59"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "filename": "Curriculum_en_1.jpg",
+            "mimetype": "image/jpeg",
+            "size": "131983",
+            "file_hash": "5087f334c2900b9a74c707d6f529b5b10486fe1120c1a6c7fed7efa4979fa775",
+            "submittedAt": "2026-10-17T02:10:01.827-03:00",
+            "formMode": "test",
+            "session_id": "31919b0d-2f1d-4967-bd29-af2d69cd1b65",
+            "tenant_id": "f5f2705e-6b34-4542-aa5d-92e033e15f59",
+            "tenant_slug": "beta-solutions"
+          },
+          "webhookUrl": "https://prototipos.jpvidaldesign.com/webhook/Carga_CV_Supa_MT",
+          "executionMode": "production"
+        },
+        "binary": {
+          "file": {
+            "mimeType": "image/jpeg",
+            "fileType": "image",
+            "fileExtension": "jpg",
+            "data": "filesystem-v2",
+            "fileName": "Curriculum_en_1.jpg",
+            "id": "filesystem-v2:workflows/ain9pjNO9iLZAMF4/executions/8363/binary_data/4c693e92-721b-473e-a47d-794e39e24368",
+            "fileSize": "132 kB",
+            "bytes": 131983
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Texto de JPEG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "If Nombre & Apellido NO vacias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base de Perfiles": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Perfiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perfiles": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook Busqueda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Texto de JPEG": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto de PDF": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Texto de PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "CV ya cargado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV ya cargado": {
+      "main": [
+        [
+          {
+            "node": "Respond 1 to Carga_CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Storage CV",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto de CV": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Download file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Crypto1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image1": {
+      "main": [
+        [
+          {
+            "node": "Texto de CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor2": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base de Perfiles1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Hash1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto1": {
+      "main": [
+        [
+          {
+            "node": "Check Hash1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Texto de PDF1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto de PDF1": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders1": {
+      "main": [
+        [
+          {
+            "node": "Base de Perfiles1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge5": {
+      "main": [
+        [
+          {
+            "node": "Analyze image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "Check Hash & Tenant Columns",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Storage CV": {
+      "main": [
+        [
+          {
+            "node": "Storage_Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos CV": {
+      "main": [
+        [
+          {
+            "node": "Upload CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload CV": {
+      "main": [
+        [
+          {
+            "node": "Respond 2 to Carga_CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Storage_Data": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar_CV": {
+      "main": [
+        [
+          {
+            "node": "CV_Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar_bak": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Buscar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook_Busqueda": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook_Carga_CV": {
+      "main": [
+        [
+          {
+            "node": "Check Hash & Tenant Columns",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Webhook_Get_File": {
+      "main": [
+        [
+          {
+            "node": "Limpia variable Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV_Link": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpia variable Path": {
+      "main": [
+        [
+          {
+            "node": "Buscar_CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Hash & Tenant Columns": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Nombre & Apellido NO vacias": {
+      "main": [
+        [
+          {
+            "node": "Respond 3 to Carga_CV1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 3 to Carga_CV1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4118c1b2-2916-4cd5-9c4e-f23299684375",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c091482841be934968181718e63ed46dc6f88b9897cdb9b8f002a712568b090"
+  },
+  "nodeGroups": [],
+  "id": "ain9pjNO9iLZAMF4",
+  "tags": [
+    {
+      "updatedAt": "2026-10-17T00:47:56.042Z",
+      "createdAt": "2026-10-17T00:47:56.042Z",
+      "id": "46kwYFBU4OhBs4xq",
+      "name": "CV-RRHH-Supa"
+    }
+  ]
+}
