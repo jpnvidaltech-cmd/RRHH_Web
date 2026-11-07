@@ -839,18 +839,31 @@
 
             <!-- Filter Bar -->
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-              <!-- Search input (8 cols) -->
-              <div class="md:col-span-8 relative flex items-center bg-surface-container-low rounded-xl px-space-sm py-2.5 border border-surface-container">
+              <!-- Search input (6 cols) -->
+              <div class="md:col-span-6 relative flex items-center bg-surface-container-low rounded-xl px-space-sm py-2.5 border border-surface-container">
                 <span class="material-symbols-outlined text-outline text-[20px] mr-2 shrink-0">search</span>
                 <input class="w-full bg-transparent text-[13px] text-on-surface placeholder:text-outline focus:outline-none" id="filterSearchText" placeholder="Buscar por nombre, cargo, tecnologías (ej: Python, React, Scrum)..." type="text" oninput="applyCVFilters()" autocomplete="off">
                 <kbd class="hidden sm:inline text-[11px] font-semibold bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded ml-2">Filtro</kbd>
               </div>
-              <!-- Dropdown: Especialidad (4 cols) -->
-              <div class="md:col-span-4 bg-surface-container-low rounded-xl px-space-sm py-2 flex items-center justify-between border border-surface-container">
+              <!-- Dropdown: Especialidad (3 cols) -->
+              <div class="md:col-span-3 bg-surface-container-low rounded-xl px-space-sm py-2 flex items-center justify-between border border-surface-container">
                 <div class="flex items-center gap-2 overflow-hidden w-full">
                   <span class="material-symbols-outlined text-outline text-[18px] shrink-0">category</span>
                   <select class="bg-transparent text-[13px] text-primary dark:text-slate-200 focus:outline-none cursor-pointer w-full truncate font-medium" id="filterProfessionSelect" onchange="applyCVFilters()">
                     <option value="">Especialidad: Todas</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Dropdown: Estado / Recurso (3 cols) -->
+              <div class="md:col-span-3 bg-surface-container-low rounded-xl px-space-sm py-2 flex items-center justify-between border border-surface-container">
+                <div class="flex items-center gap-2 overflow-hidden w-full">
+                  <span class="material-symbols-outlined text-outline text-[18px] shrink-0">tune</span>
+                  <select class="bg-transparent text-[13px] text-primary dark:text-slate-200 focus:outline-none cursor-pointer w-full truncate font-medium" id="filterRecursoSelect" onchange="applyCVFilters()">
+                    <option value="">Estado: Todos</option>
+                    <option value="disponible">🟢 Disponibles</option>
+                    <option value="en_proceso">🟡 En Proceso</option>
+                    <option value="contratado">🔵 Contratados</option>
+                    <option value="descartado">🔴 Descartados</option>
                   </select>
                 </div>
               </div>
@@ -862,10 +875,7 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-surface-container-low/70 text-[11px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-wider border-b border-surface-container">
-                  <th class="py-3 px-space-md font-semibold w-12 text-center">
-                    <input class="rounded text-primary focus:ring-0 cursor-pointer" type="checkbox" id="checkSelectAllCVs" onchange="toggleSelectAllCVs(this)">
-                  </th>
-                  <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('nombre')">
+                  <th class="py-3 px-space-md font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('nombre')">
                     Candidato <span id="sort-nombre"></span>
                   </th>
                   <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('profesion')">
@@ -876,6 +886,9 @@
                   </th>
                   <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('email')">
                     Email <span id="sort-email"></span>
+                  </th>
+                  <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('recurso')">
+                    Estado <span id="sort-recurso"></span>
                   </th>
                   <th class="py-3 px-space-sm font-semibold cursor-pointer hover:text-primary transition-colors select-none" onclick="handleSortClick('created_at')">
                     Fecha Registro <span id="sort-created_at">▼</span>
@@ -2741,6 +2754,146 @@
       return list;
     }
 
+    // ─── CONFIGURACIÓN DEL CICLO DE VIDA DEL CANDIDATO (CAMPO recurso) ──────
+    const RECURSO_STATUS_CONFIG = {
+      disponible: {
+        key: 'disponible',
+        label: 'Disponible',
+        icon: 'check_circle',
+        badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/30',
+        dotClass: 'bg-emerald-500'
+      },
+      en_proceso: {
+        key: 'en_proceso',
+        label: 'En Proceso',
+        icon: 'pending',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-500/30',
+        dotClass: 'bg-amber-500'
+      },
+      contratado: {
+        key: 'contratado',
+        label: 'Contratado',
+        icon: 'verified',
+        badgeClass: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-500/30',
+        dotClass: 'bg-blue-500'
+      },
+      descartado: {
+        key: 'descartado',
+        label: 'Descartado',
+        icon: 'cancel',
+        badgeClass: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-500/30',
+        dotClass: 'bg-rose-500'
+      }
+    };
+
+    function getRecursoInfo(status) {
+      const clean = (status || 'disponible').toLowerCase().trim();
+      return RECURSO_STATUS_CONFIG[clean] || RECURSO_STATUS_CONFIG['disponible'];
+    }
+
+    function findMatchingCv(cand) {
+      if (!cand || !Array.isArray(allCVs) || allCVs.length === 0) return null;
+
+      // 1. Intentar vincular por web_cv_link
+      if (cand.cvLink && typeof cand.cvLink === 'string') {
+        const cLink = cand.cvLink.toLowerCase().trim();
+        const found = allCVs.find(c => {
+          if (!c.web_cv_link) return false;
+          const dbLink = c.web_cv_link.toLowerCase().trim();
+          return dbLink === cLink || dbLink.includes(cLink) || cLink.includes(dbLink);
+        });
+        if (found) return found;
+      }
+
+      // 2. Intentar vincular por coincidencia de nombre
+      if (cand.name && typeof cand.name === 'string') {
+        const normCand = cand.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        const found = allCVs.find(c => {
+          const normDb = `${c.nombre || ''} ${c.apellido || ''}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+          return normDb === normCand || (normDb.length > 4 && normCand.includes(normDb)) || (normCand.length > 4 && normDb.includes(normCand));
+        });
+        if (found) return found;
+      }
+
+      return null;
+    }
+
+    async function quickSetCandidateStatus(cvId, status, candName, btnElement) {
+      if (!cvId) return;
+
+      const targetCard = btnElement ? (btnElement.closest('.bg-surface-container-lowest') || btnElement.closest('.group')) : null;
+      const originalBtnHtml = btnElement ? btnElement.innerHTML : '';
+      if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.innerHTML = `<span class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>`;
+      }
+
+      try {
+        const res = await fetchWithAuth(`/api/cvs/${cvId}/recurso`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recurso: status })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'No se pudo actualizar el estado.');
+        }
+
+        // Actualizar el registro en allCVs en memoria
+        const targetCv = allCVs.find(c => c.id === cvId);
+        if (targetCv) {
+          targetCv.recurso = status;
+        }
+
+        const info = getRecursoInfo(status);
+
+        // Feedback visual en la tarjeta de Búsqueda IA
+        if (targetCard) {
+          const safeId = (candName || 'cand').replace(/\W+/g, '_');
+          const badgeEl = document.getElementById(`card-status-badge-${safeId}`);
+          if (badgeEl) {
+            badgeEl.className = `inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${info.badgeClass}`;
+            badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${info.dotClass}"></span> ${info.label}`;
+          }
+
+          if (status === 'descartado') {
+            targetCard.classList.add('opacity-60', 'grayscale-[35%]');
+          } else if (status === 'contratado') {
+            targetCard.classList.remove('opacity-60', 'grayscale-[35%]');
+            targetCard.classList.add('ring-2', 'ring-blue-500/50');
+          }
+
+          const actionsContainer = targetCard.querySelector('.card-quick-actions');
+          if (actionsContainer) {
+            actionsContainer.innerHTML = `
+              <div class="col-span-2 py-1.5 px-2 rounded-xl text-center text-[11px] font-bold ${info.badgeClass}">
+                ✓ Candidato marcado como ${info.label}
+              </div>
+            `;
+          }
+        }
+
+        if (status === 'descartado') {
+          showAlert('warning', `🚫 ${candName} ha sido descartado. Haz clic en 'Buscar con IA' para que el agente proponga candidatos alternativos.`);
+        } else {
+          showAlert('success', `💼 ${candName} marcado como ${info.label}.`);
+        }
+
+        // Si la tabla de Base de Talentos está abierta, reflejar el cambio
+        if (typeof applyCVFilters === 'function') {
+          applyCVFilters();
+        }
+      } catch (err) {
+        console.error("Error en quickSetCandidateStatus:", err);
+        showAlert('error', `Error al cambiar estado: ${err.message}`);
+        if (btnElement) {
+          btnElement.disabled = false;
+          btnElement.innerHTML = originalBtnHtml;
+        }
+      }
+    }
+
     function createCandidateCardElement(cand) {
       const card = document.createElement('div');
       card.className = 'bg-surface-container-lowest rounded-2xl p-space-md shadow-xs border border-surface-container hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden h-full';
@@ -2769,6 +2922,15 @@
       }
 
       const initials = cand.name.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CV';
+
+      // Vincular con registro en base de datos para gestión de estado
+      const matchedCv = findMatchingCv(cand);
+      const cvId = matchedCv?.id || null;
+      const recursoVal = (matchedCv?.recurso || 'disponible').toLowerCase();
+      const recursoInfo = getRecursoInfo(recursoVal);
+      const myRole = currentUserProfile?.role || 'usuario';
+      const canManageCandidates = (myRole === 'admin' || myRole === 'superadmin' || myRole === 'manager');
+      const safeId = (cand.name || 'cand').replace(/\W+/g, '_');
 
       // Limpiar texto para resumen y desglosarlo completo sin límite arbitrario de caracteres
       let lines = (cand.rawBlock || '').split('\n').map(l => l.trim()).filter(Boolean);
@@ -2819,10 +2981,16 @@
             </span>
           </div>
 
-          <!-- Match tag -->
-          <div class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface text-[11px] flex items-center gap-1.5 font-bold shrink-0">
-            <span class="material-symbols-outlined text-[15px] text-primary dark:text-sky-400">verified</span>
-            <span>${matchLabel}</span>
+          <!-- Match tag y Estado del Recurso -->
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface text-[11px] flex items-center gap-1.5 font-bold shrink-0">
+              <span class="material-symbols-outlined text-[15px] text-primary dark:text-sky-400">verified</span>
+              <span>${matchLabel}</span>
+            </div>
+            <span id="card-status-badge-${safeId}" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${recursoInfo.badgeClass}">
+              <span class="w-1.5 h-1.5 rounded-full ${recursoInfo.dotClass}"></span>
+              ${recursoInfo.label}
+            </span>
           </div>
 
           <!-- Síntesis y Evaluación IA Completa y Flexible -->
@@ -2836,16 +3004,37 @@
           </div>
         </div>
 
-        <!-- Botón Ver CV anclado en la parte inferior -->
-        <div class="pt-3 mt-3 border-t border-surface-container flex items-center gap-2 shrink-0">
-          ${cand.cvLink ? `
-            <button class="w-full py-2.5 px-3 rounded-xl bg-surface-container-high hover:bg-surface-dim text-on-surface text-[12px] font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer" onclick="openCV('${escHtml(cand.cvLink)}')">
-              <span class="material-symbols-outlined text-[16px]">description</span>
-              <span>Ver Currículum</span>
-            </button>
-          ` : `
-            <span class="text-[11px] text-outline italic text-center w-full py-1">Sin enlace directo adjunto</span>
-          `}
+        <!-- Acciones: Ver CV y Gestión de Estado -->
+        <div class="pt-3 mt-3 border-t border-surface-container flex flex-col gap-2 shrink-0">
+          <div class="flex items-center gap-2">
+            ${cand.cvLink ? `
+              <button class="w-full py-2.5 px-3 rounded-xl bg-surface-container-high hover:bg-surface-dim text-on-surface text-[12px] font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer" onclick="openCV('${escHtml(cand.cvLink)}')">
+                <span class="material-symbols-outlined text-[16px]">description</span>
+                <span>Ver Currículum</span>
+              </button>
+            ` : `
+              <span class="text-[11px] text-outline italic text-center w-full py-1">Sin enlace directo adjunto</span>
+            `}
+          </div>
+
+          ${canManageCandidates && cvId ? `
+            <div class="grid grid-cols-2 gap-2 pt-1 card-quick-actions">
+              <button type="button"
+                      title="Marcar como contratado en este puesto/organización"
+                      class="py-1.5 px-2 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-blue-50/80 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-300 text-[11px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                      onclick="quickSetCandidateStatus('${cvId}', 'contratado', '${escHtml(cand.name)}', this)">
+                <span class="material-symbols-outlined text-[15px]">verified</span>
+                <span>Contratado</span>
+              </button>
+              <button type="button"
+                      title="Descartar perfil para excluirlo de futuras búsquedas de IA"
+                      class="py-1.5 px-2 rounded-xl border border-rose-200 dark:border-rose-800/40 bg-rose-50/80 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-800 dark:text-rose-300 text-[11px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                      onclick="quickSetCandidateStatus('${cvId}', 'descartado', '${escHtml(cand.name)}', this)">
+                <span class="material-symbols-outlined text-[15px]">cancel</span>
+                <span>Descartar</span>
+              </button>
+            </div>
+          ` : ''}
         </div>
       `;
 
@@ -2990,12 +3179,20 @@
     function applyCVFilters() {
       const searchInput = document.getElementById('filterSearchText');
       const professionSelect = document.getElementById('filterProfessionSelect');
+      const recursoSelect = document.getElementById('filterRecursoSelect');
       const term = (searchInput?.value || '').toLowerCase().trim();
       const selectedProf = (professionSelect?.value || '').trim();
+      const selectedRecurso = (recursoSelect?.value || '').trim().toLowerCase();
 
       filteredCVs = allCVs.filter(cv => {
         if (selectedProf && (cv.profesion || '').trim().toLowerCase() !== selectedProf.toLowerCase()) {
           return false;
+        }
+        if (selectedRecurso) {
+          const candRecurso = (cv.recurso || 'disponible').toLowerCase();
+          if (candRecurso !== selectedRecurso) {
+            return false;
+          }
         }
         if (term) {
           const fullName = `${cv.nombre || ''} ${cv.apellido || ''}`.toLowerCase();
@@ -3009,7 +3206,7 @@
 
       const badge = document.getElementById('filterResultBadge');
       if (badge) {
-        if (term || selectedProf) {
+        if (term || selectedProf || selectedRecurso) {
           badge.textContent = `Mostrando ${filteredCVs.length} de ${allCVs.length}`;
         } else {
           badge.textContent = `Total: ${allCVs.length} candidatos`;
@@ -3023,9 +3220,52 @@
     function clearCVFilters() {
       const searchInput = document.getElementById('filterSearchText');
       const professionSelect = document.getElementById('filterProfessionSelect');
+      const recursoSelect = document.getElementById('filterRecursoSelect');
       if (searchInput) searchInput.value = '';
       if (professionSelect) professionSelect.value = '';
+      if (recursoSelect) recursoSelect.value = '';
       applyCVFilters();
+    }
+
+    async function updateCvRecurso(cvId, newStatus, candidateName) {
+      if (!cvId) return;
+
+      const prevCv = allCVs.find(c => c.id === cvId);
+      const prevStatus = prevCv?.recurso || 'disponible';
+
+      try {
+        const res = await fetchWithAuth(`/api/cvs/${cvId}/recurso`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recurso: newStatus })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'No se pudo actualizar el estado del candidato.');
+        }
+
+        if (prevCv) {
+          prevCv.recurso = newStatus;
+        }
+        const filteredMatch = filteredCVs.find(c => c.id === cvId);
+        if (filteredMatch) {
+          filteredMatch.recurso = newStatus;
+        }
+
+        const info = getRecursoInfo(newStatus);
+        showAlert('success', `✓ Estado de ${candidateName || 'candidato'} actualizado a '${info.label}'.`);
+
+        // Re-renderizar tabla para refrescar badges y estilos
+        sortAndRenderTable();
+      } catch (err) {
+        console.error("Error en updateCvRecurso:", err);
+        showAlert('error', `Error al cambiar estado: ${err.message}`);
+        if (prevCv) {
+          prevCv.recurso = prevStatus;
+        }
+        sortAndRenderTable();
+      }
     }
 
     function sortAndRenderTable() {
@@ -3039,6 +3279,14 @@
           return currentSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
         }
 
+        if (currentSortColumn === 'recurso') {
+          valA = (a.recurso || 'disponible').toLowerCase();
+          valB = (b.recurso || 'disponible').toLowerCase();
+          if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+          if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+          return 0;
+        }
+
         valA = String(valA).trim().toLowerCase();
         valB = String(valB).trim().toLowerCase();
         if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
@@ -3046,7 +3294,7 @@
         return 0;
       });
 
-      const columns = ['nombre', 'profesion', 'perfil_laboral', 'email', 'created_at'];
+      const columns = ['nombre', 'profesion', 'perfil_laboral', 'email', 'recurso', 'created_at'];
       columns.forEach(col => {
         const el = document.getElementById(`sort-${col}`);
         if (el) {
@@ -3068,7 +3316,7 @@
       tbody.innerHTML = '';
 
       if (paginatedItems.length === 0) {
-        const isFiltering = (document.getElementById('filterSearchText')?.value || document.getElementById('filterProfessionSelect')?.value);
+        const isFiltering = (document.getElementById('filterSearchText')?.value || document.getElementById('filterProfessionSelect')?.value || document.getElementById('filterRecursoSelect')?.value);
         tbody.innerHTML = `
           <tr>
             <td colspan="7" class="py-12 text-center text-on-surface-variant">
@@ -3100,14 +3348,14 @@
         const diffMs = ahora - fechaCreacion;
         const isNew = fechaCreacion > 0 && diffMs >= -60000 && diffMs <= (48 * 60 * 60 * 1000);
 
+        const recursoKey = (cv.recurso || 'disponible').toLowerCase();
+        const recursoInfo = getRecursoInfo(recursoKey);
+
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-surface-container-low/50 transition-colors group';
 
         tr.innerHTML = `
-          <td class="py-4 px-space-md text-center">
-            <input class="rounded text-primary focus:ring-0 cursor-pointer cv-row-checkbox" type="checkbox" value="${cv.id || ''}" onchange="updateSelectAllState()">
-          </td>
-          <td class="py-4 px-space-sm">
+          <td class="py-4 px-space-md">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full ${colorClass} flex items-center justify-center text-[13px] font-bold shrink-0 shadow-xs">
                 ${initials}
@@ -3134,6 +3382,25 @@
           </td>
           <td class="py-4 px-space-sm">
             <span class="text-[12px] text-on-surface dark:text-slate-200 font-medium truncate">${escHtml(cv.email || '—')}</span>
+          </td>
+          <td class="py-4 px-space-sm" onclick="event.stopPropagation()">
+            ${canDelete ? `
+              <div class="relative inline-flex items-center">
+                <select onchange="updateCvRecurso('${cv.id}', this.value, '${escHtml(nombreCompleto)}')"
+                        title="Cambiar estado del candidato"
+                        class="px-2.5 py-1 rounded-full text-[11px] font-bold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all ${recursoInfo.badgeClass}">
+                  <option value="disponible" class="bg-surface-container-lowest text-on-surface dark:bg-slate-900 dark:text-white" ${recursoKey === 'disponible' ? 'selected' : ''}>🟢 Disponible</option>
+                  <option value="en_proceso" class="bg-surface-container-lowest text-on-surface dark:bg-slate-900 dark:text-white" ${recursoKey === 'en_proceso' ? 'selected' : ''}>🟡 En Proceso</option>
+                  <option value="contratado" class="bg-surface-container-lowest text-on-surface dark:bg-slate-900 dark:text-white" ${recursoKey === 'contratado' ? 'selected' : ''}>🔵 Contratado</option>
+                  <option value="descartado" class="bg-surface-container-lowest text-on-surface dark:bg-slate-900 dark:text-white" ${recursoKey === 'descartado' ? 'selected' : ''}>🔴 Descartado</option>
+                </select>
+              </div>
+            ` : `
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${recursoInfo.badgeClass}">
+                <span class="w-1.5 h-1.5 rounded-full ${recursoInfo.dotClass}"></span>
+                ${recursoInfo.label}
+              </span>
+            `}
           </td>
           <td class="py-4 px-space-sm">
             <span class="text-[12px] text-on-surface-variant dark:text-slate-400 whitespace-nowrap font-mono">${formatDate(cv.created_at)}</span>
