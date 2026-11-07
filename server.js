@@ -583,7 +583,7 @@ app.get('/api/cvs/all', requireAuth, async (req, res) => {
     console.log(`[GET /api/cvs/all] Consultando mt_cvs para tenant_id: ${activeTenantId}`);
     const { data: cvList, error } = await supabaseAdmin
       .from('mt_cvs')
-      .select('id, nombre, apellido, profesion, perfil_laboral, email, web_cv_link, created_at')
+      .select('id, nombre, apellido, profesion, perfil_laboral, email, web_cv_link, created_at, recurso')
       .eq('tenant_id', activeTenantId)
       .order('created_at', { ascending: false });
 
@@ -696,6 +696,51 @@ app.delete('/api/cvs/:id', requireAuth, requireManagerOrAdmin, async (req, res) 
   } catch (err) {
     console.error(`[DELETE /api/cvs/:id] Excepción en endpoint:`, err);
     res.status(500).json({ error: 'Error interno al procesar la eliminación del currículum.' });
+  }
+});
+
+// Actualización del estado/ciclo de vida del candidato (recurso) para Manager y Administrador
+app.patch('/api/cvs/:id/recurso', requireAuth, requireManagerOrAdmin, async (req, res) => {
+  try {
+    const cvId = req.params.id;
+    const { recurso } = req.body || {};
+
+    const validStatuses = ['disponible', 'en_proceso', 'contratado', 'descartado'];
+    if (!recurso || !validStatuses.includes(recurso)) {
+      return res.status(400).json({
+        error: `Estado inválido. Los estados permitidos son: ${validStatuses.join(', ')}.`
+      });
+    }
+
+    const activeTenantId = resolveActiveTenantId(req);
+    if (!activeTenantId) {
+      return res.status(400).json({ error: 'El usuario no tiene una organización asignada.' });
+    }
+
+    // Actualizar registro en mt_cvs verificando tenant_id
+    const { data: updatedCv, error: updateError } = await supabaseAdmin
+      .from('mt_cvs')
+      .update({ recurso })
+      .eq('id', cvId)
+      .eq('tenant_id', activeTenantId)
+      .select('id, nombre, apellido, profesion, recurso')
+      .single();
+
+    if (updateError || !updatedCv) {
+      console.warn(`[PATCH /api/cvs/:id/recurso] Error o CV no encontrado: id=${cvId}, tenant=${activeTenantId}`, updateError);
+      return res.status(404).json({ error: 'Currículum no encontrado o no pertenece a su organización.' });
+    }
+
+    const fullName = `${updatedCv.nombre || ''} ${updatedCv.apellido || ''}`.trim() || 'Candidato';
+    console.log(`[PATCH /api/cvs/:id/recurso] Éxito: CV ${cvId} (${fullName}) actualizado a estado '${recurso}' por ${req.user.email}`);
+
+    res.json({
+      message: `Estado de ${fullName} actualizado a '${recurso}' con éxito.`,
+      cv: updatedCv
+    });
+  } catch (err) {
+    console.error(`[PATCH /api/cvs/:id/recurso] Excepción:`, err);
+    res.status(500).json({ error: 'Error interno al actualizar el estado del candidato.' });
   }
 });
 
