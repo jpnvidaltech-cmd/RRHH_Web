@@ -553,9 +553,12 @@
       </button>
 
       <!-- Item 2: Base de Talento & CVs -->
-      <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-all text-left text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface" id="navBtnTalent" onclick="switchView('talent')">
-        <span class="material-symbols-outlined text-[20px]">folder_shared</span>
-        <span>Base de Talento & CVs</span>
+      <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-all text-left text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface group" id="navBtnTalent" onclick="switchView('talent')">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-[20px]">folder_shared</span>
+          <span>Base de Talento & CVs</span>
+        </div>
+        <span id="navNewCvBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300/40"></span>
       </button>
 
       <!-- Item 3: Equipo & Configuración -->
@@ -1313,6 +1316,48 @@
     </div>
   </div>
 
+  <!-- ── MODAL: NOVEDADES DE POSTULACIONES POST-LOGIN ── -->
+  <div class="fixed inset-0 bg-primary/50 backdrop-blur-md z-[115] flex items-center justify-center p-4" id="newCandidatesModal" style="display: none;">
+    <div class="bg-surface-container-lowest rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-surface-container flex flex-col gap-4 relative animate-[alertSlideIn_0.3s_cubic-bezier(0.16,1,0.3,1)_forwards]">
+      <!-- Botón cerrar X -->
+      <button class="absolute top-4 right-4 p-1.5 rounded-full text-outline hover:text-on-surface hover:bg-surface-container transition-colors" onclick="closeNewCandidatesModal()" title="Cerrar aviso">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+
+      <!-- Encabezado con Icono -->
+      <div class="flex items-start gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+          <span class="material-symbols-outlined text-[26px]">mark_email_unread</span>
+        </div>
+        <div class="min-w-0 pr-6 text-left">
+          <div class="flex items-center gap-2">
+            <h3 class="text-[18px] font-bold text-primary dark:text-white leading-tight">Nuevas Postulaciones</h3>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300" id="newCandidatesCountBadge">0 nuevos</span>
+          </div>
+          <p class="text-[12px] text-on-surface-variant mt-1 leading-relaxed" id="newCandidatesSubtitle">
+            Se registraron nuevos candidatos en tu organización desde tu última visita.
+          </p>
+        </div>
+      </div>
+
+      <!-- Mini-listado de nuevos postulantes -->
+      <div class="max-h-64 overflow-y-auto space-y-2 pr-1 rounded-2xl bg-surface-container-low p-3 border border-surface-container" id="newCandidatesList">
+        <!-- Renderizado dinámico -->
+      </div>
+
+      <!-- Botones de Acción Rápida (Sin opción de IA) -->
+      <div class="w-full flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-surface-container">
+        <button type="button" onclick="closeNewCandidatesModal()" class="w-full sm:w-auto py-2.5 px-5 rounded-xl border border-surface-container bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-[13px] transition-all cursor-pointer">
+          Cerrar / Entendido
+        </button>
+        <button type="button" onclick="goToTalentBaseFromNewCandidates()" class="w-full sm:w-auto py-2.5 px-5 rounded-xl bg-primary text-white font-bold text-[13px] hover:bg-primary-container transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+          <span class="material-symbols-outlined text-[17px]">folder_shared</span>
+          <span>Ver en Base de Talentos</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── LOGIN OVERLAY (WARM MINIMAL) ── -->
   <div class="fixed inset-0 bg-primary/50 backdrop-blur-md z-[100] flex items-center justify-center p-4" id="loginOverlay">
     <div class="bg-surface-container-lowest rounded-3xl max-w-sm w-full p-8 shadow-2xl border border-surface-container flex flex-col items-center text-center gap-4">
@@ -1397,7 +1442,9 @@
       Object.keys(views).forEach(key => {
         if (views[key]) views[key].style.display = 'none';
         if (buttons[key]) {
-          buttons[key].className = 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-all text-left text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface';
+          const isTalent = (key === 'talent');
+          const layoutClass = isTalent ? 'w-full flex items-center justify-between' : 'w-full flex items-center gap-3';
+          buttons[key].className = `${layoutClass} px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-all text-left text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface group`;
         }
       });
 
@@ -1406,11 +1453,14 @@
         views[viewName].style.display = 'flex';
       }
       if (buttons[viewName]) {
-        buttons[viewName].className = 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-all text-left bg-primary text-on-primary shadow-sm';
+        const isTalent = (viewName === 'talent');
+        const layoutClass = isTalent ? 'w-full flex items-center justify-between' : 'w-full flex items-center gap-3';
+        buttons[viewName].className = `${layoutClass} px-3 py-2.5 rounded-xl text-[14px] font-semibold transition-all text-left bg-primary text-on-primary shadow-sm group`;
       }
 
       // Cargar datos según la vista
       if (viewName === 'talent') {
+        updateNewCvBadge(0);
         loadCVList();
         updateCVCount();
       } else if (viewName === 'team') {
@@ -1753,10 +1803,16 @@
           setupSupabaseRealtime(currentTenant.id);
         }
 
+        // Resetear bandera de verificación de novedades de candidatos para esta sesión
+        hasCheckedNewCandidatesThisSession = false;
+
         // Refrescar automáticamente los datos de la vista activa según el rol autenticado
         if (activeView === 'team') {
           loadSystemUsers();
         } else if (activeView === 'talent') {
+          loadCVList();
+        } else {
+          // Si inicia en Búsqueda IA, cargamos la lista en background para verificar novedades y poblar allCVs
           loadCVList();
         }
 
@@ -1774,6 +1830,8 @@
         if (btnOpenQrModal) btnOpenQrModal.style.display = 'none';
         currentUserProfile = null;
         currentTenant = null;
+        hasCheckedNewCandidatesThisSession = false;
+        updateNewCvBadge(0);
         sessionStorage.removeItem('rrhh_auth_token');
         stopIdleTracker();
       }
@@ -1950,7 +2008,11 @@
       // 1. Limpiar completamente la vista de Búsqueda Semántica & Comparativa IA
       clearSearch();
 
-      // 2. Resetear filtros y datos de la Base de Talento & CVs
+      // 2. Resetear novedades de candidatos y badge para el nuevo tenant
+      hasCheckedNewCandidatesThisSession = false;
+      updateNewCvBadge(0);
+
+      // 3. Resetear filtros y datos de la Base de Talento & CVs
       allCVs = [];
       filteredCVs = [];
       currentPage = 1;
@@ -1959,20 +2021,22 @@
       const filterProfessionSelect = document.getElementById('filterProfessionSelect');
       if (filterProfessionSelect) filterProfessionSelect.innerHTML = '<option value="">Todas las profesiones</option>';
 
-      // 3. Actualizar conteo de CVs para la nueva organización activa
+      // 4. Actualizar conteo de CVs para la nueva organización activa
       await updateCVCount();
 
-      // 4. Actualizar tarjeta de perfil del usuario con la nueva empresa
+      // 5. Actualizar tarjeta de perfil del usuario con la nueva empresa
       updateProfileCard();
 
-      // 5. Refrescar la visualización de la vista activa
+      // 6. Refrescar la visualización de la vista activa (o cargar en background si está en búsqueda)
       if (activeView === 'talent') {
         await loadCVList();
       } else if (activeView === 'team') {
         await loadSystemUsers();
+      } else {
+        loadCVList();
       }
 
-      // 6. Actualizar suscripción a Supabase Realtime con el nuevo tenant
+      // 7. Actualizar suscripción a Supabase Realtime con el nuevo tenant
       if (currentTenant?.id) {
         setupSupabaseRealtime(currentTenant.id);
       }
@@ -3106,6 +3170,158 @@
       extraBlocks.appendChild(container);
     }
 
+    // ─── NOVEDADES DE CANDIDATOS DESDE LA ÚLTIMA SESIÓN (POST-LOGIN) ─────────
+    let hasCheckedNewCandidatesThisSession = false;
+    let latestNewCandidatesList = [];
+
+    function formatRelativeTime(isoStr) {
+      if (!isoStr) return '';
+      try {
+        const diffMs = Date.now() - new Date(isoStr).getTime();
+        if (diffMs < 0) return 'Reciente';
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        if (diffMinutes < 1) return 'Hace unos momentos';
+        if (diffMinutes < 60) return `Hace ${diffMinutes} min`;
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) return `Hace ${diffHours} h`;
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays === 1) return 'Ayer';
+        if (diffDays < 7) return `Hace ${diffDays} días`;
+        return formatDate(isoStr);
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function updateNewCvBadge(count) {
+      const badge = document.getElementById('navNewCvBadge');
+      if (!badge) return;
+      if (count > 0) {
+        badge.textContent = `+${count}`;
+        badge.classList.remove('hidden');
+      } else {
+        badge.textContent = '';
+        badge.classList.add('hidden');
+      }
+    }
+
+    function checkForNewCandidatesSinceLastSession() {
+      if (!currentUser || !currentTenant || hasCheckedNewCandidatesThisSession) return;
+      if (!allCVs || allCVs.length === 0) return;
+
+      const storageKey = `rrhh_last_session_${currentUser.id}_${currentTenant.id}`;
+      const rawLastSession = localStorage.getItem(storageKey);
+
+      // Si es el primer ingreso del usuario en este navegador/organización:
+      // Se establece el timestamp inicial para no alertar sobre todo el historial previo
+      if (!rawLastSession) {
+        localStorage.setItem(storageKey, String(Date.now()));
+        updateNewCvBadge(0);
+        hasCheckedNewCandidatesThisSession = true;
+        return;
+      }
+
+      const lastSessionTime = parseInt(rawLastSession, 10);
+      if (isNaN(lastSessionTime)) {
+        localStorage.setItem(storageKey, String(Date.now()));
+        updateNewCvBadge(0);
+        hasCheckedNewCandidatesThisSession = true;
+        return;
+      }
+
+      // Filtrar candidatos con created_at posterior a la última sesión
+      const newCvs = allCVs.filter(cv => {
+        if (!cv.created_at) return false;
+        const cvTime = new Date(cv.created_at).getTime();
+        return !isNaN(cvTime) && cvTime > lastSessionTime;
+      });
+
+      // Ordenar de más reciente a más antiguo
+      newCvs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      hasCheckedNewCandidatesThisSession = true;
+      latestNewCandidatesList = newCvs;
+
+      if (newCvs.length > 0) {
+        updateNewCvBadge(newCvs.length);
+        // Desplegar modal tras 800ms para permitir una transición visual agradable post-login
+        setTimeout(() => {
+          openNewCandidatesModal(newCvs, lastSessionTime);
+        }, 800);
+      } else {
+        updateNewCvBadge(0);
+        localStorage.setItem(storageKey, String(Date.now()));
+      }
+    }
+
+    function openNewCandidatesModal(newCvs, lastSessionTime) {
+      const modal = document.getElementById('newCandidatesModal');
+      const badge = document.getElementById('newCandidatesCountBadge');
+      const subtitle = document.getElementById('newCandidatesSubtitle');
+      const listContainer = document.getElementById('newCandidatesList');
+      if (!modal || !listContainer) return;
+
+      const count = newCvs.length;
+      if (badge) {
+        badge.textContent = `${count} ${count === 1 ? 'nuevo' : 'nuevos'}`;
+      }
+
+      if (subtitle) {
+        const lastDateFormatted = formatDate(new Date(lastSessionTime).toISOString());
+        subtitle.textContent = `Se registraron ${count} ${count === 1 ? 'nuevo perfil' : 'nuevos perfiles'} en tu organización desde tu última visita (${lastDateFormatted}).`;
+      }
+
+      listContainer.innerHTML = newCvs.map(cv => {
+        const nombre = cv.nombre ? escHtml(cv.nombre) : 'Candidato sin nombre';
+        const profesion = cv.profesion ? escHtml(cv.profesion) : (cv.area ? escHtml(cv.area) : 'Perfil sin especificar');
+        const relativeTime = formatRelativeTime(cv.created_at);
+        const fecha = formatDate(cv.created_at);
+        const cvFile = cv.nombre_archivo || cv.archivo || '';
+
+        return `
+          <div class="p-3 rounded-xl bg-surface-container-lowest border border-surface-container flex items-center justify-between gap-3 hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-[13px] shrink-0">
+                ${nombre.charAt(0).toUpperCase()}
+              </div>
+              <div class="min-w-0 text-left">
+                <p class="text-[13px] font-bold text-on-surface truncate">${nombre}</p>
+                <p class="text-[11px] text-on-surface-variant truncate">${profesion}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-[11px] font-mono text-outline dark:text-slate-400 whitespace-nowrap" title="${fecha}">
+                ${relativeTime || fecha}
+              </span>
+              ${cvFile ? `
+                <button type="button" onclick="openCV('${cvFile.replace(/'/g, "\\'")}')" class="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer" title="Ver CV original">
+                  <span class="material-symbols-outlined text-[16px]">visibility</span>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      modal.style.display = 'flex';
+    }
+
+    function closeNewCandidatesModal() {
+      const modal = document.getElementById('newCandidatesModal');
+      if (modal) modal.style.display = 'none';
+
+      // Actualizar timestamp en localStorage para no volver a alertar sobre estos mismos registros
+      if (currentUser && currentTenant) {
+        const storageKey = `rrhh_last_session_${currentUser.id}_${currentTenant.id}`;
+        localStorage.setItem(storageKey, String(Date.now()));
+      }
+    }
+
+    function goToTalentBaseFromNewCandidates() {
+      closeNewCandidatesModal();
+      switchView('talent');
+    }
+
     // ─── TABLA DE CVS Y FILTROS INTERACTIVOS (VISTA 2) ────────────────────────
     let allCVs = [];
     let filteredCVs = [];
@@ -3136,6 +3352,7 @@
         allCVs = await res.json();
         populateProfessionFilter();
         applyCVFilters();
+        checkForNewCandidatesSinceLastSession();
       } catch (err) {
         console.warn("No se pudo cargar la lista de CVs:", err);
         allCVs = [];
