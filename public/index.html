@@ -2563,6 +2563,9 @@
 
       emptyState.style.display = 'none';
       resultsContent.style.display = 'none';
+      if (resultsToolbar) resultsToolbar.style.display = 'none';
+      const resultsCount = document.getElementById('resultsCount');
+      if (resultsCount) resultsCount.textContent = '';
       loadingState.style.display = 'flex';
       btnSearch.disabled = true;
       searchSpinner.classList.remove('hidden');
