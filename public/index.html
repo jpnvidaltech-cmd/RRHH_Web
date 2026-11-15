@@ -415,26 +415,112 @@
 
     /* Print Styles */
     @media print {
-      header, aside, .no-print, #cvFilterBar, .toolbar-actions, #btnSearch, .btn-print, #loginOverlay {
+      header, aside, .no-print, #cvFilterBar, .toolbar-actions, #btnSearch, .btn-print, #loginOverlay,
+      #resultsToolbar, #emptyState, #loadingState, #searchPromptConsole, .search-top-banner {
         display: none !important;
       }
       body {
         background: #ffffff !important;
         color: #000000 !important;
       }
-      .main-content-area {
+      .main-content-area, main, div.pl-72 {
         padding: 0 !important;
         margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
       }
-      .candidates-grid {
+      #printHeaderInfo {
+        display: block !important;
+        margin-bottom: 2rem !important;
+      }
+      #candidatesGrid {
         display: block !important;
       }
-      .candidate-card {
+      #candidatesGrid > div, .candidate-card {
         page-break-inside: avoid;
         break-inside: avoid;
-        margin-bottom: 2rem !important;
-        border: 1px solid #cccccc !important;
+        margin-bottom: 1.5rem !important;
+        border: 1px solid #d1d5db !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        color: #111827 !important;
       }
+      #extraBlocks > div {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        margin-bottom: 1.5rem !important;
+        border: 1px solid #d1d5db !important;
+      }
+    }
+
+    /* Print Header Component */
+    .print-header-card {
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 1.5rem;
+      background: #f8fafc;
+      color: #0f172a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .print-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+      gap: 1.5rem;
+    }
+    .print-brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+      line-height: 1.25;
+    }
+    .print-brand-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-top: 4px;
+      display: block;
+    }
+    .print-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem 1.5rem;
+      font-size: 13px;
+    }
+    .print-meta-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .print-meta-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    .print-meta-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .print-query-box {
+      margin-top: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #334155;
+      font-style: italic;
     }
   </style>
 </head>
@@ -595,7 +681,7 @@
       <!-- ===================================================================== -->
       <section id="viewSearch" class="flex flex-col gap-space-lg w-full">
         <!-- Top Stats Banner -->
-        <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3 no-print search-top-banner">
           <div class="flex items-center gap-2">
             <div class="flex items-center gap-2 bg-surface-container-lowest px-4 py-1.5 rounded-full shadow-xs border border-surface-container">
               <span class="material-symbols-outlined text-[16px] text-primary">bolt</span>
@@ -609,7 +695,7 @@
         </div>
 
         <!-- Consola de Búsqueda Semántica Hero-grade -->
-        <div class="relative bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm border border-surface-container/70 flex flex-col gap-space-md overflow-hidden">
+        <div id="searchPromptConsole" class="relative bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm border border-surface-container/70 flex flex-col gap-space-md overflow-hidden no-print">
           <div class="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
 
           <div class="flex flex-col gap-1 relative z-10">
@@ -2637,9 +2723,66 @@
       if (resultsToolbar) resultsToolbar.style.display = 'none';
       const emptyState = document.getElementById('emptyState');
       if (emptyState) emptyState.style.display = 'flex';
+      const printHeaderInfo = document.getElementById('printHeaderInfo');
+      if (printHeaderInfo) printHeaderInfo.innerHTML = '';
     }
 
     function printReport() {
+      const printHeaderInfo = document.getElementById('printHeaderInfo');
+      if (printHeaderInfo) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('es-AR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+        const timeStr = now.toLocaleTimeString('es-AR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+
+        const tenantName = currentTenant?.name || 'Organización';
+        const userEmail = currentUser?.email || 'Reclutador/a';
+        const searchInput = document.getElementById('searchInput');
+        const queryText = searchInput?.value?.trim() || 'Criterio general evaluado';
+        const resultsCount = document.getElementById('resultsCount')?.textContent?.trim() || '';
+
+        printHeaderInfo.innerHTML = `
+          <div class="print-header-card">
+            <div class="print-header-top">
+              <div>
+                <h1 class="print-brand-title">Reporte de Evaluación y Calificación de Candidatos con IA</h1>
+                <span class="print-brand-sub">Perfiles RRHH · AI Talent Engine</span>
+              </div>
+              <div style="text-align: right; min-width: 200px;">
+                <span class="print-meta-label">Fecha y Hora de Emisión</span>
+                <span class="print-meta-val" style="font-size: 14px; font-weight: 700; color: #0f172a;">${dateStr} — ${timeStr} hs</span>
+              </div>
+            </div>
+            <div class="print-meta-grid">
+              <div class="print-meta-item">
+                <span class="print-meta-label">Organización / Empresa</span>
+                <span class="print-meta-val">${escHtml(tenantName)}</span>
+              </div>
+              <div class="print-meta-item">
+                <span class="print-meta-label">Generado por</span>
+                <span class="print-meta-val">${escHtml(userEmail)}</span>
+              </div>
+              ${resultsCount ? `
+              <div class="print-meta-item" style="grid-column: span 2;">
+                <span class="print-meta-label">Métricas de la Evaluación</span>
+                <span class="print-meta-val">${escHtml(resultsCount)}</span>
+              </div>` : ''}
+            </div>
+            <div style="margin-top: 0.75rem;">
+              <span class="print-meta-label">Criterio / Perfil Solicitado</span>
+              <div class="print-query-box">"${escHtml(queryText)}"</div>
+            </div>
+          </div>
+        `;
+      }
+
       window.print();
     }
 
@@ -3271,7 +3414,7 @@
         </div>
 
         <!-- Acciones: Ver CV y Gestión de Estado -->
-        <div class="pt-3 mt-3 border-t border-surface-container flex flex-col gap-2 shrink-0">
+        <div class="pt-3 mt-3 border-t border-surface-container flex flex-col gap-2 shrink-0 no-print">
           <div class="flex items-center gap-2">
             ${cand.cvLink ? `
               <button class="w-full py-2.5 px-3 rounded-xl bg-surface-container-high hover:bg-surface-dim text-on-surface text-[12px] font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer" onclick="openCV('${escHtml(cand.cvLink)}')">
